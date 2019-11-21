@@ -1,0 +1,62 @@
+FROM ubuntu:18.04
+
+RUN apt-get update && apt-get install -y curl \
+    wget \
+    git \
+    python \
+    python-pip \
+    vim \
+    sudo
+
+RUN pip install awscli
+
+# Install kubectl
+RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06-21/bin/linux/amd64/kubectl \
+      && chmod +x ./kubectl && cp ./kubectl /bin
+
+# Install eksctl
+RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && mv /tmp/eksctl /bin
+
+# Install kustomize
+RUN curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases |\
+  grep browser_download |\
+  grep linux |\
+  cut -d '"' -f 4 |\
+  grep /kustomize/v |\
+  sort | tail -n 1 |\
+  xargs curl -O -L && tar xzf ./kustomize_v*_linux_amd64.tar.gz && mv kustomize /bin/kustomize && chmod u+x /bin/kustomize
+
+# Install dig, used for PrivateLink test.
+RUN apt-get install -y dnsutils
+
+# Set the environment variables
+ARG DATA_BUCKET
+ENV DATA_BUCKET=$DATA_BUCKET
+
+ARG COMMIT_SHA
+ENV COMMIT_SHA=$COMMIT_SHA
+
+ARG RESULT_BUCKET
+ENV RESULT_BUCKET=$RESULT_BUCKET
+
+# Set working directory
+RUN mkdir -p /app
+WORKDIR /app/tests
+
+COPY codebuild/canarytests/xgboost-mnist-hpo.yaml .
+COPY codebuild/canarytests/xgboost-mnist-trainingjob.yaml .
+COPY codebuild/canarytests/xgboost-mnist-batchtransform.yaml .
+
+WORKDIR /app
+
+COPY codebuild/run_all_sample_canary_tests.sh .
+COPY codebuild/run_canarytest.sh .
+COPY codebuild/run_test.sh .
+
+RUN chmod +x ./run_all_sample_canary_tests.sh
+RUN chmod +x ./run_canarytest.sh
+RUN chmod +x ./run_test.sh
+
+COPY sagemaker-k8s-operator.tar.gz .
+
+CMD ["./run_canarytest.sh"]

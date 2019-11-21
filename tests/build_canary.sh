@@ -1,0 +1,1 @@
+docker build -f images/Dockerfile.canary . -t ${IMG} --build-arg DATA_BUCKET --build-arg COMMIT_SHA --build-arg RESULT_BUCKET

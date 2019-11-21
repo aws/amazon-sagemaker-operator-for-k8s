@@ -1,0 +1,18 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: BatchTransformJob
+metadata:
+  name: xgboost-mnist
+spec:
+  region: us-west-2
+  modelName: sagemaker-tensorflow-model
+  transformInput:
+    contentType: text/csv
+    dataSource:
+      s3DataSource:
+        s3DataType: S3Prefix
+        s3Uri: s3://sagemaker-sample-data-us-west-2/batch-transform/mnist-1000-samples 
+  transformOutput:
+    s3OutputPath: s3://my-bucket/sagemaker-tensorflow-model
+  transformResources:
+    instanceCount: 1
+    instanceType: ml.m4.xlarge

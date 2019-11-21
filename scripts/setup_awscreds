@@ -1,0 +1,243 @@
+#!/bin/bash
+#
+# Get AWS credentials from 'aws configure' or environemnt variables. If neither are avaiable,
+# create a new user, attach SageMakerFullAccess policy, and create an access key specifically for the operator.
+# Once obtained, the credentials are saved in a file in the Kustomize configuration directory.
+#
+# Use -i (--interactive) to see prompts for IAM actions.
+#
+# Notes:
+# * A file-on-disk is currently the best option presented by Kustomize https://github.com/kubernetes-sigs/kustomize/issues/692#issuecomment-454646060
+#   for those who do not want to implement their own Kustomize plugin.
+#
+# * We use OPERATOR_AWS_SECRET_ACCESS_KEY, OPERATOR_AWS_ACCESS_KEY_ID, and OPERATOR_AWS_PROFILE instead of
+#   the typical AWS_SECRET_KEY_ID, AWS_ACCESS_KEY_ID, and AWS_PROFILE because users may want to specify a different
+#   AWS access key environment variable for the operator than for other operations.
+
+readonly DEFAULT_IAM_USERNAME="sagemaker-k8s-operator-manager"
+readonly DEFAULT_POLICY_ARN="arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+
+function main() {
+    local interactive="false"
+    
+    # Should change to better flag parsing if we have more flags.
+    if [ "$1" == "-i" ] || [ "$1" == "--interactive" ]; then
+        interactive="true"
+    fi
+
+    exit_if_directory_not_exist "./config"
+    exit_if_directory_not_exist "./config/default"
+    exit_if_not_on_path "aws"
+    
+    get_aws_keys "${interactive}"
+    exit_if_not_has_aws_keys
+    create_awscreds_env "./config/default/awscreds.env"
+}
+
+# Check that a given binary is on path.
+function exit_if_not_on_path() {
+    local binary_name="$1"
+    builtin type -P "${binary_name}" &> /dev/null 
+    if [ $? -ne 0 ]; then
+        echo "Prerequisite $1 not found in PATH."
+        exit 1
+    fi
+}
+
+# Exit if either OPERATOR_AWS_SECRET_ACCESS_KEY or OPERATOR_AWS_ACCESS_KEY_ID are empty.
+function exit_if_not_has_aws_keys() {
+    if [ -z "${OPERATOR_AWS_SECRET_ACCESS_KEY}" ] || [ -z "${OPERATOR_AWS_ACCESS_KEY_ID}" ]; then
+        echo "Missing OPERATOR_AWS_ACCESS_KEY_ID or OPERATOR_AWS_SECRET_ACCESS_KEY"
+        exit 1
+    fi
+}
+
+function exit_if_directory_not_exist() {
+    local directory="$1" 
+
+    if [ ! -d "${directory}" ]; then
+        echo "$0 requires directory '${directory}', but it does not exist."
+        exit 1
+    fi
+}
+
+# If OPERATOR_AWS_ACCESS_KEY_ID and OPERATOR_AWS_SECRET_ACCESS_KEY are both missing, ask user if they want to create a new access key.
+# If so, create an AWS user and a corresponding access key.
+# If not, have the user input the required keys.
+function get_aws_keys() {
+    local interactive="$1"
+    local reply=""
+    
+    if [ -n "${OPERATOR_AWS_PROFILE}" ] ; then
+        echo "OPERATOR_AWS_PROFILE set to '${OPERATOR_AWS_PROFILE}', attempting to extract access keys from 'aws configure'"
+        OPERATOR_AWS_ACCESS_KEY_ID="$(aws configure get aws_access_key_id --profile "${OPERATOR_AWS_PROFILE}")"
+
+        if [ $? -ne 0 ]; then
+            # Error message will be printed to stderr by aws configure.
+            exit 1
+        fi
+
+        OPERATOR_AWS_SECRET_ACCESS_KEY="$(aws configure get aws_secret_access_key --profile "${OPERATOR_AWS_PROFILE}")"
+
+        if [ $? -ne 0 ]; then
+            # Error message will be printed to stderr by aws configure.
+            exit 1
+        fi
+    fi
+
+    if [ -z "${OPERATOR_AWS_SECRET_ACCESS_KEY}" ] && [ -z "${OPERATOR_AWS_ACCESS_KEY_ID}" ]; then
+
+        if [ "${interactive}" != "true" ]; then
+            echo "OPERATOR_AWS_ACCESS_KEY_ID and OPERATOR_AWS_SECRET_ACCESS_KEY required but not provided. Creating an AWS Access Key."
+            reply="y"
+        else
+            echo -n "OPERATOR_AWS_ACCESS_KEY_ID and OPERATOR_AWS_SECRET_ACCESS_KEY required but not provided. Do you want to create a new access key? [y/n] "
+            read reply
+        fi
+
+        case "${reply}" in
+            n) get_aws_keys_from_stdin ;;
+            y) create_aws_user_and_access_key "${interactive}" ;;
+            *)
+                echo "Unknown input"
+                exit 1
+                ;;
+        esac
+
+    fi
+
+}
+
+# Read required AWS keys from stdin and assign to environment variables.
+function get_aws_keys_from_stdin() {
+    echo -n "Provide OPERATOR_AWS_ACCESS_KEY_ID: "
+    read OPERATOR_AWS_ACCESS_KEY_ID
+    
+    echo -n "Provide OPERATOR_AWS_SECRET_ACCESS_KEY: "
+    read -s OPERATOR_AWS_SECRET_ACCESS_KEY
+    echo
+}
+
+# Prompt user for IAM username and create that user if it does not exist.
+# Attach a SageMaker policy to the user and create an access key.
+function create_aws_user_and_access_key() {
+
+    local interactive="$1"
+    local iam_username=""
+    
+    if [ "${interactive}" == "true" ]; then
+        echo "Provide an IAM username to attach the new access key to. If you provide a non-existent user, we will create one for you."
+        echo -n "IAM username (default '${DEFAULT_IAM_USERNAME}'): "
+        read iam_username
+    fi
+
+    if [ -z "${iam_username}" ]; then
+        iam_username="${DEFAULT_IAM_USERNAME}"
+    fi
+
+    echo "Creating IAM user '${iam_username}'"
+    get_user_output="$(aws iam get-user --user-name "${iam_username}" 2>&1 )"
+
+    if [ $? -ne 0 ]; then
+        if echo "${get_user_output}" | grep -q "NoSuchEntity"; then
+            create_new_iam_user "${iam_username}"
+        else
+            echo "Get user '${iam_username}' failed:"
+            echo "${get_user_output}"
+            exit 1
+        fi
+    else
+        echo "IAM user '${iam_username}' already exists."
+    fi
+
+    attach_operator_policies_to_iam_user "${interactive}" "${iam_username}"
+    create_aws_access_key "${iam_username}"
+
+}
+
+# Given an IAM username, create a new IAM user.
+# If the user already exists, exit.
+function create_new_iam_user() {
+    local iam_username="$1"
+
+    create_user_output="$(aws iam create-user --user-name "${iam_username}" 2>&1 )"
+
+    if [ $? -ne 0 ]; then
+        if echo "${create_user_output}" | grep -q "EntityAlreadyExists"; then
+            echo "User '${iam_username}' already exists."
+            exit 1
+        else
+            echo "Unable to create user '${iam_username}':"
+            echo "${create_user_output}"
+            exit 1
+        fi
+    else
+        echo "User '${iam_username}' created."
+    fi
+}
+
+# Prompt user for an IAM policy ARN to attach to the IAM user with a default value.
+# The policy is then attached to the IAM user.
+function attach_operator_policies_to_iam_user() {
+    local interactive="$1"
+    local iam_username="$2"
+    local policy_arn=""
+    
+    if [ "${interactive}" == "true" ]; then
+        echo "Provide an IAM Policy ARN to attach to the IAM user. This should grant access to the operator to create, manage, and stop SageMaker jobs."
+        echo -n "IAM Policy ARN (default '${DEFAULT_POLICY_ARN}'): "
+        read policy_arn
+    fi
+
+    if [ -z "${policy_arn}" ]; then
+        policy_arn="${DEFAULT_POLICY_ARN}"
+    fi
+
+    echo "Attaching policy '${policy_arn}' to IAM user '${iam_username}'"
+
+    # Command will succeed if policy already exists.
+    output="$(aws iam attach-user-policy --user-name "${iam_username}" --policy-arn "${policy_arn}" 2>&1 )"
+
+    if [ $? -ne 0 ]; then
+        echo "Unable to attach IAM policy '${policy_arn}' to IAM user '${iam_username}':"
+        echo "${output}"
+        exit 1
+    fi
+
+    echo "Policy '${policy_arn}' attached to IAM user '${iam_username}'."
+
+}
+
+# Given an IAM user, create a new access key.
+function create_aws_access_key() {
+    local iam_username="$1"
+
+    echo "Creating access key for IAM user '${iam_username}'"
+    create_aws_access_key_output="$(aws iam create-access-key --output text --user-name "${iam_username}" 2>&1 )"
+
+    if [ $? -ne 0 ]; then
+        echo "Unable to create access key for user '${iam_username}':"
+        echo "${create_aws_access_key_output}"
+        exit 1
+    fi
+    
+    OPERATOR_AWS_ACCESS_KEY_ID="$(echo "${create_aws_access_key_output}" | awk '{print $2}')"
+    OPERATOR_AWS_SECRET_ACCESS_KEY="$(echo "${create_aws_access_key_output}" | awk '{print $4}')"
+
+    echo "Created access key '${OPERATOR_AWS_ACCESS_KEY_ID}' for user '${iam_username}'"
+
+}
+
+# Create the awscreds file that Kustomize will use to generate Kubernetes definitions.
+function create_awscreds_env() {
+    local awscreds_file="$1"
+
+    echo "Storing access key in ${awscreds_file}."
+    echo "# Autogenerated by ${0}" > "${awscreds_file}"
+    echo "# This file should not be checked in to source control." >> "${awscreds_file}"
+    echo "AWS_ACCESS_KEY_ID=${OPERATOR_AWS_ACCESS_KEY_ID}" >> "${awscreds_file}"
+    echo "AWS_SECRET_ACCESS_KEY=${OPERATOR_AWS_SECRET_ACCESS_KEY}" >> "${awscreds_file}"
+
+}
+
+main "$@"

@@ -1,0 +1,1 @@
+docker build -f images/Dockerfile.integration -t integration-test-container .

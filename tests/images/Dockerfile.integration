@@ -1,0 +1,49 @@
+FROM ubuntu:18.04
+
+RUN apt-get update && apt-get install -y curl \
+    wget \
+    git \
+    python \
+    python-pip \
+    vim \
+    sudo \
+    jq
+
+# Enable the Docker repository
+RUN apt update && apt install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# Install Docker CE
+RUN apt update && apt install -y docker-ce
+
+RUN pip install awscli
+
+# Install kustomize
+RUN curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases |\
+  grep browser_download |\
+  grep linux |\
+  cut -d '"' -f 4 |\
+  grep /kustomize/v |\
+  sort | tail -n 1 |\
+  xargs curl -O -L && tar xzf ./kustomize_v*_linux_amd64.tar.gz && mv kustomize /bin/kustomize && chmod u+x /bin/kustomize
+
+# Install kubectl
+RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06-21/bin/linux/amd64/kubectl \
+      && chmod +x ./kubectl && cp ./kubectl /bin
+
+# Install eksctl
+RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && mv /tmp/eksctl /bin
+
+# Install Kubebuilder which is required for make test
+RUN curl -L -O https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_linux_amd64.tar.gz && tar -zxvf kubebuilder_master_linux_amd64.tar.gz && mv kubebuilder_master_linux_amd64 kubebuilder && mv kubebuilder /usr/local/ && rm -rf kubebuilder_master_linux_amd64.tar.gz
+
+# Install dig, used for PrivateLink test.
+RUN apt-get install -y dnsutils
+
+# Add Golang 
+RUN sudo add-apt-repository -y ppa:longsleep/golang-backports && sudo apt-get update && sudo apt-get install -y golang-go
+
+# This is how you start docker engine on container. Make sure container is
+# running in privileged mode. 
+# I had to comment this line since codebuild overrides this. 
+# Uncomment this line if you want to use this as build environment for this project locally
+# ENTRYPOINT sudo service docker start && bash

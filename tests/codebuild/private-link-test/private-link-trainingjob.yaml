@@ -1,0 +1,54 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: TrainingJob
+metadata:
+  name: private-link-training-job
+spec:
+    region: us-east-2
+    # Replaced by integration test.
+    sageMakerEndpoint: SAGEMAKER_ENDPOINT
+    hyperParameters:
+        - name: max_depth
+          value: "5"
+        - name: eta
+          value: "0.2"
+        - name: gamma
+          value: "4"
+        - name: min_child_weight
+          value: "6"
+        - name: silent
+          value: "0"
+        - name: objective
+          value: multi:softmax
+        - name: num_class
+          value: "10"
+        - name: num_round
+          value: "10"
+    algorithmSpecification:
+        trainingImage: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+        trainingInputMode: File
+    roleArn: {ROLE_ARN}
+    outputDataConfig:
+        s3OutputPath: s3://{DATA_BUCKET}/xgboost
+    resourceConfig:
+        instanceCount: 1
+        instanceType: ml.m4.xlarge
+        volumeSizeInGB: 5
+    stoppingCondition:
+        maxRuntimeInSeconds: 86400
+    inputDataConfig:
+        - channelName: train
+          dataSource:
+            s3DataSource:
+                s3DataType: S3Prefix
+                s3Uri: s3://{DATA_BUCKET}/train/
+                s3DataDistributionType: FullyReplicated
+          contentType: text/csv
+          compressionType: None
+        - channelName: validation
+          dataSource:
+            s3DataSource:
+                s3DataType: S3Prefix
+                s3Uri: s3://{DATA_BUCKET}/validation/
+                s3DataDistributionType: FullyReplicated
+          contentType: text/csv
+          compressionType: None

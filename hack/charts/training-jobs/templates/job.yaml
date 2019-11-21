@@ -1,0 +1,67 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: TrainingJob
+metadata:
+  name: {{ .Values.name }}
+spec:
+    hyperParameters:
+      {{- range $key, $value := .Values.spec.hyperparameters }}
+      - name: {{ $key }}
+        value: {{ $value | quote }}
+      {{- end }}
+    algorithmSpecification:
+        trainingImage: {{ .Values.spec.image }}
+        trainingInputMode: {{ .Values.spec.traininginputmode }}
+    roleArn: {{ .Values.spec.rolearn }}
+    region: {{ .Values.spec.region }}
+    outputDataConfig:
+        s3OutputPath: {{ .Values.spec.outputpath }}
+    resourceConfig:
+        instanceCount: {{ .Values.spec.instancecount }}
+        instanceType: {{ .Values.spec.instancetype }}
+        volumeSizeInGB: {{ .Values.spec.volumesize }}
+    stoppingCondition:
+        maxRuntimeInSeconds: {{ .Values.spec.maxruntimeinseconds }}
+    {{- if .Values.spec.vpcconfig }}
+    vpcConfig:
+        securityGroupIds: 
+          {{- range .Values.spec.vpcconfig.securitygroupids }}
+            - {{ . }}
+          {{- end }}   
+        subnets: 
+          {{- range .Values.spec.vpcconfig.subnets }}
+            - {{ . }} 
+          {{- end }} 
+    {{- end }}
+    inputDataConfig:
+          {{- range .Values.spec.inputdataconfig }}
+            - channelName: {{ .channel }}  
+              dataSource: 
+                {{- if .s3 }}
+                s3DataSource:
+                   s3DataType: {{ .s3.s3datatype | default "S3Prefix" }}
+                   s3Uri: {{ .s3.s3uri }}
+                   s3DataDistributionType: {{ .s3.s3datadistributiontype | default "FullyReplicated" }}
+                {{- end }}
+                {{- if .filesystem }}
+                fileSystemDataSource: 
+                    fileSystemId: {{ .filesystem.filesystemid }}
+                    fileSystemAccessMode: {{ .filesystemaccessmode | default "ro" }}
+                    fileSystemType: {{ .filesystem.filesystemtype }}
+                    directoryPath: {{ .filesystem.directorypath }}
+                {{- end }}
+              contentType: {{ .contenttype | default "text/csv" }}
+              compressionType: {{ .compressiontype | default "None" }}
+          {{- end }}
+    {{- if .Values.spec.enablemanagedspottraining }}
+    enableManagedSpotTraining: {{ .Values.spec.enablemanagedspottraining  }}
+    {{- end }}
+    {{- if .Values.spec.stoppingcondition }}
+    stoppingCondition:
+        maxRuntimeInSeconds: {{ .Values.spec.stoppingcondition.maxruntime }}
+        maxWaitTimeInSeconds: {{ .Values.spec.stoppingcondition.maxwaittime }}
+    {{- end }}
+    {{- if .Values.spec.checkpointconfig }}
+    checkpointConfig: 
+        s3Uri: {{ .Values.spec.checkpointconfig.s3uri}} 
+    {{- end }}
+  

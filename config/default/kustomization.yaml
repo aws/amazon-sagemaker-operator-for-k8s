@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Adds namespace to all resources.
+namespace: sagemaker-k8s-operator-system
+namePrefix: sagemaker-k8s-operator-
+
+secretGenerator:
+- envs:
+  - ./awscreds.env
+  name: awscreds
+
+bases:
+- ../base
+
+patchesStrategicMerge:
+- manager_creds_patch.yaml

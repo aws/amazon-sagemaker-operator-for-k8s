@@ -1,0 +1,16 @@
+version: 0.2      
+phases:
+  build:
+    commands:
+       # Docker engine takes few seconds to start
+       - sudo service docker start 
+       # TODO: Make it polling
+       - sleep 1
+       # Define env variables and ECR login
+       - GO111MODULE=on 
+       # Run unit tests first
+       - (make test)
+       - (cd smlogs-kubectl-plugin && make test)
+       # Package and ship new commit version
+       - (bash codebuild/scripts/package_operators.sh)
+

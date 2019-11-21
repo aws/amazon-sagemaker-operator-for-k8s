@@ -1,0 +1,40 @@
+name: xgboost-mnist-from-for-efs
+spec:	
+    instancecount: 1
+    instancetype: ml.m4.xlarge
+    volumesize: 5
+    maxruntimeinseconds: 86400
+    rolearn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+    region: us-east-2
+    image: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+    traininginputmode: File
+    hyperparameters:
+       max_depth: 5
+       eta: 0.2
+       num_round: 10
+       gamma: 4
+       min_child_weight: 6
+       silent: 0
+       objective: multi:softmax
+       num_class: 10
+       num_round: 10
+    outputpath: s3://my-bucket/xgboost/
+    inputdataconfig:
+      - channel: train 
+        filesystem: 
+            filesystemtype: EFS
+            filesystemid: fs-e2466d9b 
+            directorypath: /xgboost-mnist/train
+      - channel: validation
+        filesystem: 
+            filesystemtype: EFS 
+            filesystemid: fs-e2466d9b 
+            directorypath: /xgboost-mnist/validation
+    vpcconfig:
+        securitygroupids: 
+          - sg-4b23c421
+        subnets: 
+          - subnet-ae0a65c6
+          - subnet-2af0fa67
+          - subnet-dddb7fa7
+

@@ -1,0 +1,7 @@
+version: "2"
+domain: aws.amazon.com
+repo: go.amzn.com/sagemaker/sagemaker-k8s-operator
+resources:
+- group: sagemaker
+  version: v1
+  kind: TrainingJob

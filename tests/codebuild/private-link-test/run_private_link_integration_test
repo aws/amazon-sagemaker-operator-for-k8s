@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# 
+# This script tests that PrivateLink works as expected.
+#
+# It does so by 1) creating a VPC endpoint and attaching it to the cluster, 2) creating a NetworkPolicy that blocks all traffic
+# from the operator pod except to DNS and the VPCE ENI IPs, 3) creates two TrainingJobs, one that uses the correct VPCE endpoint
+# and one that doesn't, then 4) verifies that the TrainingJob with the VPCE is created in SageMaker and the TrainingJob
+# that was not created with the VPCE is not created in SageMaker. 5), it cleans up by deleting the VPCE and removing the NetworkPolicy.
+#
+# Resources:
+# * NetworkPolicy https://kubernetes.io/docs/concepts/services-networking/network-policies/
+# * Calico, a CRD that enforces the NetworkPolicy https://docs.aws.amazon.com/eks/latest/userguide/calico.html
+# * dig(1), a utility for resolving IPs https://linux.die.net/man/1/dig
+# * aws ec2 create-vpc-endpoint https://docs.aws.amazon.com/cli/latest/reference/ec2/create-vpc-endpoint.html
+
+readonly cluster_name="$1"
+readonly cluster_region="$2"
+
+readonly service_name="com.amazonaws.${cluster_region}.sagemaker.api"
+
+# Cleanup and delete external resources to the best of our ability.
+function cleanup() {
+    set +e
+    echo "Cleaning up PrivateLink test"
+
+    echo "Deleting PrivateLink TrainingJob"
+    kubectl delete trainingjob private-link-training-job
+    kubectl delete trainingjob non-private-link-training-job
+
+    echo "Deleting NetworkPolicy"
+    echo "${block_everything_except_privatelink_yaml}" | kubectl delete -f -
+
+    if [ ! -z "${vpce_id}" ]; then
+        for attempt in {1..5}; do 
+            echo "Deleting VPC endpoint, attempt $attempt"
+            aws ec2 delete-vpc-endpoints --vpc-endpoint-ids "${vpce_id}" --region "${cluster_region}" --output=text && break 
+            echo "Failed to delete"
+            sleep 60
+        done
+    fi
+}
+trap cleanup EXIT
+
+# Inject environment variables into the job YAMLs
+function inject_variables()
+{
+  variables=("ROLE_ARN" "DATA_BUCKET")
+
+  local file_name="$1"
+  for i in "${variables[@]}"
+  do
+    local curr_var=${!i}
+    sed -i "s/{$i}/${curr_var}/g" "${file_name}"
+  done
+}
+
+# Create a VPC endpoint to SageMaker that is private to the cluster, aka PrivateLink.
+# Wait for the VPCE to be in "available" state, then return.
+# Exports variables vpce_id and privatelink_domain_name
+function create_privatelink() {
+    echo "Getting cluster description"
+    local cluster_description="$(aws eks describe-cluster --name "${cluster_name}" --output=text --region "${cluster_region}" )"
+    local subnet_ids="$(echo "${cluster_description}" | grep "SUBNETIDS" | awk '{print $2}' )"
+    local security_group_id="$(echo "${cluster_description}" | grep "SECURITYGROUPIDS" | head -n 1 | awk '{print $2}' )"
+    local vpc_id="$(echo "${cluster_description}" | grep "RESOURCESVPCCONFIG" | awk '{print $4}')"
+    
+    echo "Getting private cluster subnets"
+    local private_subnet_ids="$(aws ec2 describe-subnets --filters 'Name=tag:Name,Values="*SubnetPrivate*"' --subnet-ids $(echo "${subnet_ids}" | tr '\n' ' ') --output=text --region "${cluster_region}" | grep 'SUBNETS' | awk '{print $12}' )"
+    
+    echo "Creating private VPC endpoint"
+    local vpce="$(aws ec2 create-vpc-endpoint --no-private-dns --vpc-id "${vpc_id}" --vpc-endpoint-type Interface --service-name "${service_name}" --subnet-ids $(echo "${private_subnet_ids}" | tr '\n' ' ') --security-group-id "${security_group_id}" --output=text --region "${cluster_region}" )"
+
+    # Save endpoint ID
+    readonly vpce_id="$(echo "${vpce}" | grep "VPCENDPOINT" | awk '{print $8}')"
+    
+    # Pick AZ-specific endpoint domain name at random.
+    readonly privatelink_domain_name="$(echo "${vpce}" | grep "DNSENTRIES" | grep "${vpce_id}" | shuf -n 1 | awk '{print $2}' )"
+    echo "Created VPCE ${vpce_id}"
+    echo "VPCE has domain name ${privatelink_domain_name}"
+
+    echo "Waiting for VPC endpoint to configure DNS entries"
+    timeout 10m bash -c \
+        'until [ "$(aws ec2 describe-vpc-endpoints --vpc-endpoint-ids $0 --output=text --region "$1" | grep "available" | wc -l)" -gt "0" ]; do \
+            echo "Endpoint not yet configured"; \
+            sleep 5; \
+         done' "${vpce_id}" "${cluster_region}"
+}
+
+# Install a NetworkPolicy and enforcer that blocks egress traffic to everything except DNS and the PrivateLink IPs.
+function block_traffic() {
+    
+    echo "Installing NetworkPolicy enforcer"
+    readonly network_policy_enforcer_yaml="$(curl -sS https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.2/calico.yaml)"
+    echo "${network_policy_enforcer_yaml}" | kubectl apply -f -
+
+    echo "Getting PrivateLink IPs so we can whitelist them"
+    local privatelink_ips
+    for attempt in {1..5}; do 
+        echo "Attempt ${attempt} at getting PrivateLink IPs"
+        privatelink_ips="$(dig "${privatelink_domain_name}" +short)"
+        if [ ! -z "${privatelink_ips}" ]; then
+            break
+        fi
+        sleep 60
+    done
+    
+    if [ -z "${privatelink_ips}" ]; then
+        echo "Failure to get IPs for domain name "${privatelink_domain_name}". Failing test..."
+        exit 1
+    fi
+    echo "Got PrivateLink IPs: ${privatelink_ips}"
+
+    # Create NetworkPolicy yaml, save it to global variable so that cleanup trap can delete it.
+    readonly block_everything_except_privatelink_yaml="$(echo "${privatelink_ips}" | ./generate-deny-egress-yaml)"
+    echo "Applying NetworkPolicy to block all egress except privatelink and DNS ${block_everything_except_privatelink_yaml}"
+    echo "${block_everything_except_privatelink_yaml}" | kubectl apply -f -
+
+    echo "Waiting for NetworkPolicy to be enforced"
+    # This is difficult to do via polling without significantly modifying this test.
+    # I tried running a curl loop to check when policy is enforced, but logs of
+    # pods are also blocked by network policy.
+    sleep 60
+}
+
+# Create a TrainingJob that will use PrivateLink and wait for it to be created in SageMaker.
+# Also, create a TrainingJob that does not use PrivateLink and verify that it fails to be created.
+# If it isn't created after a timeout, exit with nonzero exit code.
+function test_privatelink() {
+    echo "Creating PrivateLink TrainingJob"
+    sed -i "s/SAGEMAKER_ENDPOINT/https:\/\/${privatelink_domain_name}/g" private-link-trainingjob.yaml
+    inject_variables private-link-trainingjob.yaml
+    kubectl apply -f private-link-trainingjob.yaml
+    echo "Creating non-PrivateLink TrainingJob"
+    < non-private-link-trainingjob.yaml kubectl apply -f -
+
+    echo "Waiting for job to be picked up by controller"
+    # If this times out, then the controller failed to pick up the job.
+    timeout 5m bash -c \
+        'until [ "$(kubectl describe trainingjob private-link-training-job | grep "Sage Maker Training Job Name:" | wc -l)" -gt "0" ]; do \
+            echo "Job not yet picked up by controller"; \
+            sleep 1; \
+         done'
+
+    if [ "$(kubectl describe trainingjob non-private-link-training-job | grep "Sage Maker Training Job Name:" | wc -l)" -gt "0" ]; then
+        echo "PrivateLink test failed: the non-private-link TrainingJob worked, but was expected to not work (this is likely because the NetworkPolicy did not work correctly)"
+        exit 1
+    else
+        echo "The non-private-link TrainingJob did not work, as expected."
+    fi
+
+    echo "TrainingJob operator created SageMaker TrainingJob successfully, PrivateLink test passed"
+}
+
+# Exit program if any command fails.
+set -e
+
+create_privatelink
+block_traffic
+test_privatelink

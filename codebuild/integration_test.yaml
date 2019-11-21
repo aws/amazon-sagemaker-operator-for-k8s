@@ -1,0 +1,7 @@
+version: 0.2
+     
+phases:
+  build:
+    commands:
+       - bash tests/codebuild/run_integtest.sh
+

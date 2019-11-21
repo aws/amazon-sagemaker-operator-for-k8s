@@ -6,6 +6,96 @@ documentation, we greatly value feedback and contributions from our community.
 Please read through this document before submitting any issues or pull requests to ensure we have all the necessary
 information to effectively respond to your bug report or contribution.
 
+## Getting Started
+### Run locally
+This guide assumes that you have a k8s cluster setup and can access it via kubectl.
+Make sure your k8s cluster server version is >=1.12 and client version >=1.15
+
+To register the CRD in the cluster:
+```
+make install 
+```
+
+To run the controller, run the following command. The controller runs in an infinite loop so open another terminal to create CRDs.
+```
+make run 
+```
+
+To create a SageMaker job via the operator, apply a job config:
+```
+kubectl apply -f samples/xgboost-mnist-trainingjob.yaml
+```
+
+### Deploying to a cluster
+
+You must first push a Docker image containing the changes to a Docker repository like ECR.
+
+### Build and push docker image to ECR
+
+```bash
+$ make docker-build docker-push IMG=<YOUR ACCOUNT ID>.dkr.ecr.<ECR REGION>.amazonaws.com/<ECR REPOSITORY>
+```
+
+#### Deployment
+
+You must specify AWS access credentials for the operator. You can do so via environment variables, or by creating them.
+
+Any one of these three options will work:
+```bash
+# Create an IAM user.
+$ make deploy
+
+# Use an existing access key
+$ OPERATOR_AWS_ACCESS_KEY_ID=xxx OPERATOR_AWS_SECRET_KEY=yyy make deploy
+
+# Use an AWS profile
+$ OPERATOR_AWS_PROFILE=default make deploy
+```
+
+#### Verify installation
+
+Run the following to verify that the CRD was installed:
+```bash
+$ kubectl get crd | grep sagemaker
+batchtransformjobs.sagemaker.aws.amazon.com         2019-10-30T17:12:34Z
+endpointconfigs.sagemaker.aws.amazon.com            2019-10-30T17:12:34Z
+hostingdeployments.sagemaker.aws.amazon.com         2019-10-30T17:12:34Z
+hyperparametertuningjobs.sagemaker.aws.amazon.com   2019-10-30T17:12:34Z
+models.sagemaker.aws.amazon.com                     2019-10-30T17:12:34Z
+trainingjobs.sagemaker.aws.amazon.com               2019-10-30T17:12:34Z
+```
+
+Run the following to verify that the controller container is running:
+```bash
+$ kubectl get pods -n sagemaker-k8s-operator-system
+NAME                                                         READY   STATUS    RESTARTS   AGE
+sagemaker-k8s-operator-controller-manager-85497f7766-87qwq   2/2     Running   0          50s
+```
+
+#### Uninstallation
+To remove the operator from your cluster, run:
+
+```bash
+$ make undeploy
+```
+
+If you created an IAM account for the operator, you can delete it manually in the console or use `scripts/delete_iam_user`.
+
+### Generation of APIs and controllers
+The CRD structs, controllers, and other files in this repo were initially created using Kubebuilder:
+
+```bash
+go mod init <module_name> (e.g. go mod init hyperparametertuningjob)
+kubebuilder init --domain aws.amazon.com
+kubebuilder create api --group sagemaker --version v1 --kind HyperparameterTuningJob
+```
+
+If you’re not in `GOPATH`, you’ll need to run `go mod init <modulename>` in order to tell kubebuilder and Go the base import path of your module.
+
+For a further understanding, check [installation page](https://book.kubebuilder.io/quick-start.html#installation)
+
+Go package issues:
+- Ensure that you activate the module support by running `export GO111MODULE=on` to solve issues such as `cannot find package ... (from $GOROOT).`
 
 ## Reporting Bugs/Feature Requests
 
