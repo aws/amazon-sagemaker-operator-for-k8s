@@ -131,6 +131,12 @@ type createEndpointConfigResponse struct {
 	data *sagemaker.CreateEndpointConfigOutput
 }
 
+// Helper data structure that represents a single UpdateEndpoint response.
+type updateEndpointResponse struct {
+	err  awserr.RequestFailure
+	data *sagemaker.UpdateEndpointOutput
+}
+
 // Helper data structure that represents a single DeleteEndpoint response.
 type deleteEndpointResponse struct {
 	err  awserr.RequestFailure
@@ -391,6 +397,25 @@ func (m *MockSageMakerClientBuilder) AddDeleteEndpointConfigResponse(data sagema
 	return m
 }
 
+// Add a DeleteEndpoint error response to the client.
+func (m *MockSageMakerClientBuilder) AddDeleteEndpointErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
+	m.responses.PushBack(deleteEndpointResponse{
+		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
+		data: nil,
+	})
+	return m
+}
+
+// Add a DeleteEndpoint response to the client.
+func (m *MockSageMakerClientBuilder) AddDeleteEndpointResponse(data sagemaker.DeleteEndpointOutput) *MockSageMakerClientBuilder {
+	m.responses.PushBack(deleteEndpointResponse{
+		err:  nil,
+		data: &data,
+	})
+
+	return m
+}
+
 // Add a CreateEndpointConfig error response to the client.
 func (m *MockSageMakerClientBuilder) AddCreateEndpointConfigErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
 	m.responses.PushBack(createEndpointConfigResponse{
@@ -403,6 +428,25 @@ func (m *MockSageMakerClientBuilder) AddCreateEndpointConfigErrorResponse(code s
 // Add a CreateEndpointConfig response to the client.
 func (m *MockSageMakerClientBuilder) AddCreateEndpointConfigResponse(data sagemaker.CreateEndpointConfigOutput) *MockSageMakerClientBuilder {
 	m.responses.PushBack(createEndpointConfigResponse{
+		err:  nil,
+		data: &data,
+	})
+
+	return m
+}
+
+// Add a UpdateEndpoint error response to the client.
+func (m *MockSageMakerClientBuilder) AddUpdateEndpointErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
+	m.responses.PushBack(updateEndpointResponse{
+		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
+		data: nil,
+	})
+	return m
+}
+
+// Add a UpdateEndpoint response to the client.
+func (m *MockSageMakerClientBuilder) AddUpdateEndpointResponse(data sagemaker.UpdateEndpointOutput) *MockSageMakerClientBuilder {
+	m.responses.PushBack(updateEndpointResponse{
 		err:  nil,
 		data: &data,
 	})
@@ -433,6 +477,11 @@ func (m *MockSageMakerClientBuilder) AddCreateEndpointResponse(data sagemaker.Cr
 func (m *MockSageMakerClientBuilder) WithRequestList(requests *List) *MockSageMakerClientBuilder {
 	m.requests = requests
 	return m
+}
+
+// Get how many responses were added to the mock SageMaker client.
+func (m *MockSageMakerClientBuilder) GetAddedResponsesLen() int {
+    return m.responses.Len()
 }
 
 // Create a mock SageMaker API client given configuration.
@@ -1130,6 +1179,51 @@ func (m mockSageMakerClient) CreateEndpointConfigRequest(input *sagemaker.Create
 	}
 
 	return sagemaker.CreateEndpointConfigRequest{
+		Request: mockRequest,
+	}
+}
+
+// Mock UpdateEndpointRequest implementation. It overrides a request response with the mock data.
+// If the next response is not of type UpdateEndpoint, or there are no more responses to give, fail the test.
+func (m mockSageMakerClient) UpdateEndpointRequest(input *sagemaker.UpdateEndpointInput) sagemaker.UpdateEndpointRequest {
+
+	m.requests.PushBack(input)
+
+	front := m.responses.Front()
+
+	var nextResponse interface{}
+	if front == nil {
+		message := "Not enough UpdateEndpoint responses provided for test"
+		nextResponse = updateEndpointResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+		m.testReporter.Error(message)
+	} else {
+		nextResponse = front.Value
+		m.responses.Remove(front)
+	}
+
+	nextUpdateEndpointResponse, ok := nextResponse.(updateEndpointResponse)
+	if !ok {
+		message := "UpdateEndpoint request created, next response is not of type UpdateEndpointOutput"
+		nextUpdateEndpointResponse = updateEndpointResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+	}
+
+	mockRequest := m.mockRequestBuilder()
+
+	if nextUpdateEndpointResponse.err != nil {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Error = nextUpdateEndpointResponse.err
+		})
+	} else {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Data = nextUpdateEndpointResponse.data
+		})
+	}
+
+	return sagemaker.UpdateEndpointRequest{
 		Request: mockRequest,
 	}
 }

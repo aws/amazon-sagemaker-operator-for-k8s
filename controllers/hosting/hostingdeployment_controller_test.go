@@ -31,13 +31,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
+	endpointconfigv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/endpointconfig"
 	hostingv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/hostingdeployment"
+	controllercommon "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
+	"go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil/clientwrapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	// +kubebuilder:scaffold:imports
 )
@@ -53,7 +57,7 @@ var _ = Describe("Reconciling a HostingDeployment while failing to get the Kuber
 	})
 
 	It("should not requeue if the HostingDeployment does not exist", func() {
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
+		controller := createReconcilerWithMockedDependencies(k8sClient, sageMakerClient, "1s")
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -66,7 +70,7 @@ var _ = Describe("Reconciling a HostingDeployment while failing to get the Kuber
 
 	It("should requeue if there was an error", func() {
 		mockK8sClient := FailToGetK8sClient{}
-		controller := createReconciler(mockK8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
+		controller := createReconcilerWithMockedDependencies(mockK8sClient, sageMakerClient, "1s")
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -78,212 +82,737 @@ var _ = Describe("Reconciling a HostingDeployment while failing to get the Kuber
 	})
 })
 
-var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exist", func() {
-
-	var (
-		receivedRequests List
-		sageMakerClient  sagemakeriface.ClientAPI
-		deployment       *hostingv1.HostingDeployment
-	)
-
-	BeforeEach(func() {
-		receivedRequests = List{}
-		mockSageMakerClientBuilder := NewMockSageMakerClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
-		sageMakerClient = mockSageMakerClientBuilder.
-			AddDescribeEndpointErrorResponse("ValidationException", "Could not find endpoint xyz", 400, "request id").
-			Build()
-
-		deployment = createDeploymentWithGeneratedNames()
-		err := k8sClient.Create(context.Background(), deployment)
-		Expect(err).ToNot(HaveOccurred())
-
-	})
-
-	It("should call ModelReconciler.Reconcile with correct parameters", func() {
-		Skip("Fix me later")
-		modelReconciler := mockModelReconciler{}
-		modelReconciler.DesiredDeployments = &List{}
-
-		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		controller.Reconcile(request)
-
-		Expect(modelReconciler.DesiredDeployments.Len()).To(Equal(1))
-		desiredDeployment := modelReconciler.DesiredDeployments.Front().Value.(*hostingv1.HostingDeployment)
-		Expect(desiredDeployment.Spec).To(Equal(deployment.Spec))
-	})
-
-	It("should requeue if ModelReconciler.Reconcile failed", func() {
-		Skip("Fix me later")
-		modelReconciler := mockModelReconciler{}
-		modelReconciler.ReconcileReturnValues = &List{}
-		modelReconciler.ReconcileReturnValues.PushBack(fmt.Errorf("mock error"))
-
-		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		result, err := controller.Reconcile(request)
-
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result.Requeue).To(Equal(true))
-		Expect(modelReconciler.ReconcileReturnValues.Len()).To(Equal(0))
-	})
-
-	It("should correctly update the status if Model.Reconcile failed", func() {
-		Skip("Fix me later")
-		errorMessage := "mock error"
-		modelReconciler := mockModelReconciler{}
-		modelReconciler.ReconcileReturnValues = &List{}
-		modelReconciler.ReconcileReturnValues.PushBack(fmt.Errorf(errorMessage))
-
-		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		_, err := controller.Reconcile(request)
-		Expect(err).ToNot(HaveOccurred())
-
-		var updatedDeployment hostingv1.HostingDeployment
-		err = k8sClient.Get(context.Background(), types.NamespacedName{
-			Namespace: deployment.ObjectMeta.Namespace,
-			Name:      deployment.ObjectMeta.Name,
-		}, &updatedDeployment)
-		Expect(err).ToNot(HaveOccurred())
-
-		Expect(updatedDeployment.Status.Additional).To(ContainSubstring(errorMessage))
-	})
-
-	It("should call EndpointConfigReconciler.Reconcile with correct parameters", func() {
-		Skip("Fix me later")
-		endpointConfigReconciler := mockEndpointConfigReconciler{}
-		endpointConfigReconciler.DesiredDeployments = &List{}
-
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		controller.Reconcile(request)
-
-		Expect(endpointConfigReconciler.DesiredDeployments.Len()).To(Equal(1))
-		desiredDeployment := endpointConfigReconciler.DesiredDeployments.Front().Value.(*hostingv1.HostingDeployment)
-		Expect(desiredDeployment.Spec).To(Equal(deployment.Spec))
-	})
-
-	It("should requeue if EndpointConfigReconciler.Reconcile failed", func() {
-		Skip("Fix me later")
-		endpointConfigReconciler := mockEndpointConfigReconciler{}
-		endpointConfigReconciler.ReconcileReturnValues = &List{}
-		endpointConfigReconciler.ReconcileReturnValues.PushBack(fmt.Errorf("mock error"))
-
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		result, err := controller.Reconcile(request)
-
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result.Requeue).To(Equal(true))
-		Expect(endpointConfigReconciler.ReconcileReturnValues.Len()).To(Equal(0))
-	})
-
-	It("should correctly update the status if EndpointConfigReconciler.Reconcile failed", func() {
-		Skip("Fix me later")
-		errorMessage := "mock error"
-		endpointConfigReconciler := mockEndpointConfigReconciler{}
-		endpointConfigReconciler.ReconcileReturnValues = &List{}
-		endpointConfigReconciler.ReconcileReturnValues.PushBack(fmt.Errorf(errorMessage))
-
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		_, err := controller.Reconcile(request)
-		Expect(err).ToNot(HaveOccurred())
-
-		var updatedDeployment hostingv1.HostingDeployment
-		err = k8sClient.Get(context.Background(), types.NamespacedName{
-			Namespace: deployment.ObjectMeta.Namespace,
-			Name:      deployment.ObjectMeta.Name,
-		}, &updatedDeployment)
-		Expect(err).ToNot(HaveOccurred())
-
-		Expect(updatedDeployment.Status.Additional).To(ContainSubstring(errorMessage))
-	})
-
-	It("should update the status", func() {
-		Skip("Fix me later")
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		_, err := controller.Reconcile(request)
-		Expect(err).ToNot(HaveOccurred())
-
-		var updatedDeployment hostingv1.HostingDeployment
-		err = k8sClient.Get(context.Background(), types.NamespacedName{
-			Namespace: deployment.ObjectMeta.Namespace,
-			Name:      deployment.ObjectMeta.Name,
-		}, &updatedDeployment)
-		Expect(err).ToNot(HaveOccurred())
-
-		Expect(updatedDeployment.Status.EndpointStatus).To(Equal(ReconcilingEndpointStatus))
-	})
-})
-
-var _ = Describe("Reconciling a HostingDeployment when the endpoint exists", func() {
+var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 	var (
 		receivedRequests           List
 		mockSageMakerClientBuilder *MockSageMakerClientBuilder
-		deployment                 *hostingv1.HostingDeployment
+		sageMakerClient            sagemakeriface.ClientAPI
+		expectedRequestCount int
+
+		modelReconciler              *mockModelReconciler
+		endpointConfigReconciler     *mockEndpointConfigReconciler
+		sageMakerEndpointConfigNames List
+
+		deployment *hostingv1.HostingDeployment
+		controller *HostingDeploymentReconciler
+		request    ctrl.Request
+
+		kubernetesClient k8sclient.Client
+
+		pollDuration                string
+		endpointConfigSageMakerName string
+
+		shouldHaveDeletionTimestamp bool
+		shouldHaveFinalizer         bool
+		shouldHaveEndpointConfig    bool
 	)
 
 	BeforeEach(func() {
+		controller = nil
+		pollDuration = "1s"
+
+		endpointConfigSageMakerName = "endpoint-config-" + uuid.New().String()
+
+		shouldHaveDeletionTimestamp = false
+		shouldHaveFinalizer = false
+		shouldHaveEndpointConfig = false
+
+		kubernetesClient = k8sClient
+
 		receivedRequests = List{}
 		mockSageMakerClientBuilder = NewMockSageMakerClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
 
+		sageMakerEndpointConfigNames = List{}
+
 		deployment = createDeploymentWithGeneratedNames()
-		err := k8sClient.Create(context.Background(), deployment)
-		Expect(err).ToNot(HaveOccurred())
+
+		request = CreateReconciliationRequest(deployment.ObjectMeta.GetName(), deployment.ObjectMeta.GetNamespace())
 	})
 
-	It("should correctly populate the status", func() {
-		Skip("Fix me later")
-		endpointArn := "endpoint-arn"
-		endpointStatus := "InService"
-		variantName := "variant-A"
-		sageMakerClient := mockSageMakerClientBuilder.
-			AddDescribeEndpointResponse(sagemaker.DescribeEndpointOutput{
-				EndpointArn:    &endpointArn,
-				EndpointStatus: sagemaker.EndpointStatus(endpointStatus),
-				ProductionVariants: []sagemaker.ProductionVariantSummary{
-					{
-						VariantName: &variantName,
-					},
-				},
-			}).
-			Build()
+	JustBeforeEach(func() {
 
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
-		controller.Reconcile(CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace))
+		modelReconciler = &mockModelReconciler{
+			subreconcilerCallTracker: subreconcilerCallTracker{
+				DesiredDeployments:          &List{},
+				ShouldDeleteUnusedResources: &List{},
+			},
+		}
+		endpointConfigReconciler = &mockEndpointConfigReconciler{
+			subreconcilerCallTracker: subreconcilerCallTracker{
+				DesiredDeployments:          &List{},
+				ShouldDeleteUnusedResources: &List{},
+				EndpointConfigNames:         &sageMakerEndpointConfigNames,
+			},
+		}
 
-		var updatedDeployment hostingv1.HostingDeployment
-		err := k8sClient.Get(context.Background(), types.NamespacedName{
-			Namespace: deployment.ObjectMeta.Namespace,
-			Name:      deployment.ObjectMeta.Name,
-		}, &updatedDeployment)
+		sageMakerClient = mockSageMakerClientBuilder.Build()
+		expectedRequestCount = mockSageMakerClientBuilder.GetAddedResponsesLen()
+
+		controller = createReconciler(kubernetesClient, sageMakerClient, modelReconciler, endpointConfigReconciler, pollDuration)
+
+		err := k8sClient.Create(context.Background(), deployment)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(updatedDeployment.Status.EndpointStatus).To(Equal(endpointStatus))
-		Expect(updatedDeployment.Status.EndpointArn).To(Equal(endpointArn))
-		Expect(len(updatedDeployment.Status.ProductionVariants)).To(Equal(1))
-		Expect(updatedDeployment.Status.ProductionVariants[0]).ToNot(BeNil())
-		Expect(updatedDeployment.Status.ProductionVariants[0].VariantName).ToNot(BeNil())
-		Expect(*updatedDeployment.Status.ProductionVariants[0].VariantName).To(Equal(variantName))
+		if shouldHaveFinalizer {
+			AddFinalizer(deployment)
+		}
+
+		if shouldHaveDeletionTimestamp {
+			SetDeletionTimestamp(deployment)
+		}
+
+		if shouldHaveEndpointConfig {
+			CreateEndpointConfigWithSageMakerName(deployment, endpointConfigSageMakerName)
+		}
+	})
+
+	AfterEach(func() {
+	    Expect(receivedRequests.Len()).To(Equal(expectedRequestCount))
+	})
+
+	Context("DescribeEndpoint fails", func() {
+
+		var failureMessage string
+
+		BeforeEach(func() {
+			failureMessage = "error message " + uuid.New().String()
+			mockSageMakerClientBuilder.AddDescribeEndpointErrorResponse("Exception", failureMessage, 500, "request id")
+		})
+
+
+		It("Requeues immediately", func() {
+			result, err := controller.Reconcile(request)
+			ExpectRequeueImmediately(result, err)
+		})
+
+		It("Updates status", func() {
+			controller.Reconcile(request)
+			ExpectAdditionalToContain(deployment, failureMessage)
+			ExpectStatusToBe(deployment, ReconcilingEndpointStatus)
+		})
+	})
+
+	Context("Endpoint does not exist", func() {
+
+		BeforeEach(func() {
+			mockSageMakerClientBuilder.
+				AddDescribeEndpointErrorResponse(clientwrapper.DescribeEndpoint404Code, clientwrapper.DescribeEndpoint404MessagePrefix, 400, "request id")
+		})
+
+		Context("HasDeletionTimestamp", func() {
+
+			BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+				shouldHaveFinalizer = true
+			})
+
+			It("Cleans up resources", func() {
+				controller.Reconcile(request)
+				ExpectNthSubreconcilerCallToDeleteUnusedResources(modelReconciler, endpointConfigReconciler, 0)
+			})
+
+			It("Removes finalizer", func() {
+				controller.Reconcile(request)
+				ExpectDeploymentToBeDeleted(deployment)
+			})
+
+			It("Requeues after interval", func() {
+				result, err := controller.Reconcile(request)
+				ExpectRequeueAfterInterval(result, err, pollDuration)
+			})
+		})
+
+		Context("!HasDeletionTimestamp", func() {
+			BeforeEach(func() {
+				mockSageMakerClientBuilder.
+					AddCreateEndpointResponse(sagemaker.CreateEndpointOutput{}).
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.EndpointStatusCreating))
+
+				shouldHaveDeletionTimestamp = false
+				shouldHaveFinalizer = true
+				shouldHaveEndpointConfig = true
+			})
+
+
+			It("Creates necessary resources", func() {
+				controller.Reconcile(request)
+				ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler, endpointConfigReconciler, 0)
+			})
+
+			It("Creates an Endpoint", func() {
+				controller.Reconcile(request)
+
+				req := receivedRequests.Front().Next().Value
+				Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateEndpointInput)(nil)))
+
+				createdRequest := req.(*sagemaker.CreateEndpointInput)
+				Expect(*createdRequest.EndpointConfigName).To(Equal(endpointConfigSageMakerName))
+				Expect(*createdRequest.EndpointName).To(Equal(GetSageMakerEndpointName(*deployment)))
+			})
+
+			It("Requeues after interval", func() {
+				result, err := controller.Reconcile(request)
+				ExpectRequeueAfterInterval(result, err, pollDuration)
+			})
+
+			It("Updates status", func() {
+				controller.Reconcile(request)
+				ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusCreating))
+			})
+		})
+	})
+
+	Context("Endpoint exists", func() {
+
+		var expectedStatus sagemaker.EndpointStatus
+
+		BeforeEach(func() {
+			shouldHaveFinalizer = true
+			shouldHaveEndpointConfig = true
+		})
+
+		Context("Endpoint has status 'Creating'", func() {
+			BeforeEach(func() {
+				expectedStatus = sagemaker.EndpointStatusCreating
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+
+			})
+
+
+			When("!HasDeletionTimestamp", func() {
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(expectedStatus))
+			    })
+
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+
+			})
+
+			When("HasDeletionTimestamp", func() {
+			    BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+			    })
+
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+			    })
+
+			})
+
+		})
+
+		Context("Endpoint has status 'Deleting'", func() {
+			BeforeEach(func() {
+				expectedStatus = sagemaker.EndpointStatusDeleting
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+
+			})
+
+
+			When("!HasDeletionTimestamp", func() {
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(expectedStatus))
+			    })
+
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+
+			})
+
+			When("HasDeletionTimestamp", func() {
+			    BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+			    })
+
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+			    })
+
+			})
+
+		})
+
+		Context("Endpoint has status 'OutOfService'", func() {
+			BeforeEach(func() {
+				expectedStatus = sagemaker.EndpointStatusOutOfService
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+
+			})
+
+
+			When("!HasDeletionTimestamp", func() {
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(expectedStatus))
+			    })
+
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+
+			})
+
+			When("HasDeletionTimestamp", func() {
+			    BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+			    })
+
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+			    })
+
+			})
+
+		})
+
+		Context("Endpoint has status 'RollingBack'", func() {
+			BeforeEach(func() {
+				expectedStatus = sagemaker.EndpointStatusRollingBack
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+
+			})
+
+
+			When("!HasDeletionTimestamp", func() {
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(expectedStatus))
+			    })
+
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+
+			})
+
+			When("HasDeletionTimestamp", func() {
+			    BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+			    })
+
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+			    })
+
+			})
+
+			When("!HasDeletionTimestamp", func() {
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(expectedStatus))
+			    })
+
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+
+			})
+
+			When("HasDeletionTimestamp", func() {
+			    BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+			    })
+
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+			    })
+
+			})
+
+
+		})
+
+		Context("Endpoint has status 'SystemUpdating'", func() {
+			BeforeEach(func() {
+				expectedStatus = sagemaker.EndpointStatusSystemUpdating
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+
+			})
+
+
+			When("!HasDeletionTimestamp", func() {
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(expectedStatus))
+			    })
+
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+
+			})
+
+			When("HasDeletionTimestamp", func() {
+			    BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+			    })
+
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+			    })
+
+			})
+
+		})
+
+		Context("Endpoint has status 'Updating'", func() {
+			BeforeEach(func() {
+				expectedStatus = sagemaker.EndpointStatusUpdating
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+
+			})
+
+
+			When("!HasDeletionTimestamp", func() {
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(expectedStatus))
+			    })
+
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+
+			})
+
+			When("HasDeletionTimestamp", func() {
+			    BeforeEach(func() {
+				shouldHaveDeletionTimestamp = true
+			    })
+
+			    It("Requeues after interval", func() {
+			    	result, err := controller.Reconcile(request)
+			    	ExpectRequeueAfterInterval(result, err, pollDuration)
+			    })
+
+			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+			    	controller.Reconcile(request)
+			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+			    })
+
+			})
+
+
+		})
+
+		Context("Endpoint has status 'Failed'", func() {
+
+			BeforeEach(func() {
+				expectedStatus = sagemaker.EndpointStatusFailed
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+
+			})
+
+			Context("!HasDeletionTimestamp", func() {
+
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
+
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
+			    Context("Does not have a finalizer", func() {
+			        BeforeEach(func() {
+			    	shouldHaveFinalizer = false
+			        })
+
+			        It("Adds a finalizer", func() {
+			    	controller.Reconcile(request)
+			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+			        })
+			    })
+			})
+
+			Context("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					mockSageMakerClientBuilder.
+						AddDeleteEndpointResponse(sagemaker.DeleteEndpointOutput{})
+
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the endpoint", func() {
+					controller.Reconcile(request)
+					ExpectRequestToDeleteHostingDeployment(receivedRequests.Front().Next().Value, deployment)
+				})
+
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
+
+				It("Updates status to deleting", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
+			})
+		})
+
+		Context("Endpoint has status 'InService'", func() {
+
+			Context("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					mockSageMakerClientBuilder.
+						AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.EndpointStatusInService)).
+						AddDeleteEndpointResponse(sagemaker.DeleteEndpointOutput{})
+
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the endpoint", func() {
+					controller.Reconcile(request)
+					ExpectRequestToDeleteHostingDeployment(receivedRequests.Front().Next().Value, deployment)
+				})
+
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
+
+				It("Updates status to deleting", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
+			})
+
+			Context("!HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					// Add twice because there are two calls to GetSageMakerEndpointConfigName.
+					sageMakerEndpointConfigNames.PushBack("")
+					sageMakerEndpointConfigNames.PushBack(endpointConfigSageMakerName)
+				})
+
+				Context("The HostingDeployment endpointconfig name differs from SageMaker", func() {
+
+					BeforeEach(func() {
+						mockSageMakerClientBuilder.
+							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, "outdated-"+endpointConfigSageMakerName))
+					})
+
+					Context("The update succeeds", func() {
+						BeforeEach(func() {
+							mockSageMakerClientBuilder.
+								AddUpdateEndpointResponse(sagemaker.UpdateEndpointOutput{EndpointArn: ToStringPtr("xyz")})
+						})
+
+
+						It("Calls UpdateEndpoint", func() {
+							controller.Reconcile(request)
+							ExpectRequestToUpdateHostingDeployment(receivedRequests.Front().Next().Value, deployment, endpointConfigSageMakerName)
+						})
+
+						It("Requeues after interval", func() {
+							result, err := controller.Reconcile(request)
+							ExpectRequeueAfterInterval(result, err, pollDuration)
+						})
+					})
+
+					Context("The update failed", func() {
+						var errorMessage string
+
+						BeforeEach(func() {
+							errorMessage = "some server error"
+
+							mockSageMakerClientBuilder.
+								AddUpdateEndpointErrorResponse("Exception", errorMessage, 500, "request id")
+						})
+
+
+						It("Requeues immediately", func() {
+							result, err := controller.Reconcile(request)
+							ExpectRequeueImmediately(result, err)
+						})
+
+						It("Updates status", func() {
+							controller.Reconcile(request)
+							ExpectAdditionalToContain(deployment, errorMessage)
+							ExpectStatusToBe(deployment, ReconcilingEndpointStatus)
+						})
+					})
+				})
+
+				Context("The HostingDeployment endpointconfig name is the same as SageMaker", func() {
+					BeforeEach(func() {
+						mockSageMakerClientBuilder.
+							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, endpointConfigSageMakerName))
+					})
+
+
+					It("Creates resources", func() {
+						controller.Reconcile(request)
+						ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler, endpointConfigReconciler, 0)
+					})
+
+					It("Cleans up resources", func() {
+						controller.Reconcile(request)
+						ExpectNthSubreconcilerCallToDeleteUnusedResources(modelReconciler, endpointConfigReconciler, 1)
+					})
+
+					It("Requeues after interval", func() {
+						result, err := controller.Reconcile(request)
+						ExpectRequeueAfterInterval(result, err, pollDuration)
+					})
+				})
+			})
+		})
 	})
 
 })
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, modelReconciler ModelReconciler, endpointConfigReconciler EndpointConfigReconciler, pollIntervalStr string) HostingDeploymentReconciler {
+func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) *HostingDeploymentReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
-	return HostingDeploymentReconciler{
+	return &HostingDeploymentReconciler{
+		Client:                         k8sClient,
+		Log:                            ctrl.Log,
+		PollInterval:                   pollInterval,
+		createSageMakerClient:          CreateMockSageMakerClientProvider(sageMakerClient),
+		awsConfigLoader:                CreateMockAwsConfigLoader(),
+		createModelReconciler:          createModelReconcilerProvider(&mockModelReconciler{}),
+		createEndpointConfigReconciler: createEndpointConfigReconcilerProvider(&mockEndpointConfigReconciler{}),
+	}
+}
+
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, modelReconciler ModelReconciler, endpointConfigReconciler EndpointConfigReconciler, pollIntervalStr string) *HostingDeploymentReconciler {
+	pollInterval := ParseDurationOrFail(pollIntervalStr)
+
+	return &HostingDeploymentReconciler{
 		Client:                         k8sClient,
 		Log:                            ctrl.Log,
 		PollInterval:                   pollInterval,
@@ -317,12 +846,18 @@ type mockEndpointConfigReconciler struct {
 // Mock implementation of Reconcile. This stores the parameters it was called with in the mock. It also will return a ReturnValue
 // in each invocation.
 func (r *mockEndpointConfigReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, shouldDeleteUnusedResources bool) error {
-	return r.TrackOnlyDesiredDeployment(desiredDeployment)
+	return r.TrackAll(desiredDeployment, shouldDeleteUnusedResources)
 }
 
 // Mock implementation of GetSageMakerEndpointConfigName
 func (r *mockEndpointConfigReconciler) GetSageMakerEndpointConfigName(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) (string, error) {
-	return "", nil
+	if r.EndpointConfigNames != nil && r.EndpointConfigNames.Len() > 0 {
+		front := r.EndpointConfigNames.Front()
+		r.EndpointConfigNames.Remove(front)
+		return front.Value.(string), nil
+	} else {
+		return "", fmt.Errorf("no SageMaker endpoint config name provided")
+	}
 }
 
 // Mock implementation of ModelReconciler.
@@ -336,7 +871,7 @@ type mockModelReconciler struct {
 // Mock implementation of Reconcile. This stores the parameters it was called with in the mock. It also will return a ReturnValue
 // in each invocation.
 func (r *mockModelReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, shouldDeletedUnusedModels bool) error {
-	return r.TrackOnlyDesiredDeployment(desiredDeployment)
+	return r.TrackAll(desiredDeployment, shouldDeletedUnusedModels)
 }
 
 // Mock implementation of GetSageMakerModelNames.
@@ -355,15 +890,14 @@ type subreconcilerCallTracker struct {
 	// This must be non-nil in order for HostingDeployments to be stored here.
 	DesiredDeployments *List
 
-	// A list of *DescribeEndpointOutputs that are passed to Reconcile. This is useful if a test wants
-	// to verify that parameters were correctly passed.
-	// This must be non-nil in order for *DescribeEndpointOutputs to be stored here.
-	ActualDeployments *List
+	ShouldDeleteUnusedResources *List
 
 	// A list of errors that are returned from the mock Reconcile.
 	// If this is nil, or if the number of calls to Reconcile is greater than the number of elements
 	// originally in this list, Reconcile will return nil.
 	ReconcileReturnValues *List
+
+	EndpointConfigNames *List
 }
 
 // Store the DesiredDeployment and return a ReturnValue
@@ -382,14 +916,33 @@ func (r *subreconcilerCallTracker) TrackOnlyDesiredDeployment(desiredDeployment 
 	}
 }
 
-// Store the DesiredDeployment and ActualDeployment. Return a ReturnValue.
-func (r *subreconcilerCallTracker) TrackAll(desiredDeployment *hostingv1.HostingDeployment, actualDeployment *sagemaker.DescribeEndpointOutput) error {
+func (r *subreconcilerCallTracker) TrackAll(desiredDeployment *hostingv1.HostingDeployment, shouldDeleteUnusedResources bool) error {
 
-	if r.ActualDeployments != nil {
-		r.ActualDeployments.PushBack(actualDeployment)
+	if r.ShouldDeleteUnusedResources != nil {
+		r.ShouldDeleteUnusedResources.PushBack(shouldDeleteUnusedResources)
 	}
 
 	return r.TrackOnlyDesiredDeployment(desiredDeployment)
+}
+
+func (r *subreconcilerCallTracker) GetNthReconcileCall(index int) (*hostingv1.HostingDeployment, bool) {
+
+	if r.DesiredDeployments == nil {
+		Fail("Unable to get nth reconcile call because DesiredDeployment is nil")
+	}
+
+	if r.ShouldDeleteUnusedResources == nil {
+		Fail("Unable to get nth reconcile call because ShouldDeleteUnusedResources is nil")
+	}
+
+	desiredDeploymentElement := r.DesiredDeployments.Front()
+	shouldDeleteUnusedResourcesElement := r.ShouldDeleteUnusedResources.Front()
+	for i := 0; i < index; i++ {
+		desiredDeploymentElement = desiredDeploymentElement.Next()
+		shouldDeleteUnusedResourcesElement = shouldDeleteUnusedResourcesElement.Next()
+	}
+
+	return desiredDeploymentElement.Value.(*hostingv1.HostingDeployment), shouldDeleteUnusedResourcesElement.Value.(bool)
 }
 
 func createDeploymentWithGeneratedNames() *hostingv1.HostingDeployment {
@@ -418,4 +971,155 @@ func createDeployment(k8sName, k8sNamespace string) *hostingv1.HostingDeployment
 			Containers: []commonv1.ContainerDefinition{},
 		},
 	}
+}
+
+func ExpectRequeueAfterInterval(result ctrl.Result, err error, pollDuration string) {
+	Expect(err).ToNot(HaveOccurred())
+	Expect(result.Requeue).To(Equal(false))
+	Expect(result.RequeueAfter).To(Equal(ParseDurationOrFail(pollDuration)))
+}
+
+func ExpectRequeueImmediately(result ctrl.Result, err error) {
+	Expect(err).ToNot(HaveOccurred())
+	Expect(result.Requeue).To(Equal(true))
+	Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
+}
+
+func ExpectAdditionalToContain(deployment *hostingv1.HostingDeployment, substring string) {
+	var actual hostingv1.HostingDeployment
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: deployment.ObjectMeta.Namespace,
+		Name:      deployment.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(actual.Status.Additional).To(ContainSubstring(substring))
+}
+
+func ExpectStatusToBe(deployment *hostingv1.HostingDeployment, status string) {
+	var actual hostingv1.HostingDeployment
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: deployment.ObjectMeta.Namespace,
+		Name:      deployment.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(string(actual.Status.EndpointStatus)).To(Equal(status))
+}
+
+func ExpectToHaveFinalizer(deployment *hostingv1.HostingDeployment, finalizer string) {
+	var actual hostingv1.HostingDeployment
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: deployment.ObjectMeta.Namespace,
+		Name:      deployment.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(actual.ObjectMeta.Finalizers).To(ContainElement(finalizer))
+}
+
+func SetDeletionTimestamp(deployment *hostingv1.HostingDeployment) {
+	var actual hostingv1.HostingDeployment
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: deployment.ObjectMeta.Namespace,
+		Name:      deployment.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(k8sClient.Delete(context.Background(), &actual)).To(Succeed())
+}
+
+func ExpectDeploymentToBeDeleted(deployment *hostingv1.HostingDeployment) {
+	var actual hostingv1.HostingDeployment
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: deployment.ObjectMeta.Namespace,
+		Name:      deployment.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).To(HaveOccurred())
+	Expect(apierrs.IsNotFound(err)).To(Equal(true))
+}
+
+func AddFinalizer(deployment *hostingv1.HostingDeployment) {
+	var actual hostingv1.HostingDeployment
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: deployment.ObjectMeta.Namespace,
+		Name:      deployment.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	actual.ObjectMeta.Finalizers = []string{controllercommon.SageMakerResourceFinalizerName}
+
+	Expect(k8sClient.Update(context.Background(), &actual)).To(Succeed())
+}
+
+func CreateEndpointConfigWithSageMakerName(deployment *hostingv1.HostingDeployment, endpointConfigSageMakerName string) {
+	namespacedName := GetKubernetesEndpointConfigNamespacedName(*deployment)
+
+	endpointConfig := endpointconfigv1.EndpointConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      namespacedName.Name,
+			Namespace: namespacedName.Namespace,
+			Labels:    GetResourceOwnershipLabelsForHostingDeployment(*deployment),
+		},
+		Spec: endpointconfigv1.EndpointConfigSpec{
+			Region: deployment.Spec.Region,
+			ProductionVariants: []commonv1.ProductionVariant{
+				{
+					InitialInstanceCount: ToInt64Ptr(5),
+					InstanceType:         "instance-type",
+					ModelName:            ToStringPtr("model-name"),
+					VariantName:          ToStringPtr("variant-name"),
+				},
+			},
+		},
+		Status: endpointconfigv1.EndpointConfigStatus{
+			SageMakerEndpointConfigName: endpointConfigSageMakerName,
+		},
+	}
+
+	Expect(k8sClient.Create(context.Background(), &endpointConfig)).ToNot(HaveOccurred())
+	Expect(k8sClient.Status().Update(context.Background(), &endpointConfig)).ToNot(HaveOccurred())
+}
+
+func ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler *mockModelReconciler, endpointConfigReconciler *mockEndpointConfigReconciler, index int) {
+	ExpectNthSubreconcilerCallToHaveShouldDelete(modelReconciler, endpointConfigReconciler, index, false)
+}
+
+func ExpectNthSubreconcilerCallToDeleteUnusedResources(modelReconciler *mockModelReconciler, endpointConfigReconciler *mockEndpointConfigReconciler, index int) {
+	ExpectNthSubreconcilerCallToHaveShouldDelete(modelReconciler, endpointConfigReconciler, index, true)
+}
+
+func ExpectNthSubreconcilerCallToHaveShouldDelete(modelReconciler *mockModelReconciler, endpointConfigReconciler *mockEndpointConfigReconciler, index int, expected bool) {
+	var shouldDeleteUnusedResources bool
+	_, shouldDeleteUnusedResources = modelReconciler.GetNthReconcileCall(index)
+	Expect(shouldDeleteUnusedResources).To(Equal(expected))
+	_, shouldDeleteUnusedResources = endpointConfigReconciler.GetNthReconcileCall(index)
+	Expect(shouldDeleteUnusedResources).To(Equal(expected))
+}
+
+func ExpectRequestToDeleteHostingDeployment(req interface{}, deployment *hostingv1.HostingDeployment) {
+	Expect(req).To(BeAssignableToTypeOf((*sagemaker.DeleteEndpointInput)(nil)))
+
+	deleteRequest := req.(*sagemaker.DeleteEndpointInput)
+	Expect(*deleteRequest.EndpointName).To(Equal(GetSageMakerEndpointName(*deployment)))
+}
+
+func ExpectRequestToUpdateHostingDeployment(req interface{}, deployment *hostingv1.HostingDeployment, expectedEndpointConfigName string) {
+	Expect(req).To(BeAssignableToTypeOf((*sagemaker.UpdateEndpointInput)(nil)))
+
+	updateRequest := req.(*sagemaker.UpdateEndpointInput)
+	Expect(*updateRequest.EndpointName).To(Equal(GetSageMakerEndpointName(*deployment)))
+	Expect(*updateRequest.EndpointConfigName).To(Equal(expectedEndpointConfigName))
+}
+
+func CreateDescribeOutputWithOnlyStatus(status sagemaker.EndpointStatus) sagemaker.DescribeEndpointOutput {
+	return sagemaker.DescribeEndpointOutput{
+		EndpointStatus: status,
+	}
+}
+
+func CreateDescribeOutput(status sagemaker.EndpointStatus, endpointConfigName string) sagemaker.DescribeEndpointOutput {
+	output := CreateDescribeOutputWithOnlyStatus(status)
+	output.EndpointConfigName = &endpointConfigName
+	return output
 }
