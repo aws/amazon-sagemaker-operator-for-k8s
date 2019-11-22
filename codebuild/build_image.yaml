@@ -7,10 +7,7 @@ phases:
        # TODO: Make it polling
        - sleep 1
        # Define env variables and ECR login
-       - GO111MODULE=on 
-       # Run unit tests first
-       - (make test)
-       - (cd smlogs-kubectl-plugin && make test)
+       - GO111MODULE=on
        # Package and ship new commit version
        - (bash codebuild/scripts/package_operators.sh)
 
