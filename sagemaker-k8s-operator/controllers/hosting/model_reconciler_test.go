@@ -70,7 +70,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		err := reconciler.Reconcile(context.Background(), desired)
+		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
 	})
@@ -100,7 +100,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		err := reconciler.Reconcile(context.Background(), desired)
+		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Container hostnames must be unique."))
@@ -127,7 +127,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		err := reconciler.Reconcile(context.Background(), desired)
+		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unable to determine primary container for model"))
@@ -163,7 +163,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		err := reconciler.Reconcile(context.Background(), desired)
+		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Missing container definition"))
@@ -198,7 +198,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		err := reconciler.Reconcile(context.Background(), desired)
+		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("Unknown primary container"))
@@ -236,7 +236,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				},
 			}
 
-			err := reconciler.Reconcile(context.Background(), desired)
+			err := reconciler.Reconcile(context.Background(), desired, true)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Unable to get actual models"))
@@ -277,7 +277,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				},
 			}
 
-			err := reconciler.Reconcile(context.Background(), desired)
+			err := reconciler.Reconcile(context.Background(), desired, true)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Unable to create Kubernetes model"))
@@ -343,7 +343,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 
 			expectedModelName = GetKubernetesModelNamespacedName("model-name", *desired).Name
 
-			reconciler.Reconcile(context.Background(), desired)
+			reconciler.Reconcile(context.Background(), desired, true)
 		})
 
 		AfterEach(func() {
@@ -369,7 +369,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 
 			labels := model.ObjectMeta.Labels
 
-			expectedLabels := GetModelOwnershipLabelsForHostingDeployment(*desired)
+			expectedLabels := GetResourceOwnershipLabelsForHostingDeployment(*desired)
 			for key, value := range expectedLabels {
 				Expect(labels).To(HaveKeyWithValue(key, value))
 			}
@@ -483,7 +483,7 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 
 		var model modelv1.Model
 
-		err := reconciler.Reconcile(context.Background(), desired)
+		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		err = k8sClient.Get(context.Background(), types.NamespacedName{
 			Namespace: k8sNamespace,
@@ -672,7 +672,7 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 		updated := desired.DeepCopy()
 		updated.Spec.Containers[0].ModelDataUrl = &newModelDataUrl
 
-		err := reconciler.Reconcile(context.Background(), updated)
+		err := reconciler.Reconcile(context.Background(), updated, true)
 		Expect(err).ToNot(HaveOccurred())
 
 		var model modelv1.Model

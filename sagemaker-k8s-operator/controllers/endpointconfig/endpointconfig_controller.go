@@ -330,9 +330,17 @@ func (r *EndpointConfigReconciler) updateStatusWithAdditional(ctx reconcileReque
 	return nil
 }
 
-// TODO Make sure this fits SageMaker validation https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateEndpointConfig.html#SageMaker-CreateEndpointConfig-request-EndpointConfigName
 func generateEndpointConfigName(endpointConfig *endpointconfigv1.EndpointConfig) string {
-	return endpointConfig.ObjectMeta.GetName() + "-" + strings.Replace(string(endpointConfig.ObjectMeta.GetUID()), "-", "", -1)
+	sageMakerMaxNameLen := 63
+	name := endpointConfig.ObjectMeta.GetName()
+	requiredPostfix := "-" + strings.Replace(string(endpointConfig.ObjectMeta.GetUID()), "-", "", -1)
+
+	sageMakerEndpointConfigName := name + requiredPostfix
+	if len(sageMakerEndpointConfigName) > sageMakerMaxNameLen {
+		sageMakerEndpointConfigName = name[:sageMakerMaxNameLen-len(requiredPostfix)] + requiredPostfix
+	}
+
+	return sageMakerEndpointConfigName
 }
 
 // TODO add code that ignores status, metadata updates.

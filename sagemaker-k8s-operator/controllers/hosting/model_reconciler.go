@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -47,7 +48,7 @@ func NewModelReconciler(client client.Client, log logr.Logger) ModelReconciler {
 
 // Helper type that is responsible for reconciling models of an endpoint.
 type ModelReconciler interface {
-	Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) error
+	Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, shouldDeleteUnusedModels bool) error
 	GetSageMakerModelNames(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) (map[string]string, error)
 }
 
@@ -64,9 +65,10 @@ var _ ModelReconciler = (*modelReconciler)(nil)
 // If there are models that are desired but do not exist, create them.
 // If there are models that are not desired but exist, delete them.
 // This creates a modelv1.Model in Kubernetes before creating the model in SageMaker for idempotency.
+// The parameter shouldDeleteUnusedResources controls whether unnecessary endpoint configs are deleted. This is useful when updating Endpoints.
 //
 // Returns an error if any operation fails. The reconciliation should be retried if err is non-nil.
-func (r *modelReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) error {
+func (r *modelReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, shouldDeleteUnusedModels bool) error {
 	r.log.Info("Reconciling models")
 
 	var err error
@@ -92,8 +94,12 @@ func (r *modelReconciler) Reconcile(ctx context.Context, desiredDeployment *host
 		return errors.Wrap(err, "Unable to create model(s)")
 	}
 
-	if err = r.reconcileModelsToDelete(ctx, modelsToDelete); err != nil {
-		return errors.Wrap(err, "Unable to delete model(s)")
+	if shouldDeleteUnusedModels {
+		if err = r.reconcileModelsToDelete(ctx, modelsToDelete); err != nil {
+			return errors.Wrap(err, "Unable to delete model(s)")
+		}
+	} else {
+		r.log.Info("Ignoring modelsToDelete because shouldDeleteUnusedModels=false", "shouldDeleteUnusedModels", shouldDeleteUnusedModels)
 	}
 
 	if err = r.reconcileModelsToUpdate(ctx, modelsToUpdate); err != nil {
@@ -168,7 +174,7 @@ func getModelNamesFromMap(m map[string]*modelv1.Model) []string {
 // This is necessary when the spec is updated and a model is completely deleted from the spec. In order
 // to delete the model in Kubernetes, the HostingDeployment controller needs to be able to list all
 // models that it created.
-func GetModelOwnershipLabelsForHostingDeployment(deployment hostingv1.HostingDeployment) map[string]string {
+func GetResourceOwnershipLabelsForHostingDeployment(deployment hostingv1.HostingDeployment) map[string]string {
 	typeName := reflect.TypeOf(deployment).Name()
 
 	return map[string]string{
@@ -180,7 +186,7 @@ func GetModelOwnershipLabelsForHostingDeployment(deployment hostingv1.HostingDep
 // Get models created for the desired deployment. This looks up existing models by HostingDeployment ownership labels.
 func (r *modelReconciler) getActualModelsForHostingDeployment(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) (map[string]*modelv1.Model, error) {
 
-	ownershipLabelSelector := client.MatchingLabels(GetModelOwnershipLabelsForHostingDeployment(*desiredDeployment))
+	ownershipLabelSelector := client.MatchingLabels(GetResourceOwnershipLabelsForHostingDeployment(*desiredDeployment))
 
 	// TODO need to support pagination.
 	// See https://github.com/kubernetes-sigs/controller-runtime/blob/6b91e8e65756b561525314771a913145d161aa14/pkg/client/options.go#L457-L461 for how to use limits and test.
@@ -289,7 +295,7 @@ func (r *modelReconciler) extractDesiredModelsFromHostingDeployment(deployment *
 
 		// Add labels to model that indicate which particular HostingDeployment
 		// owns it.
-		ownershipLabels := GetModelOwnershipLabelsForHostingDeployment(*deployment)
+		ownershipLabels := GetResourceOwnershipLabelsForHostingDeployment(*deployment)
 
 		k8sModel := &modelv1.Model{
 			ObjectMeta: metav1.ObjectMeta{
@@ -412,10 +418,13 @@ func (r *modelReconciler) getPrimaryContainerDefinition(model *commonv1.Model, c
 func GetKubernetesModelNamespacedName(modelName string, hostingDeployment hostingv1.HostingDeployment) types.NamespacedName {
 	k8sMaxLen := 253
 	uid := strings.Replace(string(hostingDeployment.ObjectMeta.GetUID()), "-", "", -1)
-	name := modelName + "-" + uid
+	generation := strconv.FormatInt(hostingDeployment.ObjectMeta.GetGeneration(), 10)
+
+	requiredPostfix := "-" + generation + "-" + uid
+	name := modelName + requiredPostfix
 
 	if len(name) > k8sMaxLen {
-		name = modelName[:k8sMaxLen-len(uid)-1] + "-" + uid
+		name = modelName[:k8sMaxLen-len(requiredPostfix)] + requiredPostfix
 	}
 
 	return types.NamespacedName{

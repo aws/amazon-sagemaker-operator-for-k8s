@@ -1,0 +1,57 @@
+name: xgboost-mnist-hpo
+spec:   
+    instancecount: 1
+    instancetype: ml.m4.xlarge
+    volumesize: 35
+    maxruntimeinseconds: 86400
+    rolearn: arn:aws:iam::578276202366:role/service-role/AmazonSageMaker-ExecutionRole-20190614T120659
+    region: us-east-2
+    image: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+    enablenetworkisolation: true
+    enableintercontainertrafficencryption: false
+    traininginputmode: File
+    hyperparametertuningjobconfig:
+      maxnumberoftrainingjobs: 10
+      maxparalleltrainingjobs: 10
+      strategy: Bayesian
+      hyperparametertuningjobobjective: 
+         type: Minimize
+         metricname: validation:error
+      integerparameterranges:
+         name: num_round
+         minvalue: 10
+         maxvalue: 20
+         scalingtype: Linear
+    trainingjobconfig: 
+      hyperparameters:
+        base_score: '0.5' 
+        booster: gbtree
+        csv_weights: '0'
+        dsplit: row
+        grow_policy: depthwise
+        lambda_bias: '0.0'
+        max_bin: '256'
+        max_leaves: '0' 
+        normalize_type: tree
+        objective: reg:linear
+        one_drop: '0' 
+        prob_buffer_row: '1.0'
+        process_type: default
+        rate_drop: '0.0'
+        refresh_leaf: '1'
+        sample_type: uniform
+        scale_pos_weight: '1.0'
+        silent: '0'
+        sketch_eps: '0.03'
+        skip_drop: '0.0'
+        tree_method: auto
+        tweedie_variance_power: '1.5'
+        updater: grow_colmaker,prune
+    inputdataconfig:
+      - channel: train 
+        s3: 
+           s3uri: https://s3-us-east-2.amazonaws.com/cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/train/
+      - channel: validation
+        s3: 
+           s3uri: https://s3-us-east-2.amazonaws.com/cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/validation/
+    outputpath: s3://cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/xgboost/

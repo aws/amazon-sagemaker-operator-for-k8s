@@ -15,6 +15,9 @@ limitations under the License.
 
 package hosting
 
+/*
+// TODO(cdnamz) I am keeping these commented instead of deleting them as some bits will be useful when writing HostingDeployment controller tests.
+
 import (
 	. "container/list"
 	"context"
@@ -231,3 +234,4 @@ func createEndpointConfig(name, namespace, region string) endpointconfigv1.Endpo
 		},
 	}
 }
+*/

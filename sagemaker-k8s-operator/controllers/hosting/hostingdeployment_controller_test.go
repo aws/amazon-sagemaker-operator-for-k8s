@@ -26,7 +26,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
-	"go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
@@ -54,7 +53,7 @@ var _ = Describe("Reconciling a HostingDeployment while failing to get the Kuber
 	})
 
 	It("should not requeue if the HostingDeployment does not exist", func() {
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -67,7 +66,7 @@ var _ = Describe("Reconciling a HostingDeployment while failing to get the Kuber
 
 	It("should requeue if there was an error", func() {
 		mockK8sClient := FailToGetK8sClient{}
-		controller := createReconciler(mockK8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(mockK8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -105,7 +104,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 		modelReconciler := mockModelReconciler{}
 		modelReconciler.DesiredDeployments = &List{}
 
-		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, "1s")
 		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
 
 		controller.Reconcile(request)
@@ -121,7 +120,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 		modelReconciler.ReconcileReturnValues = &List{}
 		modelReconciler.ReconcileReturnValues.PushBack(fmt.Errorf("mock error"))
 
-		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, "1s")
 		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
 
 		result, err := controller.Reconcile(request)
@@ -138,7 +137,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 		modelReconciler.ReconcileReturnValues = &List{}
 		modelReconciler.ReconcileReturnValues.PushBack(fmt.Errorf(errorMessage))
 
-		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &modelReconciler, &mockEndpointConfigReconciler{}, "1s")
 		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
 
 		_, err := controller.Reconcile(request)
@@ -159,7 +158,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 		endpointConfigReconciler := mockEndpointConfigReconciler{}
 		endpointConfigReconciler.DesiredDeployments = &List{}
 
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, "1s")
 		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
 
 		controller.Reconcile(request)
@@ -175,7 +174,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 		endpointConfigReconciler.ReconcileReturnValues = &List{}
 		endpointConfigReconciler.ReconcileReturnValues.PushBack(fmt.Errorf("mock error"))
 
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, "1s")
 		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
 
 		result, err := controller.Reconcile(request)
@@ -192,67 +191,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 		endpointConfigReconciler.ReconcileReturnValues = &List{}
 		endpointConfigReconciler.ReconcileReturnValues.PushBack(fmt.Errorf(errorMessage))
 
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, &mockEndpointReconciler{}, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		_, err := controller.Reconcile(request)
-		Expect(err).ToNot(HaveOccurred())
-
-		var updatedDeployment hostingv1.HostingDeployment
-		err = k8sClient.Get(context.Background(), types.NamespacedName{
-			Namespace: deployment.ObjectMeta.Namespace,
-			Name:      deployment.ObjectMeta.Name,
-		}, &updatedDeployment)
-		Expect(err).ToNot(HaveOccurred())
-
-		Expect(updatedDeployment.Status.Additional).To(ContainSubstring(errorMessage))
-	})
-
-	It("should call EndpointReconciler.Reconcile with correct parameters", func() {
-		Skip("Fix me later")
-		endpointReconciler := mockEndpointReconciler{}
-		endpointReconciler.DesiredDeployments = &List{}
-		endpointReconciler.ActualDeployments = &List{}
-
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, &endpointReconciler, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		controller.Reconcile(request)
-
-		Expect(endpointReconciler.DesiredDeployments.Len()).To(Equal(1))
-		desiredDeployment := endpointReconciler.DesiredDeployments.Front().Value.(*hostingv1.HostingDeployment)
-		Expect(desiredDeployment.Spec).To(Equal(deployment.Spec))
-
-		// Since the endpoint does not exist, we check that the reconciler received an empty actual state.
-		Expect(endpointReconciler.ActualDeployments.Len()).To(Equal(1))
-		actualDeployment := endpointReconciler.ActualDeployments.Front().Value.(*sagemaker.DescribeEndpointOutput)
-		Expect(actualDeployment).To(BeNil())
-	})
-
-	It("should requeue if EndpointReconciler.Reconcile failed", func() {
-		Skip("Fix me later")
-		endpointReconciler := mockEndpointReconciler{}
-		endpointReconciler.ReconcileReturnValues = &List{}
-		endpointReconciler.ReconcileReturnValues.PushBack(fmt.Errorf("mock error"))
-
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, &endpointReconciler, "1s")
-		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
-
-		result, err := controller.Reconcile(request)
-
-		Expect(err).ToNot(HaveOccurred())
-		Expect(result.Requeue).To(Equal(true))
-		Expect(endpointReconciler.ReconcileReturnValues.Len()).To(Equal(0))
-	})
-
-	It("should correctly update the status if EndpointReconciler.Reconcile failed", func() {
-		Skip("Fix me later")
-		errorMessage := "mock error"
-		endpointReconciler := mockEndpointReconciler{}
-		endpointReconciler.ReconcileReturnValues = &List{}
-		endpointReconciler.ReconcileReturnValues.PushBack(fmt.Errorf(errorMessage))
-
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, &endpointReconciler, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &endpointConfigReconciler, "1s")
 		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
 
 		_, err := controller.Reconcile(request)
@@ -270,7 +209,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 
 	It("should update the status", func() {
 		Skip("Fix me later")
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
 		request := CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
 
 		_, err := controller.Reconcile(request)
@@ -283,7 +222,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint does not exi
 		}, &updatedDeployment)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(updatedDeployment.Status.EndpointStatus).To(Equal(PreparingEndpointStatus))
+		Expect(updatedDeployment.Status.EndpointStatus).To(Equal(ReconcilingEndpointStatus))
 	})
 })
 
@@ -321,7 +260,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint exists", fun
 			}).
 			Build()
 
-		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, &mockEndpointReconciler{}, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, &mockModelReconciler{}, &mockEndpointConfigReconciler{}, "1s")
 		controller.Reconcile(CreateReconciliationRequest(deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace))
 
 		var updatedDeployment hostingv1.HostingDeployment
@@ -341,7 +280,7 @@ var _ = Describe("Reconciling a HostingDeployment when the endpoint exists", fun
 
 })
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, modelReconciler ModelReconciler, endpointConfigReconciler EndpointConfigReconciler, endpointReconciler EndpointReconciler, pollIntervalStr string) HostingDeploymentReconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, modelReconciler ModelReconciler, endpointConfigReconciler EndpointConfigReconciler, pollIntervalStr string) HostingDeploymentReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return HostingDeploymentReconciler{
@@ -352,7 +291,6 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 		awsConfigLoader:                CreateMockAwsConfigLoader(),
 		createModelReconciler:          createModelReconcilerProvider(modelReconciler),
 		createEndpointConfigReconciler: createEndpointConfigReconcilerProvider(endpointConfigReconciler),
-		createEndpointReconciler:       createEndpointReconcilerProvider(endpointReconciler),
 	}
 }
 
@@ -368,26 +306,6 @@ func createEndpointConfigReconcilerProvider(endpointConfigReconciler EndpointCon
 	}
 }
 
-func createEndpointReconcilerProvider(endpointReconciler EndpointReconciler) EndpointReconcilerProvider {
-	return func(_ client.Client, _ logr.Logger, _ clientwrapper.SageMakerClientWrapper) EndpointReconciler {
-		return endpointReconciler
-	}
-}
-
-// Mock implementation of EndpointReconciler.
-// This simply tracks invocations of Reconcile and the parameters it was called with.
-// Return values are configurable.
-type mockEndpointReconciler struct {
-	EndpointReconciler
-	subreconcilerCallTracker
-}
-
-// Mock implementation of Reconcile. This stores the parameters it was called with in the mock. It also will return a ReturnValue
-// in each invocation.
-func (r *mockEndpointReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, actualDeployment *sagemaker.DescribeEndpointOutput) error {
-	return r.TrackAll(desiredDeployment, actualDeployment)
-}
-
 // Mock implementation of EndpointConfigReconciler.
 // This simply tracks invocations of Reconcile and the parameters it was called with.
 // Return values are configurable.
@@ -398,7 +316,7 @@ type mockEndpointConfigReconciler struct {
 
 // Mock implementation of Reconcile. This stores the parameters it was called with in the mock. It also will return a ReturnValue
 // in each invocation.
-func (r *mockEndpointConfigReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) error {
+func (r *mockEndpointConfigReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, shouldDeleteUnusedResources bool) error {
 	return r.TrackOnlyDesiredDeployment(desiredDeployment)
 }
 
@@ -417,7 +335,7 @@ type mockModelReconciler struct {
 
 // Mock implementation of Reconcile. This stores the parameters it was called with in the mock. It also will return a ReturnValue
 // in each invocation.
-func (r *mockModelReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) error {
+func (r *mockModelReconciler) Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, shouldDeletedUnusedModels bool) error {
 	return r.TrackOnlyDesiredDeployment(desiredDeployment)
 }
 
@@ -426,7 +344,7 @@ func (r *mockModelReconciler) GetSageMakerModelNames(ctx context.Context, desire
 	return map[string]string{}, nil
 }
 
-// Call tracker for sub reconcilers (ModelReconciler/EndpointConfigReconciler/EndpointReconciler).
+// Call tracker for sub reconcilers (ModelReconciler/EndpointConfigReconciler).
 // Common logic and variables are refactored into this common struct.
 // This simply tracks invocations of Reconcile and the parameters it was called with.
 // Return values are configurable.

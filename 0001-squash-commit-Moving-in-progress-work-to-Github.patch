@@ -33,7 +33,6 @@ HostingDeployment delete no longer crashes operator if endpointconfig names can'
 
 cr https://code.amazon.com/reviews/CR-15926882
 ---
- build-tools/bin/custom-build                  |  10 +-
  .../endpointconfig_controller.go              |  12 +-
  .../hosting/endpoint_reconciler.go            | 175 ----------
  .../hosting/endpoint_reconciler_test.go       |   4 +
@@ -53,7 +52,6 @@ cr https://code.amazon.com/reviews/CR-15926882
  .../templates/NOTES.txt                       |  12 +
  .../templates/hpo-job.yaml                    |  74 ++++
  .../hyperparameter-tuning-jobs/values.yaml    |  57 +++
- .../smlogs-kubectl-plugin/go.mod              |   2 +-
  21 files changed, 719 insertions(+), 462 deletions(-)
  delete mode 100644 sagemaker-k8s-operator/controllers/hosting/endpoint_reconciler.go
  create mode 100644 sagemaker-k8s-operator/hack/charts/batch-transform-jobs/Chart.yaml
@@ -65,34 +63,6 @@ cr https://code.amazon.com/reviews/CR-15926882
  create mode 100644 sagemaker-k8s-operator/hack/charts/hyperparameter-tuning-jobs/templates/hpo-job.yaml
  create mode 100644 sagemaker-k8s-operator/hack/charts/hyperparameter-tuning-jobs/values.yaml
 
-diff --git a/build-tools/bin/custom-build b/build-tools/bin/custom-build
-index d07523f..6b4ac81 100755
---- a/build-tools/bin/custom-build
-+++ b/build-tools/bin/custom-build
-@@ -21,7 +21,7 @@ echo "Creating coverage directory"
- buildroot="$(bpath package-build-root)"
- # Taken from https://code.amazon.com/packages/CoverlayWorkflowService/blobs/ee688ce79944dcebb92fa42057ac83eff4351e13/--/src/com/amazon/coverlayworkflowservice/build/CodeCoverageFinder.java#L58
- coveragedir="${buildroot}/brazil-documentation/coverage"
--mkdir -p "${coveragedir}/sagemaker-k8s-operator" "${coveragedir}/smlogs-kubectl-plugin" "${coveragedir}/smctl"
-+mkdir -p "${coveragedir}/sagemaker-k8s-operator" "${coveragedir}/smlogs-kubectl-plugin"
- 
- echo "Installing kubebuilder test binaries"
- # Taken from https://book.kubebuilder.io/quick-start.html#installation
-@@ -41,13 +41,7 @@ make test
- cp cover.out "${coveragedir}/sagemaker-k8s-operator/coverage.out"
- popd
- 
--pushd smctl 
--echo "Running tests for $(pwd)"
--make test
--cp cover.out "${coveragedir}/smctl/coverage.out"
--popd
--
--pushd smlogs-kubectl-plugin
-+pushd sagemaker-k8s-operator/smlogs-kubectl-plugin
- echo "Running tests for $(pwd)"
- make test
- cp cover.out "${coveragedir}/smlogs-kubectl-plugin/coverage.out"
 diff --git a/sagemaker-k8s-operator/controllers/endpointconfig/endpointconfig_controller.go b/sagemaker-k8s-operator/controllers/endpointconfig/endpointconfig_controller.go
 index dbf2022..fe775cc 100644
 --- a/sagemaker-k8s-operator/controllers/endpointconfig/endpointconfig_controller.go
@@ -1968,19 +1938,5 @@ index 0000000..ddbe45e
 +        s3: 
 +           s3uri: https://s3-us-east-2.amazonaws.com/cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/validation/
 +    outputpath: s3://cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/xgboost/
-diff --git a/sagemaker-k8s-operator/smlogs-kubectl-plugin/go.mod b/sagemaker-k8s-operator/smlogs-kubectl-plugin/go.mod
-index a0fd90b..9ab77f1 100644
---- a/sagemaker-k8s-operator/smlogs-kubectl-plugin/go.mod
-+++ b/sagemaker-k8s-operator/smlogs-kubectl-plugin/go.mod
-@@ -17,7 +17,7 @@ require (
- 
- replace (
- 	// https://stackoverflow.com/a/52330233 . Remove once we have package available for consumption.
--	go.amzn.com/sagemaker/sagemaker-k8s-operator => ../sagemaker-k8s-operator
-+	go.amzn.com/sagemaker/sagemaker-k8s-operator => ../
- 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20181025213731-e84da0312774
- 	golang.org/x/net => golang.org/x/net v0.0.0-20190206173232-65e2d4e15006
- 	golang.org/x/sync => golang.org/x/sync v0.0.0-20181108010431-42b317875d0f
--- 
 2.17.2 (Apple Git-113)
 
