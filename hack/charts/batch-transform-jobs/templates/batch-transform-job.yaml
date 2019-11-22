@@ -1,0 +1,21 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: BatchTransformJob
+metadata:
+  name: {{ .Values.name }}
+spec:
+  region: {{ .Values.spec.region }}
+  modelName: {{ .Values.spec.modelname | quote }}
+  transformInput: 
+     dataSource: 
+       s3DataSource:
+          s3DataType: {{ .Values.spec.inputdataconfig.s3DataType | default "S3Prefix" }}
+          s3Uri: {{ .Values.spec.inputdataconfig.s3uri  }}
+     contentType: {{ .contenttype | default "text/csv" }}
+  transformOutput:
+    s3OutputPath: {{ .Values.spec.outputpath }}
+  transformResources:
+    instanceCount: {{ .Values.spec.instancecount }}
+    instanceType: {{ .Values.spec.instancetype }}
+  tags:
+    - key: test-key
+      value: test-value

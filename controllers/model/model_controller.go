@@ -326,9 +326,16 @@ func (r *ModelReconciler) updateStatusWithAdditional(ctx reconcileRequestContext
 	return nil
 }
 
-// TODO Make sure this fits SageMaker validation https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateModel.html#SageMaker-CreateModel-request-ModelName
 func generateModelName(model *modelv1.Model) string {
-	return model.ObjectMeta.GetName() + "-" + strings.Replace(string(model.ObjectMeta.GetUID()), "-", "", -1)
+	sageMakerMaxNameLen := 63
+	name := model.ObjectMeta.GetName()
+	requiredPostfix := "-" + strings.Replace(string(model.ObjectMeta.GetUID()), "-", "", -1)
+
+	sageMakerModelName := name + requiredPostfix
+	if len(sageMakerModelName) > sageMakerMaxNameLen {
+		sageMakerModelName = name[:sageMakerMaxNameLen-len(requiredPostfix)] + requiredPostfix
+	}
+	return sageMakerModelName
 }
 
 // TODO add code that ignores status, metadata updates.

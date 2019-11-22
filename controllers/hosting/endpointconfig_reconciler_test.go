@@ -59,7 +59,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 			},
 		}
 
-		err := reconciler.Reconcile(context.Background(), &desired)
+		err := reconciler.Reconcile(context.Background(), &desired, true)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("ProductionVariant has nil VariantName"))
@@ -75,7 +75,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 			},
 		}
 
-		err := reconciler.Reconcile(context.Background(), &desired)
+		err := reconciler.Reconcile(context.Background(), &desired, true)
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("ProductionVariant"))
@@ -89,7 +89,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		})
 
 		It("Returns error if unable to get K8s EndpointConfig", func() {
-			err := reconciler.Reconcile(context.Background(), &desired)
+			err := reconciler.Reconcile(context.Background(), &desired, true)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Unable to resolve SageMaker model name for model"))
@@ -130,7 +130,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		reconciler = NewEndpointConfigReconciler(FailTestOnCreateK8sClient{
 			ActualClient: k8sClient,
 		}, ctrl.Log)
-		err = reconciler.Reconcile(context.Background(), &desired)
+		err = reconciler.Reconcile(context.Background(), &desired, true)
 
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -154,7 +154,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 
 		It("Returns error if unable to create k8s EndpointConfig", func() {
 			Skip("Fix me later")
-			err := reconciler.Reconcile(context.Background(), &desired)
+			err := reconciler.Reconcile(context.Background(), &desired, true)
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Unable to create Kubernetes EndpointConfig"))
@@ -190,7 +190,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 			modelNamespacedName := GetKubernetesModelNamespacedName(modelName, desired)
 			Expect(createCreatedModelWithAnySageMakerName(modelNamespacedName, desired)).ToNot(HaveOccurred())
 
-			reconciler.Reconcile(context.Background(), &desired)
+			reconciler.Reconcile(context.Background(), &desired, true)
 		})
 
 		AfterEach(func() {
@@ -271,7 +271,7 @@ var _ = Describe("Delete EndpointConfigReconciler.Reconcile", func() {
 		modelNamespacedName := GetKubernetesModelNamespacedName(modelName, desired)
 		Expect(createCreatedModelWithAnySageMakerName(modelNamespacedName, desired)).ToNot(HaveOccurred())
 
-		reconciler.Reconcile(context.Background(), &desired)
+		reconciler.Reconcile(context.Background(), &desired, true)
 
 		var endpointConfig endpointconfigv1.EndpointConfig
 		err := k8sClient.Get(context.Background(), expectedEndpointConfigNamespacedName, &endpointConfig)
@@ -377,7 +377,7 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 		updated := desired.DeepCopy()
 		updated.Spec.ProductionVariants[0].InitialVariantWeight = &newWeight
 
-		err := reconciler.Reconcile(context.Background(), updated)
+		err := reconciler.Reconcile(context.Background(), updated, true)
 		Expect(err).ToNot(HaveOccurred())
 
 		var endpointConfig endpointconfigv1.EndpointConfig
@@ -402,7 +402,7 @@ func createCreatedModelWithSageMakerName(namespacedName types.NamespacedName, de
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      namespacedName.Name,
 			Namespace: namespacedName.Namespace,
-			Labels:    GetModelOwnershipLabelsForHostingDeployment(deployment),
+			Labels:    GetResourceOwnershipLabelsForHostingDeployment(deployment),
 		},
 		Spec: modelv1.ModelSpec{
 			ExecutionRoleArn: ToStringPtr("xxx"),
@@ -493,4 +493,21 @@ func createHostingDeployment(k8sName, k8sNamespace string) hostingv1.HostingDepl
 			Region:             ToStringPtr("us-east-1"),
 		},
 	}
+}
+
+func updateEndpointConfigStatus(namespacedName types.NamespacedName, status, sageMakerEndpointConfigName string) error {
+	var endpointconfig endpointconfigv1.EndpointConfig
+	err := k8sClient.Get(context.Background(), namespacedName, &endpointconfig)
+	if err != nil {
+		return err
+	}
+
+	endpointconfig.Status.Status = status
+	endpointconfig.Status.SageMakerEndpointConfigName = sageMakerEndpointConfigName
+	err = k8sClient.Status().Update(context.Background(), &endpointconfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

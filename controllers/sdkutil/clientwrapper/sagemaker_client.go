@@ -26,12 +26,16 @@ import (
 )
 
 const (
-	DeleteEndpoint404MessagePrefix        = "Could not find endpoint"
-	DeleteEndpoint404Code                 = "ValidationException"
-	DeleteEndpointInProgressMessagePrefix = "Cannot update in-progress endpoint"
-	DeleteEndpointInProgressCode          = "ValidationException"
-	DescribeEndpoint404MessagePrefix      = "Could not find endpoint"
-	DescribeEndpoint404Code               = "ValidationException"
+	DeleteEndpoint404MessagePrefix                        = "Could not find endpoint"
+	DeleteEndpoint404Code                                 = "ValidationException"
+	DeleteEndpointInProgressMessagePrefix                 = "Cannot update in-progress endpoint"
+	DeleteEndpointInProgressCode                          = "ValidationException"
+	DescribeEndpoint404MessagePrefix                      = "Could not find endpoint"
+	DescribeEndpoint404Code                               = "ValidationException"
+	UpdateEndpoint404MessagePrefix                        = "Could not find endpoint"
+	UpdateEndpoint404Code                                 = "ValidationException"
+	UpdateEndpointUnableToFindEndpointConfigMessagePrefix = "Could not find endpoint configuration"
+	UpdateEndpointUnableToFindEndpointConfigCode          = "ValidationException"
 
 	DescribeEndpointConfig404MessagePrefix = "Could not find endpoint configuration"
 	DescribeEndpointConfig404Code          = "ValidationException"
@@ -52,6 +56,7 @@ type SageMakerClientWrapper interface {
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
 	CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error)
 	DeleteEndpoint(ctx context.Context, endpointName *string) (*sagemaker.DeleteEndpointOutput, error)
+	UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string) (*sagemaker.UpdateEndpointOutput, error)
 
 	DescribeModel(ctx context.Context, modelName string) (*sagemaker.DescribeModelOutput, error)
 	CreateModel(ctx context.Context, model *sagemaker.CreateModelInput) (*sagemaker.CreateModelOutput, error)
@@ -116,6 +121,26 @@ func (c *sageMakerClientWrapper) isDeleteEndpoint404Error(err error) bool {
 	return false
 }
 
+// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
+// to an HTTP 404 not found.
+func (c *sageMakerClientWrapper) isUpdateEndpoint404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == UpdateEndpoint404Code && strings.HasPrefix(requestFailure.Message(), UpdateEndpoint404MessagePrefix)
+	}
+
+	return false
+}
+
+// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
+// to an HTTP 404 not found.
+func (c *sageMakerClientWrapper) isUpdateEndpointUnableToFindEndpointConfigurationError(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == UpdateEndpointUnableToFindEndpointConfigCode && strings.HasPrefix(requestFailure.Message(), UpdateEndpointUnableToFindEndpointConfigMessagePrefix)
+	}
+
+	return false
+}
+
 // Create an Endpoint. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error) {
 
@@ -146,6 +171,28 @@ func (c *sageMakerClientWrapper) DeleteEndpoint(ctx context.Context, endpointNam
 	}
 
 	return deleteResponse.DeleteEndpointOutput, nil
+}
+
+// Delete an Endpoint. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string) (*sagemaker.UpdateEndpointOutput, error) {
+	updateRequest := c.innerClient.UpdateEndpointRequest(&sagemaker.UpdateEndpointInput{
+		EndpointName:       &endpointName,
+		EndpointConfigName: &endpointConfigName,
+	})
+
+	updateResponse, updateError := updateRequest.Send(ctx)
+
+	if updateError != nil {
+
+		// Unfortunately both of these errors have the same prefix. We must check that it is 404 for Endpoint and not 404 for EndpointConfig.
+		// SageMaker will return 404 if the original (non-updating) EndpointConfig does not exist.
+		if c.isUpdateEndpoint404Error(updateError) && !c.isUpdateEndpointUnableToFindEndpointConfigurationError(updateError) {
+			return nil, nil
+		}
+		return nil, updateError
+	}
+
+	return updateResponse.UpdateEndpointOutput, nil
 }
 
 // Return a model description or nil if error.
