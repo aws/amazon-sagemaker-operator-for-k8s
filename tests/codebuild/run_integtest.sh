@@ -68,6 +68,9 @@ fi
 aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-east-1.tar.gz sagemaker-k8s-operator.tar.gz 
 tar -xf sagemaker-k8s-operator.tar.gz
 
+# Jump to the root dir of the operator
+pushd sagemaker-k8s-operator
+
 # Setup the PATH for smlogs
 mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
 
@@ -81,6 +84,9 @@ kustomize build config/default | kubectl apply -f -
 
 # Come out from CRD dir sagemaker-k8s-operator-install-scripts
 popd 
+
+# Come out from sagemaker-k8s-operator
+popd
 
 echo "Waiting for controller pod to be Ready"
 # Wait to increase chance that pod is ready
