@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 
 	gabs "github.com/Jeffail/gabs/v2"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
@@ -195,8 +196,26 @@ func createCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.Hyperparamet
 }
 
 // Create a CreateModel request input from a Kubernetes Model spec.
-// TODO This needs to support environment map
 func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) (*sagemaker.CreateModelInput, error) {
+
+	var primaryContainerEnvironment []*commonv1.KeyValuePair
+	var containersEnvironment [][]*commonv1.KeyValuePair
+
+	if model.Containers != nil {
+		for _, container := range model.Containers {
+			containerEnvironment := container.Environment
+			containersEnvironment = append(containersEnvironment, containerEnvironment)
+			// reset in spec
+			container.Environment = []*commonv1.KeyValuePair{}
+		}
+	}
+
+	if model.PrimaryContainer != nil {
+		primaryContainerEnvironment = model.PrimaryContainer.Environment
+		// reset in spec
+		model.PrimaryContainer.Environment = []*commonv1.KeyValuePair{}
+	}
+
 	jsonstr, err := json.Marshal(model)
 	if err != nil {
 		return nil, err
@@ -207,6 +226,15 @@ func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) 
 		return nil, err
 	}
 
+	if output.Containers != nil {
+		for i := range output.Containers {
+			output.Containers[i].Environment = ConvertKeyValuePairSliceToMap(containersEnvironment[i])
+		}
+	}
+
+	if output.PrimaryContainer != nil {
+		output.PrimaryContainer.Environment = ConvertKeyValuePairSliceToMap(primaryContainerEnvironment)
+	}
 	output.ModelName = &modelName
 
 	return &output, nil
@@ -221,19 +249,56 @@ func CreateDeleteModelInput(modelName *string) (*sagemaker.DeleteModelInput, err
 }
 
 // Create a Kubernetes Model spec from a SageMaker model description.
-// TODO This needs to support environment map
 func CreateModelSpecFromDescription(description *sagemaker.DescribeModelOutput) (*modelv1.ModelSpec, error) {
-	jsonstr, err := json.Marshal(description)
+
+	transformedContainersEnvironment := [][]*commonv1.KeyValuePair{}
+	transformedContainerEnvironment := []*commonv1.KeyValuePair{}
+	transformedPrimaryContainerEnvironment := []*commonv1.KeyValuePair{}
+
+	if description.Containers != nil {
+		// Go through each container
+		for _, container := range description.Containers {
+			transformedContainerEnvironment = ConvertMapToKeyValuePairSlice(container.Environment)
+			transformedContainersEnvironment = append(transformedContainersEnvironment, transformedContainerEnvironment)
+		}
+	}
+
+	if description.PrimaryContainer != nil {
+		transformedPrimaryContainerEnvironment = ConvertMapToKeyValuePairSlice(description.PrimaryContainer.Environment)
+	}
+
+	marshalled, err := json.Marshal(description)
 	if err != nil {
 		return nil, err
 	}
 
-	var output modelv1.ModelSpec
-	if err = json.Unmarshal(jsonstr, &output); err != nil {
+	// Replace map of environments with list of environment.
+	// gabs makes this easier.
+	obj, err := gabs.ParseJSON(marshalled)
+	if err != nil {
 		return nil, err
 	}
 
-	return &output, nil
+	if description.Containers != nil {
+		for i, _ := range description.Containers {
+			if _, err := obj.SetP(transformedContainersEnvironment[i], "Containers/"+strconv.Itoa(i)+"/.Environment"); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if description.PrimaryContainer != nil {
+		if _, err := obj.SetP(transformedPrimaryContainerEnvironment, "PrimaryContainer.Environment"); err != nil {
+			return nil, err
+		}
+	}
+
+	var unmarshalled modelv1.ModelSpec
+	if err := json.Unmarshal(obj.Bytes(), &unmarshalled); err != nil {
+		return nil, err
+	}
+
+	return &unmarshalled, nil
 }
 
 // Creates a CreateTrainingJobInput from a BatchTransformJobSpec
