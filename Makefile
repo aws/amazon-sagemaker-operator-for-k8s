@@ -24,7 +24,7 @@ install: manifests
 # Build a tarball containing everything needed to install the operator onto a cluster.
 # This also removes the awscreds.env file before creating the tarball to make sure that credentials are
 # not included in the release.
-build-release-tarball:
+build-release-tarball: generate fmt vet manifests
 	rm -f ./config/default/awscreds.env
 	@# Build tarball using Dockerfile then transfer it to host filesystem by running the image and printing the file to stdout.
 	docker run "$$(docker build . --file scripts/build-release-tarball-Dockerfile --quiet)" "/bin/cat" "/sagemaker-k8s-operator-install-scripts.tar.gz" > ./bin/sagemaker-k8s-operator-install-scripts.tar.gz
@@ -69,7 +69,7 @@ set-image:
 	cd config/default && kustomize edit set image controller=${IMG}
 
 # Build the docker image
-docker-build:
+docker-build: generate fmt vet manifests
 	docker build . --file scripts/manager-builder-Dockerfile -t ${IMG}
 
 # Push the docker image
