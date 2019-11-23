@@ -51,10 +51,9 @@ set -e
 if [ "${need_setup_cluster}" == "true" ]; then
     echo "Launching the cluster"
     readonly cluster_name="sagemaker-k8s-pipeline-"$(date '+%Y-%m-%d--%H-%M-%S')""
-    readonly cluster_region="us-east-1"
 
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
-    eksctl create cluster "${cluster_name}" --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${cluster_region}" --auto-kubeconfig --version=1.13
+    eksctl create cluster "${cluster_name}" --nodes 1 --node-type=c5.xlarge --timeout=40m --region us-east-1 --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.13
 
     echo "Setting kubeconfig"
     export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
