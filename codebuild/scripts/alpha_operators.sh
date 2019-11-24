@@ -12,4 +12,4 @@ make docker-build docker-push IMG=$ALPHA_IMAGE:$CODEBUILD_RESOLVED_SOURCE_VERSIO
 # Release the operator into the private alpha repository
 # Set as all to ensure it runs through the function
 # Add the alpha prefix for integration testing
-package_operator "$ALPHA_ACCOUNT_ID" "$ALPHA_REPOSITORY_REGION" "$REPOSITORY_NAME" "all" "alpha"
+package_operator "$ALPHA_ACCOUNT_ID" "$ALPHA_REPOSITORY_REGION" "$REPOSITORY_NAME" "all" "-alpha"
