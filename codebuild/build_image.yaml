@@ -9,5 +9,5 @@ phases:
        # Define env variables
        - GO111MODULE=on
        # Package and ship new commit version
-       - (bash codebuild/scripts/alpha_operators.sh)
+       - (bash codebuild/scripts/package_alpha_operators.sh)
 
