@@ -15,23 +15,23 @@ function deploy_from_alpha()
   local image_repository="$3"
 
   # Get the images from the alpha ECR repository
-  local dest_ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
-  local alpha_ecr_image=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/$image_repository
+  local dest_ecr_image=${account_id}.dkr.ecr.${account_region}.amazonaws.com/${image_repository}
+  local alpha_ecr_image=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/${image_repository}
 
   # Login to the alpha repository
   $(aws ecr get-login --no-include-email --region $ALPHA_REPOSITORY_REGION --registry-ids $ALPHA_ACCOUNT_ID)
   docker pull $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
 
   # Login to the prod repository
-  $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
+  $(aws ecr get-login --no-include-email --region ${account_region} --registry-ids ${account_id})
 
   # Clone the controller image to the repo and set as latest
-  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $dest_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $dest_ecr_image:latest
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION ${dest_ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION ${dest_ecr_image}:latest
 
   # Push to the prod region
-  docker push $dest_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-  docker push $dest_ecr_image:latest
+  docker push ${dest_ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker push ${dest_ecr_image}:latest
 }
 
 # This function builds, packages and deploys a region-specific operator to an ECR repo and output bucket.
@@ -61,8 +61,8 @@ function package_operator()
   fi
 
   # Build, push and update the CRD with controller image and current git SHA, create the tarball and extract it to pack
-  local ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
-  make set-image IMG=$ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  local ecr_image=${account_id}.dkr.ecr.${account_region}.amazonaws.com/${image_repository}
+  make set-image IMG=${ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
   make build-release-tarball
   pushd bin
   tar -xf sagemaker-k8s-operator-install-scripts.tar.gz

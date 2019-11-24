@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -x
 
 source codebuild/scripts/package_operators.sh
