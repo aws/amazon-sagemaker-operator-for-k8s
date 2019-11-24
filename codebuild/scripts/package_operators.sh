@@ -25,12 +25,22 @@ function package_operator()
 
   # Only push to ECR repos if this is run on the prod pipeline
   if [ "$STAGE" == "prod" ]; then
+    # Get the images from the alpha ECR repository
+    local dest_ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
+    local alpha_ecr_image=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/$image_repository
+
+    # Login to the alpha repository
+    $(aws ecr get-login --no-include-email --region $ALPHA_REPOSITORY_REGION --registry-ids $ALPHA_ACCOUNT_ID)
+    docker pull $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+
+    # Login to the prod repository
     $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
 
-    local ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
     # Clone the controller image to the repo and set as latest
-    docker tag $CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-    docker tag $CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:latest
+    docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+    docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:latest
+
+    # Push to the prod region
     docker push $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
     docker push $ecr_image:latest
   fi

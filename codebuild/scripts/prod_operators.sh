@@ -1,8 +1,5 @@
 source codebuild/scripts/package_operators.sh
 
-# Build the image with a temporary tag
-make docker-build IMG=$CODEBUILD_RESOLVED_SOURCE_VERSION
-
 # Replace JSON single quotes with double quotes for jq to understand
 ACCOUNTS_ESCAPED=`echo $ACCOUNTS | sed "s/'/\"/g"`
 for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do

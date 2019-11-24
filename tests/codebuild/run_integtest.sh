@@ -64,7 +64,7 @@ else
 fi
 
 # Download the CRD
-aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-east-1.tar.gz sagemaker-k8s-operator.tar.gz 
+aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-east-1-alpha.tar.gz sagemaker-k8s-operator.tar.gz 
 tar -xf sagemaker-k8s-operator.tar.gz
 
 # Jump to the root dir of the operator
