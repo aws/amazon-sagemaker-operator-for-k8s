@@ -2,6 +2,38 @@
 
 set -e
 
+# This function deploys a region-specific operator to an ECR prod repo from the existing
+# image in the alpha repository.
+# Parameter:
+#    $1: The account ID for the ECR repo.
+#    $2: The region of the ECR repo.
+#    $3: The name of the ECR repository.
+function deploy_from_alpha()
+{
+  local account_id="$1"
+  local account_region="$2"
+  local image_repository="$3"
+
+  # Get the images from the alpha ECR repository
+  local dest_ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
+  local alpha_ecr_image=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/$image_repository
+
+  # Login to the alpha repository
+  $(aws ecr get-login --no-include-email --region $ALPHA_REPOSITORY_REGION --registry-ids $ALPHA_ACCOUNT_ID)
+  docker pull $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+
+  # Login to the prod repository
+  $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
+
+  # Clone the controller image to the repo and set as latest
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:latest
+
+  # Push to the prod region
+  docker push $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker push $ecr_image:latest
+}
+
 # This function builds, packages and deploys a region-specific operator to an ECR repo and output bucket.
 # Parameter:
 #    $1: The account ID for the ECR repo.
@@ -25,24 +57,7 @@ function package_operator()
 
   # Only push to ECR repos if this is run on the prod pipeline
   if [ "$STAGE" == "prod" ]; then
-    # Get the images from the alpha ECR repository
-    local dest_ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
-    local alpha_ecr_image=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/$image_repository
-
-    # Login to the alpha repository
-    $(aws ecr get-login --no-include-email --region $ALPHA_REPOSITORY_REGION --registry-ids $ALPHA_ACCOUNT_ID)
-    docker pull $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-
-    # Login to the prod repository
-    $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
-
-    # Clone the controller image to the repo and set as latest
-    docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-    docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:latest
-
-    # Push to the prod region
-    docker push $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-    docker push $ecr_image:latest
+    deploy_from_alpha "$account_id" "$account_region" "$image_repository"
   fi
 
   # Build, push and update the CRD with controller image and current git SHA, create the tarball and extract it to pack

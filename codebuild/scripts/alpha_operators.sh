@@ -1,7 +1,11 @@
 source codebuild/scripts/package_operators.sh
 
+# Login to alpha ECR
+$(aws ecr get-login --no-include-email --region $ALPHA_REPOSITORY_REGION --registry-ids $ALPHA_ACCOUNT_ID)
+
 # Build the image with a temporary tag
-make docker-build IMG=$CODEBUILD_RESOLVED_SOURCE_VERSION
+ALPHA_IMAGE=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/$image_repository
+make docker-build docker-push IMG=$ALPHA_IMAGE:$CODEBUILD_RESOLVED_SOURCE_VERSION
 
 # Release the operator into the private alpha repository
 # Set as prod to ensure it pushes through to ECR
