@@ -51,7 +51,7 @@ function package_operator()
   local tarball_suffix="${5:-}"
 
   # Only build images that match the release pipeline stage
-  if [ "$stage" != "$STAGE" ] || [ "$stage" == "all" ]; then
+  if [ "$stage" != "$STAGE" ] && [ "$stage" != "all" ]; then
     return 0
   fi
 
