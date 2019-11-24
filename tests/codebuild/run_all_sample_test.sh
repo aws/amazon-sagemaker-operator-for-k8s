@@ -42,4 +42,4 @@ verify_test HyperparameterTuningJob xgboost-mnist-hpo 15m Completed
 verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 15m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 15m Completed
 verify_test BatchTransformJob xgboost-mnist 10m Completed
-verify_test HostingDeployment hosting 12m InService
+verify_test HostingDeployment hosting 20m InService
