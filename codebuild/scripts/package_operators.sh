@@ -26,12 +26,12 @@ function deploy_from_alpha()
   $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
 
   # Clone the controller image to the repo and set as latest
-  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:latest
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $dest_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $dest_ecr_image:latest
 
   # Push to the prod region
-  docker push $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-  docker push $ecr_image:latest
+  docker push $dest_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker push $dest_ecr_image:latest
 }
 
 # This function builds, packages and deploys a region-specific operator to an ECR repo and output bucket.
