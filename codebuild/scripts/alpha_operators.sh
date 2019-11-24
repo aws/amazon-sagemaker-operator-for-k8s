@@ -1,4 +1,4 @@
-source package_operators.sh
+source codebuild/scripts/package_operators.sh
 
 # Build the image with a temporary tag
 make docker-build IMG=$CODEBUILD_RESOLVED_SOURCE_VERSION
