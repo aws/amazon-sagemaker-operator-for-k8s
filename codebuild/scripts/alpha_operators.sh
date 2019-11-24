@@ -1,3 +1,5 @@
+set -x
+
 source codebuild/scripts/package_operators.sh
 
 # Login to alpha ECR
