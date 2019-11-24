@@ -8,6 +8,7 @@ set -e
 #    $2: The region of the ECR repo.
 #    $3: The name of the ECR repository.
 #    $4: The stage in the pipeline for the output account. (prod/beta/dev)
+#    $5: (Optional) A suffix for the operator install bundle tarball.
 # e.g. package_operator 123456790 us-east-1 amazon-sagemaker-k8s-operator prod
 function package_operator()
 {
@@ -15,11 +16,14 @@ function package_operator()
   local account_region="$2"
   local image_repository="$3"
   local stage="$4"
+  local tarball_suffix="${5:-}"
 
+  # Only build images that match the release pipeline stage
   if [ "$stage" != "$STAGE" ]; then
     return 0
   fi
 
+  # Only push to ECR repos if this is run on the prod pipeline
   if [ "$STAGE" == "prod" ]; then
     $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
 
@@ -58,24 +62,6 @@ function package_operator()
   tar cvzf sagemaker-k8s-operator.tar.gz sagemaker-k8s-operator
 
   # Upload the final tar ball to s3 with standard name and git SHA
-  aws s3 cp sagemaker-k8s-operator.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-${account_region}.tar.gz"
+  aws s3 cp sagemaker-k8s-operator.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-${account_region}${tarball_suffix}.tar.gz"
   popd
 }
-
-# Build the image with a temporary tag
-make docker-build IMG=$CODEBUILD_RESOLVED_SOURCE_VERSION
-
-# Replace JSON single quotes with double quotes for jq to understand
-ACCOUNTS_ESCAPED=`echo $ACCOUNTS | sed "s/'/\"/g"`
-for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
-  _jq() {
-    echo ${row} | base64 --decode | jq -r ${1}
-  }
-
-  repository_account="$(_jq '.repositoryAccount')"
-  region="$(_jq '.region')"
-  image_repository="${REPOSITORY_NAME}"
-  stage="$(_jq '.stage')"
-
-  package_operator "$repository_account" "$region" "$image_repository" "$stage"
-done
