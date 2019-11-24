@@ -51,7 +51,7 @@ function package_operator()
   local tarball_suffix="${5:-}"
 
   # Only build images that match the release pipeline stage
-  if [ "$stage" != "$STAGE" ]; then
+  if [ "$stage" != "$STAGE" ] || [ "$stage" == "all" ]; then
     return 0
   fi
 
@@ -61,6 +61,7 @@ function package_operator()
   fi
 
   # Build, push and update the CRD with controller image and current git SHA, create the tarball and extract it to pack
+  local ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
   make set-image IMG=$ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
   make build-release-tarball
   pushd bin

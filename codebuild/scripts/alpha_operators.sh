@@ -10,6 +10,6 @@ ALPHA_IMAGE=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/$RE
 make docker-build docker-push IMG=$ALPHA_IMAGE:$CODEBUILD_RESOLVED_SOURCE_VERSION
 
 # Release the operator into the private alpha repository
-# Set as prod to ensure it pushes through to ECR
+# Set as all to ensure it runs through the function
 # Add the alpha prefix for integration testing
-package_operator "$ALPHA_ACCOUNT_ID" "$ALPHA_REPOSITORY_REGION" "$REPOSITORY_NAME" "prod" "alpha"
+package_operator "$ALPHA_ACCOUNT_ID" "$ALPHA_REPOSITORY_REGION" "$REPOSITORY_NAME" "all" "alpha"
