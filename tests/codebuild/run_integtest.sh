@@ -63,8 +63,8 @@ else
     readonly cluster_region="$(echo "${cluster_info}" | awk '{print $2}')"
 fi
 
-# Download the CRD
-aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-east-1.tar.gz sagemaker-k8s-operator.tar.gz 
+# Download the CRD from the tarball artifact bucket
+aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-west-2-alpha.tar.gz sagemaker-k8s-operator.tar.gz 
 tar -xf sagemaker-k8s-operator.tar.gz
 
 # Jump to the root dir of the operator

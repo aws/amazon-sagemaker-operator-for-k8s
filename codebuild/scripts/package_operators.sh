@@ -2,12 +2,45 @@
 
 set -e
 
+# This function deploys a region-specific operator to an ECR prod repo from the existing
+# image in the alpha repository.
+# Parameter:
+#    $1: The account ID for the ECR repo.
+#    $2: The region of the ECR repo.
+#    $3: The name of the ECR repository.
+function deploy_from_alpha()
+{
+  local account_id="$1"
+  local account_region="$2"
+  local image_repository="$3"
+
+  # Get the images from the alpha ECR repository
+  local dest_ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
+  local alpha_ecr_image=$ALPHA_ACCOUNT_ID.dkr.ecr.$ALPHA_REPOSITORY_REGION.amazonaws.com/$image_repository
+
+  # Login to the alpha repository
+  $(aws ecr get-login --no-include-email --region $ALPHA_REPOSITORY_REGION --registry-ids $ALPHA_ACCOUNT_ID)
+  docker pull $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+
+  # Login to the prod repository
+  $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
+
+  # Clone the controller image to the repo and set as latest
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $dest_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION $dest_ecr_image:latest
+
+  # Push to the prod region
+  docker push $dest_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  docker push $dest_ecr_image:latest
+}
+
 # This function builds, packages and deploys a region-specific operator to an ECR repo and output bucket.
 # Parameter:
 #    $1: The account ID for the ECR repo.
 #    $2: The region of the ECR repo.
 #    $3: The name of the ECR repository.
 #    $4: The stage in the pipeline for the output account. (prod/beta/dev)
+#    $5: (Optional) A suffix for the operator install bundle tarball.
 # e.g. package_operator 123456790 us-east-1 amazon-sagemaker-k8s-operator prod
 function package_operator()
 {
@@ -15,23 +48,20 @@ function package_operator()
   local account_region="$2"
   local image_repository="$3"
   local stage="$4"
+  local tarball_suffix="${5:-}"
 
-  if [ "$stage" != "$STAGE" ]; then
+  # Only build images that match the release pipeline stage
+  if [ "$stage" != "$STAGE" ] && [ "$stage" != "all" ]; then
     return 0
   fi
 
+  # Only push to ECR repos if this is run on the prod pipeline
   if [ "$STAGE" == "prod" ]; then
-    $(aws ecr get-login --no-include-email --region $account_region --registry-ids $account_id)
-
-    local ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
-    # Clone the controller image to the repo and set as latest
-    docker tag $CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-    docker tag $CODEBUILD_RESOLVED_SOURCE_VERSION $ecr_image:latest
-    docker push $ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
-    docker push $ecr_image:latest
+    deploy_from_alpha "$account_id" "$account_region" "$image_repository"
   fi
 
   # Build, push and update the CRD with controller image and current git SHA, create the tarball and extract it to pack
+  local ecr_image=$account_id.dkr.ecr.$account_region.amazonaws.com/$image_repository
   make set-image IMG=$ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION
   make build-release-tarball
   pushd bin
@@ -58,24 +88,6 @@ function package_operator()
   tar cvzf sagemaker-k8s-operator.tar.gz sagemaker-k8s-operator
 
   # Upload the final tar ball to s3 with standard name and git SHA
-  aws s3 cp sagemaker-k8s-operator.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-${account_region}.tar.gz"
+  aws s3 cp sagemaker-k8s-operator.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-${account_region}${tarball_suffix}.tar.gz"
   popd
 }
-
-# Build the image with a temporary tag
-make docker-build IMG=$CODEBUILD_RESOLVED_SOURCE_VERSION
-
-# Replace JSON single quotes with double quotes for jq to understand
-ACCOUNTS_ESCAPED=`echo $ACCOUNTS | sed "s/'/\"/g"`
-for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
-  _jq() {
-    echo ${row} | base64 --decode | jq -r ${1}
-  }
-
-  repository_account="$(_jq '.repositoryAccount')"
-  region="$(_jq '.region')"
-  image_repository="${REPOSITORY_NAME}"
-  stage="$(_jq '.stage')"
-
-  package_operator "$repository_account" "$region" "$image_repository" "$stage"
-done
