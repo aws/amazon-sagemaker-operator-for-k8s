@@ -67,6 +67,6 @@ function inject_variables()
   for i in "${variables[@]}"
   do
     local curr_var=${!i}
-    sed -i "s/{$i}/${curr_var}/g" "${file_name}"
+    sed -i "s|{$i}|${curr_var}|g" "${file_name}"
   done
 }
