@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 # This function will pull an existing image + tag and push it with a new tag.
 # Parameter:
 #    $1: The repository and image to pull from.
@@ -39,6 +37,8 @@ for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
   image=${repository_account}.dkr.ecr.${region}.amazonaws.com/${image_repository}
   old_tag=${CODEBUILD_RESOLVED_SOURCE_VERSION}
   new_tag=${CODEBUILD_GIT_TAG}
+
+  echo "Tagging $image:$old_tag to $image:$new_tag"
 
   retag_image "$image" "$old_tag" "$new_tag"
 done
