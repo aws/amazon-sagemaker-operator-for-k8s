@@ -39,6 +39,8 @@ type EndpointConfigSpec struct {
 	Tags []commonv1.Tag `json:"tags,omitempty"`
 
 	Region *string `json:"region"`
+
+	SageMakerEndpoint *string `json:"sageMakerEndpoint,omitempty"`
 }
 
 // EndpointConfigStatus defines the observed state of EndpointConfig

@@ -43,6 +43,8 @@ type ModelSpec struct {
 	VpcConfig *commonv1.VpcConfig `json:"vpcConfig,omitempty"`
 
 	Region *string `json:"region"`
+
+	SageMakerEndpoint *string `json:"sageMakerEndpoint,omitempty"`
 }
 
 // ModelStatus defines the observed state of Model

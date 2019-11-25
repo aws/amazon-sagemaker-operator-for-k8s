@@ -311,7 +311,7 @@ func (r *modelReconciler) extractDesiredModelsFromHostingDeployment(deployment *
 				VpcConfig:              model.VpcConfig,
 				Tags:                   commonv1.DeepCopyTagSlice(deployment.Spec.Tags),
 				Region:                 deployment.Spec.Region,
-				// TODO add SageMaker endpoint when model has it.
+				SageMakerEndpoint:      deployment.Spec.SageMakerEndpoint,
 			},
 		}
 

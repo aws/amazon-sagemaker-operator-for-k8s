@@ -123,8 +123,7 @@ func ModelSpecMatchesDescription(description sagemaker.DescribeModelOutput, spec
 // These options configure the equality check for ModelSpecs.
 var modelSpecComparisonOptions = []cmp.Option{
 	createIgnoreRegionOption(modelv1.ModelSpec{}),
-	// TODO: model privatelink support
-	//createIgnoreSageMakerEndpointOption(modelv1.ModelSpec{}),
+	createIgnoreSageMakerEndpointOption(modelv1.ModelSpec{}),
 	createIgnoreTagsOption(modelv1.ModelSpec{}),
 	equateEmptySlicesAndMapsToNil,
 	equateNilBoolToFalse,
@@ -146,8 +145,7 @@ func EndpointConfigSpecMatchesDescription(description sagemaker.DescribeEndpoint
 // These options configure the equality check for EndpointConfigSpecs.
 var endpointConfigSpecComparisonOptions = []cmp.Option{
 	createIgnoreRegionOption(endpointconfigv1.EndpointConfigSpec{}),
-	// TODO: model privatelink support
-	//createIgnoreSageMakerEndpointOption(modelv1.EndpointConfigSpec{}),
+	createIgnoreSageMakerEndpointOption(endpointconfigv1.EndpointConfigSpec{}),
 	createIgnoreTagsOption(endpointconfigv1.EndpointConfigSpec{}),
 	equateEmptySlicesAndMapsToNil,
 	equateNilStringToEmptyString,
