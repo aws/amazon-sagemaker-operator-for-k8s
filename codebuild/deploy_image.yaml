@@ -9,4 +9,4 @@ phases:
        # Define env variables
        - GO111MODULE=on
        # Package and ship new commit version
-       - (bash codebuild/scripts/prod_operators.sh)
+       - (bash codebuild/scripts/package_prod_operators.sh)

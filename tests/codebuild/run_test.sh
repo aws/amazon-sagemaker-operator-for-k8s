@@ -17,6 +17,7 @@ function verify_test()
   local crd_type="$1"
   local crd_instance="$2"
   local timeout="$3"
+  local desired_status="$4"
   # Check if job exist
   kubectl get "${crd_type}" "${crd_instance}"
   if [ $? -ne 0 ]; then
@@ -43,7 +44,7 @@ function verify_test()
 
   echo "Waiting for job to complete"
   timeout "${timeout}" bash -c \
-      'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i Completed | wc -l)" -eq "1" ]; do \
+      'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i "$4" | wc -l)" -eq "1" ]; do \
           echo "Job $1 has not completed yet"; \
           sleep 5; \
        done' "${crd_type}" "${crd_instance}"

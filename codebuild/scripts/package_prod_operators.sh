@@ -1,3 +1,5 @@
+#!/bin/bash
+
 source codebuild/scripts/package_operators.sh
 
 # Replace JSON single quotes with double quotes for jq to understand
