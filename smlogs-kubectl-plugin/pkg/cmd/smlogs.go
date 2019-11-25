@@ -207,7 +207,7 @@ func NewCmdSmLogs(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "smlogs [subcommand] RESOURCE_NAME",
 		Aliases:      []string{"SMLogs", "Smlogs"},
-		Short:        "View SageMaker logs via Kubernetes",
+		Short:        "View Amazon SageMaker logs via Kubernetes",
 		SilenceUsage: true,
 	}
 
