@@ -1,0 +1,10 @@
+version: 0.2      
+phases:
+  build:
+    commands:
+       # Docker engine takes few seconds to start
+       - sudo service docker start 
+       # TODO: Make it polling
+       - sleep 1
+       # Package and ship new commit version
+       - (bash codebuild/scripts/release_tag.sh)
