@@ -27,6 +27,10 @@ function cleanup {
         echo "need_setup_cluster is not true, will remove operator without deleting cluster"
         kustomize build bin/sagemaker-k8s-operator-install-scripts/config/default | kubectl delete -f -
     fi
+
+    if [ "${existing_fsx}" == "false" ] && [ "$FSX_ID" != "" ]; then
+        aws fsx --region us-west-2 delete-file-system --file-system-id "$FSX_ID"
+    fi
 }
 
 # Set the trap to clean up resources
@@ -44,13 +48,20 @@ else
 fi
 readonly need_setup_cluster
 
+if [ "${FSX_ID}" != "" ]; then
+    existing_fsx="true"
+else
+    existing_fsx="false"
+fi
+readonly existing_fsx
+
 # If any command fails, exit the script with an error code.
 set -e
 
 # Launch EKS cluster if we need to and define cluster_name,cluster_region.
 if [ "${need_setup_cluster}" == "true" ]; then
     echo "Launching the cluster"
-    readonly cluster_name="sagemaker-k8s-pipeline-"$(date '+%Y-%m-%d--%H-%M-%S')""
+    readonly cluster_name="sagemaker-k8s-pipeline-"$(date '+%Y-%m-%d-%H-%M-%S')""
     readonly cluster_region="us-east-1"
 
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
@@ -104,4 +115,4 @@ kubectl delete trainingjob --all
 kubectl delete batchtransformjob --all
 
 echo "Skipping private link test"
-#cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "${cluster_region}"
+#cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"

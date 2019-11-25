@@ -21,10 +21,10 @@ spec:
         - name: num_round
           value: "10"
     algorithmSpecification:
-        trainingImage: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
         trainingInputMode: File
     roleArn: "{ROLE_ARN}"
-    region: us-east-2
+    region: us-west-2
     outputDataConfig:
         s3OutputPath: s3://{DATA_BUCKET}/xgboost/output
     resourceConfig:

@@ -21,12 +21,12 @@ spec:
         - name: num_round
           value: "10"
     algorithmSpecification:
-        trainingImage: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
         trainingInputMode: File
     roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    region: us-east-2
+    region: us-west-2
     outputDataConfig:
-        s3OutputPath: https://s3-us-east-2.amazonaws.com/my-bucket/xgboost
+        s3OutputPath: s3://my-bucket/xgboost
     resourceConfig:
         instanceCount: 1
         instanceType: ml.m4.xlarge

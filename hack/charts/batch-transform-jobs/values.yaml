@@ -3,9 +3,9 @@ spec:
     instancecount: 1
     instancetype: ml.m4.xlarge
     region: us-west-2
-    modelname: sagemaker-tensorflow-2019-10-15-01-36-46-192 
+    modelname: xgboost-mnist-model
     inputdataconfig:
        s3uri: s3://sagemaker-sample-data-us-west-2/batch-transform/mnist-1000-samples
        s3datatype: S3Prefix
-    outputpath: s3://sagemaker-us-west-2-578276202366/sagemaker-tensorflow-2019-10-15-01-36-4-2019-10-15-04-00-11-585
+    outputpath: s3://my-bucket/batch_transform/output
 

@@ -13,4 +13,4 @@ This will build a Docker image that is based on the integration test Docker imag
 ## Notes / Caveats:
 * The integration test files are copied into the Docker container at runtime (akin to cloning a repo), so you do not need to push them anywhere beforehand.
 * Our tests are currently set up to pull an installation package from s3. If you want to test some new code that you have written, you must currently hack that code to pull your own s3 installation package (which itself points to a published controller image). This should be improved in the future when someone wants to use this.
-* Your AWS user must have read access to SSM, as buildspec.yaml specifies certian credentials that must be loaded from SSM.
+* You should provide a `.env` file in the `tests/codebuild/local-run` directory containing all the relevant environment variables. An example `.env.example` file has been provided with all the required variables to run existing tests.

@@ -4,9 +4,9 @@ spec:
     instancetype: ml.m4.xlarge
     volumesize: 35
     maxruntimeinseconds: 86400
-    rolearn: arn:aws:iam::578276202366:role/service-role/AmazonSageMaker-ExecutionRole-20190614T120659
-    region: us-east-2
-    image: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+    rolearn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+    region: us-west-2
+    image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
     enablenetworkisolation: true
     enableintercontainertrafficencryption: false
     traininginputmode: File
@@ -50,8 +50,8 @@ spec:
     inputdataconfig:
       - channel: train 
         s3: 
-           s3uri: https://s3-us-east-2.amazonaws.com/cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/train/
+           s3uri: s3://my-bucket/xgboost-mnist/train/
       - channel: validation
         s3: 
-           s3uri: https://s3-us-east-2.amazonaws.com/cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/validation/
-    outputpath: s3://cdnamz-sagemaker-operator-training-data/sagemaker/xgboost-mnist/xgboost/
+           s3uri: s3://my-bucket/xgboost-mnist/validation/
+    outputpath: s3://my-bucket/xgboost-mnist/xgboost/
