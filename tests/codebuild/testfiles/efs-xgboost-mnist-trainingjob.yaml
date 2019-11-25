@@ -21,10 +21,10 @@ spec:
         - name: num_round
           value: "10"
     algorithmSpecification:
-        trainingImage: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
         trainingInputMode: File
     roleArn: {ROLE_ARN}
-    region: us-east-2
+    region: us-west-2
     outputDataConfig:
         s3OutputPath: s3://{DATA_BUCKET}/xgboost
     resourceConfig:
@@ -54,8 +54,8 @@ spec:
           compressionType: None
     vpcConfig:
         securityGroupIds: 
-          - sg-4b23c421
+          - sg-4ace4a2f
         subnets: 
-          - subnet-ae0a65c6
-          - subnet-2af0fa67
-          - subnet-dddb7fa7
+          - subnet-e5b2538e
+          - subnet-c7247bbd
+          - subnet-c34bcc8f

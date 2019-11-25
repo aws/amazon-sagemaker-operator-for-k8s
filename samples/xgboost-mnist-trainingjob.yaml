@@ -21,10 +21,10 @@ spec:
         - name: num_round
           value: "10"
     algorithmSpecification:
-        trainingImage: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
         trainingInputMode: File
     roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    region: us-east-2
+    region: us-west-2
     outputDataConfig:
         s3OutputPath: s3://my-bucket/xgboost/
     resourceConfig:
@@ -38,7 +38,7 @@ spec:
           dataSource:
             s3DataSource:
                 s3DataType: S3Prefix
-                s3Uri: https://s3-us-east-2.amazonaws.com/my-bucket/xgboost/train/
+                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/train/
                 s3DataDistributionType: FullyReplicated
           contentType: text/csv
           compressionType: None
@@ -46,7 +46,7 @@ spec:
           dataSource:
             s3DataSource:
                 s3DataType: S3Prefix
-                s3Uri: https://s3-us-east-2.amazonaws.com/my-bucket/xgboost/validation/
+                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/validation/
                 s3DataDistributionType: FullyReplicated
           contentType: text/csv
           compressionType: None

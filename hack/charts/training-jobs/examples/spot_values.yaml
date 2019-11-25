@@ -5,8 +5,8 @@ spec:
     volumesize: 5
     maxruntimeinseconds: 86400
     rolearn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    region: us-east-2
-    image: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+    region: us-west-2
+    image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
     traininginputmode: File
     hyperparameters:
        max_depth: 5
@@ -21,14 +21,14 @@ spec:
     inputdataconfig:
       - channel: train 
         s3: 
-           s3uri: https://s3-us-east-2.amazonaws.com/my-bucket/train/
+           s3uri: s3://my-bucket/train/
       - channel: validation
         s3: 
-           s3uri: https://s3-us-east-2.amazonaws.com/my-bucket/validation/
+           s3uri: s3://my-bucket/validation/
     outputpath: s3://my-bucket/xgboost/
     enablemanagedspottraining: true
     stoppingcondition:
         maxruntime: 3599
         maxwaittime: 3600
     checkpointconfig:
-       s3uri: https://s3-us-east-2.amazonaws.com/my-bucket/checkpoints/
+       s3uri: s3://my-bucket/checkpoints/

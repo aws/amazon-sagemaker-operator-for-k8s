@@ -1,32 +1,20 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: TrainingJob
 metadata:
-  name: fsx-xgboost-mnist
+  name: fsx-kmeans-mnist
 spec:
     hyperParameters:
-        - name: max_depth
-          value: "5"
-        - name: eta
-          value: "0.2"
-        - name: gamma
-          value: "4"
-        - name: min_child_weight
-          value: "6"
-        - name: silent
-          value: "0"
-        - name: objective
-          value: multi:softmax
-        - name: num_class
+        - name: k
           value: "10"
-        - name: num_round
-          value: "10"
+        - name: feature_dim
+          value: "784"
     algorithmSpecification:
-        trainingImage: 825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1
+        trainingImage: 174872318107.dkr.ecr.us-west-2.amazonaws.com/kmeans:1
         trainingInputMode: File
     roleArn: {ROLE_ARN}
-    region: us-east-2
+    region: us-west-2
     outputDataConfig:
-        s3OutputPath: s3://{DATA_BUCKET}/xgboost
+        s3OutputPath: s3://{DATA_BUCKET}/kmeans_mnist_example/output
     resourceConfig:
         instanceCount: 1
         instanceType: ml.m4.xlarge
@@ -39,23 +27,14 @@ spec:
             fileSystemDataSource:
                 fileSystemType: FSxLustre
                 fileSystemAccessMode: ro
-                fileSystemId: fs-0d0f8e3f721664c98
-                directoryPath: /fsx/sagemaker/xgboost-mnist
-          contentType: text/csv
-          compressionType: None
-        - channelName: validation
-          dataSource:
-            fileSystemDataSource:
-                fileSystemType: FSxLustre
-                fileSystemAccessMode: ro
-                fileSystemId: fs-0d0f8e3f721664c98
-                directoryPath: /fsx/sagemaker/xgboost-mnist
-          contentType: text/csv
+                fileSystemId: "{FSX_ID}"
+                directoryPath: /fsx/kmeans_mnist_example/input
+          contentType: "text/csv;label_size=0"
           compressionType: None
     vpcConfig:
         securityGroupIds: 
-          - sg-4b23c421
+          - sg-e6b84ca2
         subnets: 
-          - subnet-ae0a65c6
-          - subnet-2af0fa67
-          - subnet-dddb7fa7
+          - subnet-187e9960
+          - subnet-21d8d86a
+          - subnet-91b1d8ba

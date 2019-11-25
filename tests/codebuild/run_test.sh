@@ -61,7 +61,7 @@ function verify_test()
 # Inject environment variables into the job YAMLs
 function inject_variables()
 {
-  variables=("ROLE_ARN" "DATA_BUCKET")
+  variables=("ROLE_ARN" "DATA_BUCKET" "FSX_ID")
 
   local file_name="$1"
   for i in "${variables[@]}"
@@ -69,4 +69,31 @@ function inject_variables()
     local curr_var=${!i}
     sed -i "s|{$i}|${curr_var}|g" "${file_name}"
   done
+}
+
+# Build a new FSX file system for integration testing purposes
+function build_fsx_from_s3()
+{
+   NEW_FS=$(aws fsx create-file-system \
+      --file-system-type LUSTRE \
+      --lustre-configuration ImportPath=s3://${DATA_BUCKET}/kmeans_mnist_example \
+      --storage-capacity 1200 \
+      --subnet-ids subnet-187e9960 \
+      --tags Key="Name",Value="$(date '+%Y-%m-%d-%H-%M-%S')" \
+      --region us-west-2)
+
+   echo $NEW_FS
+   FSX_ID=$(echo $NEW_FS | jq -r ".FileSystem.FileSystemId")
+   FS_AVAILABLE=CREATING
+   until [[ "${FS_AVAILABLE}" != "CREATING" ]]; do
+      FS_AVAILABLE=$(aws fsx --region us-west-2 describe-file-systems --file-system-id ${FSX_ID} | jq -r ".FileSystems[0].Lifecycle")
+      sleep 30
+   done
+   aws fsx --region us-west-2 describe-file-systems --file-system-id ${FSX_ID}
+
+   if [[ "${FS_AVAILABLE}" != "AVAILABLE" ]]; then
+      exit 1
+   fi
+
+   export FSX_ID=$FSX_ID
 }
