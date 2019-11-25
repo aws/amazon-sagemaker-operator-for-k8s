@@ -7,6 +7,8 @@ if [ "$FSX_ID" == "" ]; then
   build_fsx_from_s3
 fi
 
+# TODO: Automate creation/testing of EFS file systems for relevant jobs
+
 # Inject environment variables into tests
 inject_variables testfiles/xgboost-mnist-trainingjob.yaml
 inject_variables testfiles/spot-xgboost-mnist-trainingjob.yaml
