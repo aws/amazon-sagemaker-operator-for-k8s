@@ -5,7 +5,6 @@ source run_test.sh
 # Inject environment variables into tests
 inject_variables testfiles/xgboost-mnist-trainingjob.yaml
 inject_variables testfiles/spot-xgboost-mnist-trainingjob.yaml
-inject_variables testfiles/kmeans_west2_tf_neo.yaml
 inject_variables testfiles/xgboost-mnist-custom-endpoint.yaml
 inject_variables testfiles/efs-xgboost-mnist-trainingjob.yaml
 inject_variables testfiles/fsx-xgboost-mnist-trainingjob.yaml
@@ -20,7 +19,6 @@ inject_variables testfiles/xgboost-hosting-deployment.yaml
 # Format: `run_test testfiles/<Your test file name>`
 run_test testfiles/xgboost-mnist-trainingjob.yaml
 run_test testfiles/spot-xgboost-mnist-trainingjob.yaml
-run_test testfiles/kmeans_west2_tf_neo.yaml
 run_test testfiles/xgboost-mnist-custom-endpoint.yaml
 run_test testfiles/efs-xgboost-mnist-trainingjob.yaml
 run_test testfiles/fsx-xgboost-mnist-trainingjob.yaml
@@ -34,7 +32,6 @@ run_test testfiles/xgboost-hosting-deployment.yaml
 # Format: `verify_test <type of job> <Job's metadata name> <timeout to complete the test> <desired status for job to achieve>` 
 verify_test trainingjob xgboost-mnist 10m Completed
 verify_test trainingjob spot-xgboost-mnist 10m Completed
-verify_test trainingjob kmeans-mnist 10m Completed
 verify_test trainingjob xgboost-mnist-custom-endpoint 10m Completed
 verify_test trainingjob efs-xgboost-mnist 10m Completed
 verify_test trainingjob fsx-xgboost-mnist 10m Completed
