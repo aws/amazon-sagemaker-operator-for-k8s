@@ -481,7 +481,7 @@ func (m *MockSageMakerClientBuilder) WithRequestList(requests *List) *MockSageMa
 
 // Get how many responses were added to the mock SageMaker client.
 func (m *MockSageMakerClientBuilder) GetAddedResponsesLen() int {
-    return m.responses.Len()
+	return m.responses.Len()
 }
 
 // Create a mock SageMaker API client given configuration.

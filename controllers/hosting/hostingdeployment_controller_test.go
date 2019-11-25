@@ -88,7 +88,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 		receivedRequests           List
 		mockSageMakerClientBuilder *MockSageMakerClientBuilder
 		sageMakerClient            sagemakeriface.ClientAPI
-		expectedRequestCount int
+		expectedRequestCount       int
 
 		modelReconciler              *mockModelReconciler
 		endpointConfigReconciler     *mockEndpointConfigReconciler
@@ -168,7 +168,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 	})
 
 	AfterEach(func() {
-	    Expect(receivedRequests.Len()).To(Equal(expectedRequestCount))
+		Expect(receivedRequests.Len()).To(Equal(expectedRequestCount))
 	})
 
 	Context("DescribeEndpoint fails", func() {
@@ -179,7 +179,6 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 			failureMessage = "error message " + uuid.New().String()
 			mockSageMakerClientBuilder.AddDescribeEndpointErrorResponse("Exception", failureMessage, 500, "request id")
 		})
-
 
 		It("Requeues immediately", func() {
 			result, err := controller.Reconcile(request)
@@ -234,7 +233,6 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				shouldHaveEndpointConfig = true
 			})
 
-
 			It("Creates necessary resources", func() {
 				controller.Reconcile(request)
 				ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler, endpointConfigReconciler, 0)
@@ -280,45 +278,44 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 			})
 
-
 			When("!HasDeletionTimestamp", func() {
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(expectedStatus))
-			    })
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
 
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 
 			})
 
 			When("HasDeletionTimestamp", func() {
-			    BeforeEach(func() {
-				shouldHaveDeletionTimestamp = true
-			    })
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
 
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
-			    })
+				It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
 
 			})
 
@@ -332,45 +329,44 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 			})
 
-
 			When("!HasDeletionTimestamp", func() {
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(expectedStatus))
-			    })
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
 
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 
 			})
 
 			When("HasDeletionTimestamp", func() {
-			    BeforeEach(func() {
-				shouldHaveDeletionTimestamp = true
-			    })
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
 
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
-			    })
+				It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
 
 			})
 
@@ -384,45 +380,44 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 			})
 
-
 			When("!HasDeletionTimestamp", func() {
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(expectedStatus))
-			    })
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
 
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 
 			})
 
 			When("HasDeletionTimestamp", func() {
-			    BeforeEach(func() {
-				shouldHaveDeletionTimestamp = true
-			    })
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
 
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
-			    })
+				It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
 
 			})
 
@@ -436,89 +431,87 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 			})
 
-
 			When("!HasDeletionTimestamp", func() {
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(expectedStatus))
-			    })
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
 
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 
 			})
 
 			When("HasDeletionTimestamp", func() {
-			    BeforeEach(func() {
-				shouldHaveDeletionTimestamp = true
-			    })
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
 
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
-			    })
+				It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
 
 			})
 
 			When("!HasDeletionTimestamp", func() {
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(expectedStatus))
-			    })
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
 
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 
 			})
 
 			When("HasDeletionTimestamp", func() {
-			    BeforeEach(func() {
-				shouldHaveDeletionTimestamp = true
-			    })
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
 
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
-			    })
+				It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
 
 			})
-
 
 		})
 
@@ -530,45 +523,44 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 			})
 
-
 			When("!HasDeletionTimestamp", func() {
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(expectedStatus))
-			    })
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
 
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 
 			})
 
 			When("HasDeletionTimestamp", func() {
-			    BeforeEach(func() {
-				shouldHaveDeletionTimestamp = true
-			    })
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
 
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
-			    })
+				It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
 
 			})
 
@@ -582,48 +574,46 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 			})
 
-
 			When("!HasDeletionTimestamp", func() {
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(expectedStatus))
-			    })
+				It("Updates status", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(expectedStatus))
+				})
 
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 
 			})
 
 			When("HasDeletionTimestamp", func() {
-			    BeforeEach(func() {
-				shouldHaveDeletionTimestamp = true
-			    })
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
 
-			    It("Requeues after interval", func() {
-			    	result, err := controller.Reconcile(request)
-			    	ExpectRequeueAfterInterval(result, err, pollDuration)
-			    })
+				It("Requeues after interval", func() {
+					result, err := controller.Reconcile(request)
+					ExpectRequeueAfterInterval(result, err, pollDuration)
+				})
 
-			    It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
-			    	controller.Reconcile(request)
-			    	ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
-			    })
+				It("Updates status to 'Deleting' and does not delete HostingDeployment", func() {
+					controller.Reconcile(request)
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
+				})
 
 			})
-
 
 		})
 
@@ -647,16 +637,16 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 					controller.Reconcile(request)
 					ExpectStatusToBe(deployment, string(expectedStatus))
 				})
-			    Context("Does not have a finalizer", func() {
-			        BeforeEach(func() {
-			    	shouldHaveFinalizer = false
-			        })
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
 
-			        It("Adds a finalizer", func() {
-			    	controller.Reconcile(request)
-			    	ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
-			        })
-			    })
+					It("Adds a finalizer", func() {
+						controller.Reconcile(request)
+						ExpectToHaveFinalizer(deployment, controllercommon.SageMakerResourceFinalizerName)
+					})
+				})
 			})
 
 			Context("HasDeletionTimestamp", func() {
@@ -731,7 +721,6 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 								AddUpdateEndpointResponse(sagemaker.UpdateEndpointOutput{EndpointArn: ToStringPtr("xyz")})
 						})
 
-
 						It("Calls UpdateEndpoint", func() {
 							controller.Reconcile(request)
 							ExpectRequestToUpdateHostingDeployment(receivedRequests.Front().Next().Value, deployment, endpointConfigSageMakerName)
@@ -753,7 +742,6 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 								AddUpdateEndpointErrorResponse("Exception", errorMessage, 500, "request id")
 						})
 
-
 						It("Requeues immediately", func() {
 							result, err := controller.Reconcile(request)
 							ExpectRequeueImmediately(result, err)
@@ -772,7 +760,6 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 						mockSageMakerClientBuilder.
 							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, endpointConfigSageMakerName))
 					})
-
 
 					It("Creates resources", func() {
 						controller.Reconcile(request)

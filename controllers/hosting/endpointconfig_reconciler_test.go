@@ -97,7 +97,6 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 	})
 
 	It("Will not create if an EndpointConfig exists already and they are deep equal", func() {
-		Skip("Fix me later")
 		desired = createHostingDeploymentWithBasicProductionVariant()
 		key := GetKubernetesEndpointConfigNamespacedName(desired)
 
@@ -105,6 +104,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      key.Name,
 				Namespace: key.Namespace,
+				Labels:    GetResourceOwnershipLabelsForHostingDeployment(desired),
 			},
 			Spec: endpointconfigv1.EndpointConfigSpec{
 				ProductionVariants: []commonv1.ProductionVariant{
@@ -138,7 +138,6 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 	Context("Fail to create k8s EndpointConfig", func() {
 
 		BeforeEach(func() {
-			Skip("Fix me later")
 			reconciler = NewEndpointConfigReconciler(FailToCreateK8sClient{
 				ActualClient: k8sClient,
 			}, ctrl.Log)
@@ -153,7 +152,6 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		})
 
 		It("Returns error if unable to create k8s EndpointConfig", func() {
-			Skip("Fix me later")
 			err := reconciler.Reconcile(context.Background(), &desired, true)
 
 			Expect(err).To(HaveOccurred())
@@ -170,7 +168,6 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		)
 
 		BeforeEach(func() {
-			Skip("Fix me later")
 			tagKey = "tag-key"
 			tagValue = "tag-value"
 
@@ -203,7 +200,6 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		})
 
 		It("Created the k8s endpointconfig with correct ProductionVariant", func() {
-			Skip("Fix me later")
 			var endpointConfig endpointconfigv1.EndpointConfig
 			err := k8sClient.Get(context.Background(), expectedEndpointConfigNamespacedName, &endpointConfig)
 			Expect(err).ToNot(HaveOccurred())
@@ -215,7 +211,6 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		})
 
 		It("Created the k8s endpointconfig with correct region", func() {
-			Skip("Fix me later")
 			var endpointConfig endpointconfigv1.EndpointConfig
 			err := k8sClient.Get(context.Background(), expectedEndpointConfigNamespacedName, &endpointConfig)
 			Expect(err).ToNot(HaveOccurred())
@@ -225,7 +220,6 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		})
 
 		It("Created the k8s endpointconfig with correct tags", func() {
-			Skip("Fix me later")
 			var endpointConfig endpointconfigv1.EndpointConfig
 			err := k8sClient.Get(context.Background(), expectedEndpointConfigNamespacedName, &endpointConfig)
 			Expect(err).ToNot(HaveOccurred())
@@ -249,7 +243,6 @@ var _ = Describe("Delete EndpointConfigReconciler.Reconcile", func() {
 	)
 
 	BeforeEach(func() {
-		Skip("Fix me later")
 		tagKey = "tag-key"
 		tagValue = "tag-value"
 
@@ -282,7 +275,6 @@ var _ = Describe("Delete EndpointConfigReconciler.Reconcile", func() {
 	})
 
 	It("Verify that endpoint config has been deleted from k8s", func() {
-		Skip("Fix me later")
 		var endpointConfig endpointconfigv1.EndpointConfig
 		err := k8sClient.Get(context.Background(), expectedEndpointConfigNamespacedName, &endpointConfig)
 		Expect(err).To(HaveOccurred())
@@ -305,7 +297,6 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 	)
 
 	BeforeEach(func() {
-		Skip("Fix me later")
 		reconciler = NewEndpointConfigReconciler(k8sClient, ctrl.Log)
 		modelName = "model-name"
 
@@ -313,6 +304,7 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "k8s-name-" + uuid.New().String(),
 				Namespace: "k8s-namespace-" + uuid.New().String(),
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				Region: ToStringPtr("us-east-1"),
@@ -372,7 +364,6 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 	})
 
 	It("Updates Kubernetes EndpointConfig", func() {
-		Skip("Fix me later")
 		newWeight := int64(5)
 		updated := desired.DeepCopy()
 		updated.Spec.ProductionVariants[0].InitialVariantWeight = &newWeight
@@ -436,6 +427,7 @@ func createCreatedEndpointConfig(namespacedName types.NamespacedName, deployment
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      namespacedName.Name,
 			Namespace: namespacedName.Namespace,
+			Labels:    GetResourceOwnershipLabelsForHostingDeployment(deployment),
 		},
 		Spec: endpointconfigv1.EndpointConfigSpec{
 			Region:             ToStringPtr(*deployment.Spec.Region),
@@ -485,6 +477,7 @@ func createHostingDeployment(k8sName, k8sNamespace string) hostingv1.HostingDepl
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sName,
 			Namespace: k8sNamespace,
+			UID:       types.UID(uuid.New().String()),
 		},
 		Spec: hostingv1.HostingDeploymentSpec{
 			ProductionVariants: []commonv1.ProductionVariant{},
