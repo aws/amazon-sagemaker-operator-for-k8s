@@ -78,8 +78,8 @@ var _ = Describe("GetGeneratedJobName", func() {
 			Expect(generatedJobName).To(ContainSubstring(uidWithoutHyphens))
 		})
 
-		It("Length does not exceed maxNameLen", func() {
-			Expect(len(generatedJobName)).To(BeNumerically("<=", maxNameLen))
+		It("Length equals maxNameLen", func() {
+			Expect(len(generatedJobName)).To(BeNumerically("==", maxNameLen))
 		})
 	})
 
@@ -142,6 +142,10 @@ var _ = Describe("GetGeneratedJobName", func() {
 
 		It("Length does not exceed maxNameLen", func() {
 			Expect(len(generatedJobName)).To(BeNumerically("<=", maxNameLen))
+		})
+
+		It("Is contained in the full hyphen-less UID", func() {
+			Expect(uidWithoutHyphens).To(ContainSubstring(generatedJobName))
 		})
 	})
 })

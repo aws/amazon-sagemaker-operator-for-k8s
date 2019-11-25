@@ -145,7 +145,7 @@ func Now() *metav1.Time {
 // Generate a SageMaker name for a corresponding Kubernetes object.
 // We need an deterministic way to identiy SageMaker resources given a Kubernetes object. This generates
 // a name based off of the UID and object meta name.
-// SageMaker requires that names be less than a certian length. For Training and BatchTransform, the
+// SageMaker requires that names be less than a certain length. For Training and BatchTransform, the
 // maximum name length is 63. For HPO, the maximum name length is 32.
 //
 // See also:
