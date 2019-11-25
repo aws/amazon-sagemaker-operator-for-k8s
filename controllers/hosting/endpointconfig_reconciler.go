@@ -195,6 +195,7 @@ func (r *endpointConfigReconciler) extractDesiredEndpointConfigFromHostingDeploy
 			KmsKeyId:           GetOrDefault(desiredDeployment.Spec.KmsKeyId, ""),
 			Tags:               commonv1.DeepCopyTagSlice(desiredDeployment.Spec.Tags),
 			Region:             desiredDeployment.Spec.Region,
+			SageMakerEndpoint:  desiredDeployment.Spec.SageMakerEndpoint,
 		},
 	}
 

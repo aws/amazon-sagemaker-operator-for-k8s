@@ -346,9 +346,7 @@ func (r *HostingDeploymentReconciler) initializeContext(ctx *reconcileRequestCon
 	ctx.EndpointName = GetSageMakerEndpointName(*ctx.Deployment)
 	r.Log.Info("SageMaker EndpointName", "name", ctx.EndpointName)
 
-	// TODO add SageMaker endpoint to spec.
-	sageMakerEndpoint := ""
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Deployment.Spec.Region, &sageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

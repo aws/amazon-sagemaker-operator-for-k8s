@@ -493,6 +493,11 @@ spec:
             region:
               minLength: 1
               type: string
+            sageMakerEndpoint:
+              description: A custom SageMaker endpoint to use when communicating with
+                SageMaker.
+              pattern: ^(https|http)://.*$
+              type: string
             tags:
               items:
                 properties:

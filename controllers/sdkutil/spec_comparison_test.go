@@ -563,16 +563,15 @@ var _ = Describe("ModelSpecMatchesDescription", func() {
 		Expect(comparison.Differences).To(Equal(""))
 	})
 
-	// TODO Uncomment when model supports SageMakerEndpoint.
-	//It("ignores spec.SageMakerEndpoint", func() {
-	//	spec.SageMakerEndpoint = ToStringPtr("https://some.endpoint.com")
+	It("ignores spec.SageMakerEndpoint", func() {
+		spec.SageMakerEndpoint = ToStringPtr("https://some.endpoint.com")
 
-	//	comparison, err := ModelSpecMatchesDescription(description, spec)
+		comparison, err := ModelSpecMatchesDescription(description, spec)
 
-	//	Expect(err).ToNot(HaveOccurred())
-	//	Expect(comparison.Equal).To(Equal(true))
-	//	Expect(comparison.Differences).To(Equal(""))
-	//})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(comparison.Equal).To(Equal(true))
+		Expect(comparison.Differences).To(Equal(""))
+	})
 
 	It("considers nil *bool to equal false", func() {
 		spec.EnableNetworkIsolation = nil
@@ -683,16 +682,15 @@ var _ = Describe("EndpointConfigSpecMatchesDescription", func() {
 		Expect(comparison.Differences).To(Equal(""))
 	})
 
-	// TODO Uncomment when model supports SageMakerEndpoint.
-	//It("ignores spec.SageMakerEndpoint", func() {
-	//	spec.SageMakerEndpoint = ToStringPtr("https://some.endpoint.com")
+	It("ignores spec.SageMakerEndpoint", func() {
+		spec.SageMakerEndpoint = ToStringPtr("https://some.endpoint.com")
 
-	//	comparison, err := EndpointConfigSpecMatchesDescription(description, spec)
+		comparison, err := EndpointConfigSpecMatchesDescription(description, spec)
 
-	//	Expect(err).ToNot(HaveOccurred())
-	//	Expect(comparison.Equal).To(Equal(true))
-	//	Expect(comparison.Differences).To(Equal(""))
-	//})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(comparison.Equal).To(Equal(true))
+		Expect(comparison.Differences).To(Equal(""))
+	})
 
 	It("considers nil *string to equal \"\"", func() {
 		spec.KmsKeyId = ""

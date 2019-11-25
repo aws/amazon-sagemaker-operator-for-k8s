@@ -199,9 +199,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 // Initialize config on context object.
 func (r *ModelReconciler) initializeContext(ctx *reconcileRequestContext) error {
 
-	// TODO add SageMaker endpoint to spec.
-	sageMakerEndpoint := ""
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Model.Spec.Region, &sageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Model.Spec.Region, ctx.Model.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

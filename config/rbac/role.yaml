@@ -89,6 +89,26 @@ rules:
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
+  - endpointconfigs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
   - hyperparametertuningjobs
   verbs:
   - get

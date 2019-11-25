@@ -442,6 +442,8 @@ spec:
               type: object
             region:
               type: string
+            sageMakerEndpoint:
+              type: string
             tags:
               items:
                 properties:

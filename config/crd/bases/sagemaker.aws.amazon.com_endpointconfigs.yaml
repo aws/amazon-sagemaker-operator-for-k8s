@@ -430,6 +430,8 @@ spec:
               type: array
             region:
               type: string
+            sageMakerEndpoint:
+              type: string
             tags:
               items:
                 properties:
