@@ -39,4 +39,6 @@ for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
   image=${repository_account}.dkr.ecr.${region}.amazonaws.com/${image_repository}
   old_tag=${CODEBUILD_RESOLVED_SOURCE_VERSION}
   new_tag=${CODEBUILD_GIT_TAG}
+
+  retag_image "$image" "$old_tag" "$new_tag"
 done
