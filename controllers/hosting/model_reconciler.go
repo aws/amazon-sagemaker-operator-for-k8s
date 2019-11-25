@@ -246,7 +246,11 @@ func (r *modelReconciler) getSageMakerModelNames(ctx context.Context, desiredMod
 		}
 
 		if actualModel.Status.SageMakerModelName == "" {
-			return nil, fmt.Errorf("Awaiting model name for '%s' to not be empty", key)
+			causedBy := ""
+			if actualModel.Status.Additional != "" {
+				causedBy = fmt.Sprintf("Caused by: %s", actualModel.Status.Additional)
+			}
+			return nil, fmt.Errorf("Awaiting model name for '%s' to not be empty. %s", key, causedBy)
 		}
 
 		sageMakerModelNames[modelSpecName] = actualModel.Status.SageMakerModelName
