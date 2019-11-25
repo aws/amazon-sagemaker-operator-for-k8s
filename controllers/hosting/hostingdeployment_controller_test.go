@@ -193,8 +193,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 	})
 
 	AfterEach(func() {
-		// Test that all responses were consumed.
-		Expect(receivedRequests.Len()).To(Equal(expectedRequestCount))
+		Expect(receivedRequests.Len()).To(Equal(expectedRequestCount), "Expect that all SageMaker responses were consumed")
 	})
 
 	Context("DescribeEndpoint fails", func() {
@@ -252,6 +251,10 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				shouldHaveDeletionTimestamp = false
 				shouldHaveFinalizer = true
 				shouldHaveEndpointConfig = true
+
+				// Add twice because there are two calls to GetSageMakerEndpointConfigName.
+				sageMakerEndpointConfigNames.PushBack(endpointConfigSageMakerName)
+				sageMakerEndpointConfigNames.PushBack(endpointConfigSageMakerName)
 			})
 
 			It("Creates necessary resources", func() {
@@ -809,7 +812,7 @@ func (r *mockEndpointConfigReconciler) GetSageMakerEndpointConfigName(ctx contex
 		r.EndpointConfigNames.Remove(front)
 		return front.Value.(string), nil
 	} else {
-		return "", fmt.Errorf("no SageMaker endpoint config name provided")
+		return "", fmt.Errorf("no SageMaker endpoint config name provided for mockEndpointConfigReconciler")
 	}
 }
 
