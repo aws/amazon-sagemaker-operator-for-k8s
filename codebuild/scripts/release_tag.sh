@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 # This function will pull an existing image + tag and push it with a new tag.
 # Parameter:
 #    $1: The repository and image to pull from.
