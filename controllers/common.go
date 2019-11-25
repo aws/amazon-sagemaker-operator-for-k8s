@@ -147,7 +147,8 @@ func GetGeneratedJobName(objectMetaUID types.UID, objectMetaName string, maxName
 	// For Training and BatchTransform this is 63
 	// For HPO this is 32
 	// Validation Error From SM: `Member must have length less than or equal to {maxNameLen}`
-	namePostfix := "-" + strings.Replace(string(objectMetaUID), "-", "", -1)
+	uid := strings.Replace(string(objectMetaUID), "-", "", -1)
+	namePostfix := "-" + uid
 
 	smBatchJobName := objectMetaName + namePostfix
 	if len(smBatchJobName) > maxNameLen {
@@ -157,8 +158,11 @@ func GetGeneratedJobName(objectMetaUID types.UID, objectMetaName string, maxName
 		if truncatedMetaNameLength > 0 {
 			smBatchJobName = objectMetaName[:truncatedMetaNameLength] + namePostfix
 		} else {
-			// Ideally this case should not happen. Why?
-			smBatchJobName = namePostfix[:maxNameLen]
+			if maxNameLen > len(uid) {
+				smBatchJobName = uid
+			} else {
+				smBatchJobName = uid[:maxNameLen]
+			}
 		}
 	}
 

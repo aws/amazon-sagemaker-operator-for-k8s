@@ -279,7 +279,7 @@ func (r *HostingDeploymentReconciler) handleUpdates(ctx reconcileRequestContext)
 
 	// If the desired endpoint config name does not equal the actual endpoint config name, we need to call UpdateEndpoint.
 	if *ctx.EndpointDescription.EndpointConfigName != ctx.EndpointConfigName {
-		r.Log.Info("Endpoint needs update", "name", ctx.EndpointName, "config name", ctx.EndpointConfigName)
+		r.Log.Info("Endpoint needs update", "endpoint name", ctx.EndpointName, "actual config name", ctx.EndpointDescription.EndpointConfigName, "desired config name", ctx.EndpointConfigName)
 
 		var output *sagemaker.UpdateEndpointOutput
 		if output, err = ctx.SageMakerClient.UpdateEndpoint(ctx, ctx.EndpointName, ctx.EndpointConfigName); err != nil {

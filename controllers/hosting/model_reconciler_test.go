@@ -55,6 +55,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
@@ -85,6 +86,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
@@ -115,6 +117,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
@@ -142,6 +145,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
@@ -178,6 +182,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
@@ -217,6 +222,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      k8sName,
 					Namespace: k8sNamespace,
+					UID:       types.UID(uuid.New().String()),
 				},
 				Spec: hostingv1.HostingDeploymentSpec{
 					ProductionVariants: []commonv1.ProductionVariant{},
@@ -258,6 +264,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      k8sName,
 					Namespace: k8sNamespace,
+					UID:       types.UID(uuid.New().String()),
 				},
 				Spec: hostingv1.HostingDeploymentSpec{
 					ProductionVariants: []commonv1.ProductionVariant{},
@@ -313,6 +320,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      k8sName,
 					Namespace: k8sNamespace,
+					UID:       types.UID(uuid.New().String()),
 				},
 				Spec: hostingv1.HostingDeploymentSpec{
 					Region:             &region,
@@ -359,7 +367,6 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		})
 
 		It("Created the k8s model with correct ownership labels", func() {
-			Skip("Fix me later")
 			var model modelv1.Model
 			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Namespace: k8sNamespace,
@@ -376,7 +383,6 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		})
 
 		It("Created the k8s model with correct modelDataUrl", func() {
-			Skip("Fix me later")
 			var model modelv1.Model
 			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Namespace: k8sNamespace,
@@ -390,7 +396,6 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		})
 
 		It("Created the k8s model with correct region", func() {
-			Skip("Fix me later")
 			var model modelv1.Model
 			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Namespace: k8sNamespace,
@@ -403,7 +408,6 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		})
 
 		It("Created the k8s model with correct tags", func() {
-			Skip("Fix me later")
 			var model modelv1.Model
 			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Namespace: k8sNamespace,
@@ -436,7 +440,6 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 	)
 
 	BeforeEach(func() {
-		Skip("Fix me later")
 		reconciler = NewModelReconciler(k8sClient, ctrl.Log)
 		k8sName = "k8s-deployment-name"
 		k8sNamespace = "k8s-namespace"
@@ -451,6 +454,7 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				Region:             &region,
@@ -497,7 +501,6 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 	})
 
 	It("Verify that model has been deleted from k8s", func() {
-		Skip("Fix me later")
 
 		var model modelv1.Model
 		err := k8sClient.Get(context.Background(), types.NamespacedName{
@@ -536,6 +539,7 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				Region: ToStringPtr("us-east-1"),
@@ -573,7 +577,6 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 	})
 
 	It("Gets the correct SageMaker model names", func() {
-		Skip("Fix me later")
 		sageMakerModelName := "sagemaker-name"
 
 		err := createCreatedModelWithSageMakerName(modelNamespacedName, *desired, sageMakerModelName)
@@ -588,7 +591,6 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 	})
 
 	It("Returns an error if not all names are populated", func() {
-		Skip("Fix me later")
 		sageMakerModelName := ""
 
 		err := createCreatedModelWithSageMakerName(modelNamespacedName, *desired, sageMakerModelName)
@@ -612,7 +614,6 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 	)
 
 	BeforeEach(func() {
-		Skip("Fix me later")
 		k8sName := "k8s-name-" + uuid.New().String()
 		k8sNamespace = "k8s-namespace-" + uuid.New().String()
 
@@ -624,6 +625,7 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
 				Namespace: k8sNamespace,
+				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				Region: ToStringPtr("us-east-1"),
@@ -667,7 +669,6 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 	})
 
 	It("Updates Kubernetes models", func() {
-		Skip("Fix me later")
 		newModelDataUrl := "s3://updated-bucket/model.tar.gz"
 		updated := desired.DeepCopy()
 		updated.Spec.Containers[0].ModelDataUrl = &newModelDataUrl

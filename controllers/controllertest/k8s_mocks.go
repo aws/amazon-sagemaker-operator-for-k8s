@@ -155,8 +155,13 @@ func (m FailTestOnCreateK8sClient) Update(ctx context.Context, obj runtime.Objec
 	return m.ActualClient.Update(ctx, obj, opts...)
 }
 
+// List should work normally.
+func (m FailTestOnCreateK8sClient) List(ctx context.Context, obj runtime.Object, opts ...client.ListOption) error {
+	return m.ActualClient.List(ctx, obj, opts...)
+}
+
 // Make test fail.
 func (m FailTestOnCreateK8sClient) Create(_ context.Context, _ runtime.Object, _ ...client.CreateOption) error {
-	Fail("FailTestOnCreateK8sClient.Createshould never be called")
+	Fail("FailTestOnCreateK8sClient.Create should never be called")
 	return nil
 }
