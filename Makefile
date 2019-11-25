@@ -86,7 +86,7 @@ else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
-create-installers:
+create-installers: set-image
 	OPERATOR_AWS_ACCESS_KEY_ID=XXX OPERATOR_AWS_SECRET_ACCESS_KEY=YYY ./scripts/setup_awscreds
 	kustomize build config/default > release/credsbased/installer.yaml
 	kustomize build config/rolebasedcreds > release/rolebased/installer.yaml
