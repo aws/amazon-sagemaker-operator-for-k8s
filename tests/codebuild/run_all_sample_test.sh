@@ -4,7 +4,8 @@ source run_test.sh
 
 # Build prerequisite resources
 if [ "$FSX_ID" == "" ]; then
-  build_fsx_from_s3
+  echo "Skipping build_fsx_from_s3 as fsx tests are disabled"
+  #build_fsx_from_s3
 fi
 
 # TODO: Automate creation/testing of EFS file systems for relevant jobs
@@ -14,7 +15,7 @@ inject_variables testfiles/xgboost-mnist-trainingjob.yaml
 inject_variables testfiles/spot-xgboost-mnist-trainingjob.yaml
 inject_variables testfiles/xgboost-mnist-custom-endpoint.yaml
 # inject_variables testfiles/efs-xgboost-mnist-trainingjob.yaml
-inject_variables testfiles/fsx-kmeans-mnist-trainingjob.yaml
+#inject_variables testfiles/fsx-kmeans-mnist-trainingjob.yaml
 inject_variables testfiles/xgboost-mnist-hpo.yaml
 inject_variables testfiles/spot-xgboost-mnist-hpo.yaml
 inject_variables testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
@@ -28,7 +29,7 @@ run_test testfiles/xgboost-mnist-trainingjob.yaml
 run_test testfiles/spot-xgboost-mnist-trainingjob.yaml
 run_test testfiles/xgboost-mnist-custom-endpoint.yaml
 # run_test testfiles/efs-xgboost-mnist-trainingjob.yaml
-run_test testfiles/fsx-kmeans-mnist-trainingjob.yaml
+#run_test testfiles/fsx-kmeans-mnist-trainingjob.yaml
 run_test testfiles/xgboost-mnist-hpo.yaml
 run_test testfiles/spot-xgboost-mnist-hpo.yaml
 run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
@@ -41,7 +42,7 @@ verify_test trainingjob xgboost-mnist 10m Completed
 verify_test trainingjob spot-xgboost-mnist 10m Completed
 verify_test trainingjob xgboost-mnist-custom-endpoint 10m Completed
 # verify_test trainingjob efs-xgboost-mnist 10m Completed
-verify_test trainingjob fsx-kmeans-mnist 10m Completed
+#verify_test trainingjob fsx-kmeans-mnist 10m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo 15m Completed
 verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 15m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 15m Completed
