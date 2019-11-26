@@ -17,7 +17,7 @@ function build_canary()
     return
   fi
 
-  $(aws ecr get-login --no-include-email --region $account_region --registry-ids $AWS_ACCOUNT_ID)
+  $(aws ecr get-login --no-include-email --region $CANARY_ECR_REGION --registry-ids $AWS_ACCOUNT_ID)
 
   # Download the operator for this canary
   pushd tests
