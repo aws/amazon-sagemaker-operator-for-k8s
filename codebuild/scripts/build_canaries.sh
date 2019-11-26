@@ -40,9 +40,9 @@ function build_canary()
 
 # Replace JSON single quotes with double quotes for jq to understand
 ACCOUNTS_ESCAPED=`echo $ACCOUNTS | sed "s/'/\"/g"`
-for row in $(echo "${ACCOUNTS_ESCAPED}" | jq -r '.[]'); do
+for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
   _jq() {
-    echo ${row} | jq -r ${1}
+    echo ${row} | base64 --decode | jq -r ${1}
   }
 
   region="$(_jq '.region')"
