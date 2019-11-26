@@ -13,5 +13,5 @@ patchesStrategicMerge:
 # This is set by `make docker-build` but not when you build helm chart
 images:
 - name: controller
-  newName: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s
+  newName: ecr_repo/tag
   newTag: latest
