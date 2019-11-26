@@ -74,6 +74,7 @@ function inject_variables()
 # Build a new FSX file system for integration testing purposes
 function build_fsx_from_s3()
 {
+   echo "Building fsx from s3"
    NEW_FS=$(aws fsx create-file-system \
       --file-system-type LUSTRE \
       --lustre-configuration ImportPath=s3://${DATA_BUCKET}/kmeans_mnist_example \
