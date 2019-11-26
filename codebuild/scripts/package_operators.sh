@@ -37,12 +37,14 @@ function deploy_from_alpha()
   local binary_prefix="s3://${bucket_name}/kubectl-smlogs-plugin"
   local alpha_prefix="s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}"
 
-  # Copy across the binaries and set as latest
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.linux.amd64.tar.gz" "${binary_prefix}/${CODEBUILD_RESOLVED_SOURCE_VERSION}/linux.amd64.tar.gz"
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.linux.amd64.tar.gz" "${binary_prefix}/latest/linux.amd64.tar.gz"
+  local cp_args="--acl public-read"
 
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.darwin.amd64.tar.gz" "${binary_prefix}/${CODEBUILD_RESOLVED_SOURCE_VERSION}/darwin.amd64.tar.gz"
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.darwin.amd64.tar.gz" "${binary_prefix}/latest/darwin.amd64.tar.gz"
+  # Copy across the binaries and set as latest
+  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.linux.amd64.tar.gz" "${binary_prefix}/${CODEBUILD_RESOLVED_SOURCE_VERSION}/linux.amd64.tar.gz" ${cp_args}
+  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.linux.amd64.tar.gz" "${binary_prefix}/latest/linux.amd64.tar.gz" ${cp_args}
+
+  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.darwin.amd64.tar.gz" "${binary_prefix}/${CODEBUILD_RESOLVED_SOURCE_VERSION}/darwin.amd64.tar.gz" ${cp_args}
+  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.darwin.amd64.tar.gz" "${binary_prefix}/latest/darwin.amd64.tar.gz" ${cp_args}
 }
 
 # This function builds, packages and deploys a region-specific operator to an ECR repo and output bucket.
