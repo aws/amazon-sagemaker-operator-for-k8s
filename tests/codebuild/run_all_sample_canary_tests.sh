@@ -19,3 +19,14 @@ run_test tests/xgboost-mnist-batchtransform.yaml
 verify_test TrainingJob xgboost-mnist 10m
 verify_test HyperparameterTuningJob xgboost-mnist-hpo 15m
 verify_test BatchTransformJob xgboost-mnist 10m
+
+# Verify smlogs worked.
+# TODO this is common with run_all_sample_test. Should put in own file.
+if [ "$(kubectl smlogs trainingjob xgboost-mnist | wc -l)" -lt "1" ]; then
+    echo "smlogs trainingjob did not produce any output."
+    exit 1
+fi
+if [ "$(kubectl smlogs batchtransformjob xgboost-mnist | wc -l)" -lt "1" ]; then
+    echo "smlogs batchtransformjob did not produce any output."
+    exit 1
+fi
