@@ -272,7 +272,7 @@ func (r *modelReconciler) extractDesiredModelsFromHostingDeployment(deployment *
 	}
 
 	var containers map[string]*commonv1.ContainerDefinition
-	if containers, err = r.getAndValidateContainerMap(deployment.Spec.Containers); err != nil {
+	if containers, err = r.getAndValidateContainerMap(deployment.Spec.Models); err != nil {
 		return nil, nil, err
 	}
 
@@ -342,22 +342,23 @@ func (r *modelReconciler) getAndValidateModelMap(models []commonv1.Model) (map[s
 }
 
 // Get a map of container name to container definition. This also validates that all containers have unique hostnames.
-func (r *modelReconciler) getAndValidateContainerMap(containers []commonv1.ContainerDefinition) (map[string]*commonv1.ContainerDefinition, error) {
+func (r *modelReconciler) getAndValidateContainerMap(models []commonv1.Model) (map[string]*commonv1.ContainerDefinition, error) {
 	containerMap := map[string]*commonv1.ContainerDefinition{}
-	for _, container := range containers {
+	for _, model := range models {
+		for _, container := range model.Containers {
 
-		if container.ContainerHostname == nil {
-			return nil, fmt.Errorf("All containers must have hostnames")
+			if container.ContainerHostname == nil {
+				return nil, fmt.Errorf("All containers must have hostnames")
+			}
+			containerHostname := *container.ContainerHostname
+
+			if _, ok := containerMap[containerHostname]; ok {
+				return nil, fmt.Errorf("Container hostnames must be unique. Found multiple containers with hostname '%s'", containerHostname)
+			}
+
+			containerMap[containerHostname] = container.DeepCopy()
 		}
-		containerHostname := *container.ContainerHostname
-
-		if _, ok := containerMap[containerHostname]; ok {
-			return nil, fmt.Errorf("Container hostnames must be unique. Found multiple containers with hostname '%s'", containerHostname)
-		}
-
-		containerMap[containerHostname] = container.DeepCopy()
 	}
-
 	return containerMap, nil
 }
 
@@ -366,8 +367,9 @@ func (r *modelReconciler) getAndValidateContainerMap(containers []commonv1.Conta
 // An error is returned if a required container is not defined.
 func (r *modelReconciler) getContainerDefinitions(model *commonv1.Model, containers map[string]*commonv1.ContainerDefinition, primaryContainerHostname string) ([]*commonv1.ContainerDefinition, error) {
 	var modelContainers []*commonv1.ContainerDefinition
-	for _, containerName := range model.Containers {
+	for _, container := range model.Containers {
 
+		containerName := *(container.ContainerHostname)
 		// Do not store primary container in containers slice.
 		if containerName == primaryContainerHostname {
 			continue
@@ -394,9 +396,9 @@ func (r *modelReconciler) getPrimaryContainerDefinition(model *commonv1.Model, c
 	// If none is specified and the list of required containers has only one element, use that container as the primary.
 	var primaryContainerName string
 	if model.PrimaryContainer != nil {
-		primaryContainerName = *model.PrimaryContainer
+		primaryContainerName = *model.PrimaryContainer.ContainerHostname
 	} else if len(model.Containers) == 1 {
-		primaryContainerName = model.Containers[0]
+		primaryContainerName = *model.Containers[0].ContainerHostname
 	} else {
 		return nil, fmt.Errorf("Unable to determine primary container for model '%s'. Either specify explicitly or provide only one container.", *model.Name)
 	}

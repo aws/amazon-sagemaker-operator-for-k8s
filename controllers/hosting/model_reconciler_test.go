@@ -59,7 +59,6 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
-				Containers:         []commonv1.ContainerDefinition{},
 				Models: []commonv1.Model{
 					{
 						Name: &modelName,
@@ -81,6 +80,14 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		containerHostname := "container-hostname"
 		k8sName := "k8s-deployment-name"
 		k8sNamespace := "k8s-namespace"
+		containers := []*commonv1.ContainerDefinition{
+			{
+				ContainerHostname: &containerHostname,
+			},
+			{
+				ContainerHostname: &containerHostname,
+			},
+		}
 
 		desired := &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -90,28 +97,25 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
-				Containers: []commonv1.ContainerDefinition{
+				Models: []commonv1.Model{
 					{
-						ContainerHostname: &containerHostname,
-					},
-					{
-						ContainerHostname: &containerHostname,
+						Containers: containers,
 					},
 				},
-				Models: []commonv1.Model{},
 			},
 		}
 
 		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Container hostnames must be unique."))
+		Expect(err.Error()).To(ContainSubstring("Unable to interpret models: All models must have names"))
 	})
 
 	It("Returns an error if no model primary container is specified", func() {
 
 		k8sName := "k8s-deployment-name"
 		k8sNamespace := "k8s-namespace"
+		containers := []*commonv1.ContainerDefinition{}
 
 		desired := &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -121,10 +125,10 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
-				Containers:         []commonv1.ContainerDefinition{},
 				Models: []commonv1.Model{
 					{
-						Name: ToStringPtr("model-name"),
+						Name:       ToStringPtr("model-name"),
+						Containers: containers,
 					},
 				},
 			},
@@ -141,6 +145,19 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		k8sName := "k8s-deployment-name"
 		k8sNamespace := "k8s-namespace"
 
+		containers := []*commonv1.ContainerDefinition{
+			{
+				ContainerHostname: ToStringPtr("missing-container"),
+			},
+			{
+				ContainerHostname: ToStringPtr("present-container"),
+			},
+		}
+
+		presentContainer := commonv1.ContainerDefinition{
+			ContainerHostname: ToStringPtr("present-container"),
+		}
+
 		desired := &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
@@ -149,19 +166,11 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
-				Containers: []commonv1.ContainerDefinition{
-					{
-						ContainerHostname: ToStringPtr("present-container"),
-					},
-				},
 				Models: []commonv1.Model{
 					{
-						Name: ToStringPtr("model-name"),
-						Containers: []string{
-							"missing-container",
-							"present-container",
-						},
-						PrimaryContainer: ToStringPtr("present-container"),
+						Name:             ToStringPtr("model-name"),
+						Containers:       containers,
+						PrimaryContainer: &presentContainer,
 					},
 				},
 			},
@@ -170,13 +179,23 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Missing container definition"))
+		Expect(err.Error()).To(ContainSubstring("Unable to create model"))
 	})
 
 	It("Returns an error if the primary container definition is missing", func() {
 
 		k8sName := "k8s-deployment-name"
 		k8sNamespace := "k8s-namespace"
+
+		containers := []*commonv1.ContainerDefinition{
+			{
+				ContainerHostname: ToStringPtr("present-container"),
+			},
+		}
+
+		primarycontainer := commonv1.ContainerDefinition{
+			ContainerHostname: ToStringPtr("missing-container"),
+		}
 
 		desired := &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -186,18 +205,11 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
 				ProductionVariants: []commonv1.ProductionVariant{},
-				Containers: []commonv1.ContainerDefinition{
-					{
-						ContainerHostname: ToStringPtr("present-container"),
-					},
-				},
 				Models: []commonv1.Model{
 					{
-						Name: ToStringPtr("model-name"),
-						Containers: []string{
-							"present-container",
-						},
-						PrimaryContainer: ToStringPtr("missing-container"),
+						Name:             ToStringPtr("model-name"),
+						Containers:       containers,
+						PrimaryContainer: &primarycontainer,
 					},
 				},
 			},
@@ -217,6 +229,11 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		It("Returns error if unable to list K8s model", func() {
 			k8sName := "k8s-deployment-name"
 			k8sNamespace := "k8s-namespace"
+			containers := []*commonv1.ContainerDefinition{
+				{
+					ContainerHostname: ToStringPtr("container"),
+				},
+			}
 
 			desired := &hostingv1.HostingDeployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -226,17 +243,10 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				},
 				Spec: hostingv1.HostingDeploymentSpec{
 					ProductionVariants: []commonv1.ProductionVariant{},
-					Containers: []commonv1.ContainerDefinition{
-						{
-							ContainerHostname: ToStringPtr("container"),
-						},
-					},
 					Models: []commonv1.Model{
 						{
-							Name: ToStringPtr("model-name"),
-							Containers: []string{
-								"container",
-							},
+							Name:       ToStringPtr("model-name"),
+							Containers: containers,
 						},
 					},
 				},
@@ -259,6 +269,11 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		It("Returns error if unable to create k8s model", func() {
 			k8sName := "k8s-deployment-name"
 			k8sNamespace := "k8s-namespace"
+			containers := []*commonv1.ContainerDefinition{
+				{
+					ContainerHostname: ToStringPtr("container"),
+				},
+			}
 
 			desired := &hostingv1.HostingDeployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -268,17 +283,10 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				},
 				Spec: hostingv1.HostingDeploymentSpec{
 					ProductionVariants: []commonv1.ProductionVariant{},
-					Containers: []commonv1.ContainerDefinition{
-						{
-							ContainerHostname: ToStringPtr("container"),
-						},
-					},
 					Models: []commonv1.Model{
 						{
-							Name: ToStringPtr("model-name"),
-							Containers: []string{
-								"container",
-							},
+							Name:       ToStringPtr("model-name"),
+							Containers: containers,
 						},
 					},
 				},
@@ -287,7 +295,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			err := reconciler.Reconcile(context.Background(), desired, true)
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Unable to create Kubernetes model"))
+			Expect(err.Error()).To(ContainSubstring("Unable to create model"))
 		})
 	})
 
@@ -316,6 +324,13 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			tagKey = "tag-key"
 			tagValue = "tag-value"
 
+			containers := []*commonv1.ContainerDefinition{
+				{
+					ContainerHostname: ToStringPtr("present-container"),
+					ModelDataUrl:      &modelDataUrl,
+				},
+			}
+
 			desired = &hostingv1.HostingDeployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      k8sName,
@@ -325,18 +340,10 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				Spec: hostingv1.HostingDeploymentSpec{
 					Region:             &region,
 					ProductionVariants: []commonv1.ProductionVariant{},
-					Containers: []commonv1.ContainerDefinition{
-						{
-							ContainerHostname: ToStringPtr("present-container"),
-							ModelDataUrl:      &modelDataUrl,
-						},
-					},
 					Models: []commonv1.Model{
 						{
-							Name: ToStringPtr("model-name"),
-							Containers: []string{
-								"present-container",
-							},
+							Name:             ToStringPtr("model-name"),
+							Containers:       containers,
 							ExecutionRoleArn: ToStringPtr("xxx-yyy"),
 						},
 					},
@@ -450,6 +457,13 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 		tagKey = "tag-key"
 		tagValue = "tag-value"
 
+		containers := []*commonv1.ContainerDefinition{
+			{
+				ContainerHostname: ToStringPtr("present-container"),
+				ModelDataUrl:      &modelDataUrl,
+			},
+		}
+
 		desired = &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
@@ -459,18 +473,10 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 			Spec: hostingv1.HostingDeploymentSpec{
 				Region:             &region,
 				ProductionVariants: []commonv1.ProductionVariant{},
-				Containers: []commonv1.ContainerDefinition{
-					{
-						ContainerHostname: ToStringPtr("present-container"),
-						ModelDataUrl:      &modelDataUrl,
-					},
-				},
 				Models: []commonv1.Model{
 					{
-						Name: ToStringPtr("model-name"),
-						Containers: []string{
-							"present-container",
-						},
+						Name:             ToStringPtr("model-name"),
+						Containers:       containers,
 						ExecutionRoleArn: ToStringPtr("xxx-yyy"),
 					},
 				},
@@ -533,6 +539,12 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 		k8sName = "k8s-name-" + uuid.New().String()
 		k8sNamespace = "k8s-namespace-" + uuid.New().String()
 
+		containers := []*commonv1.ContainerDefinition{
+			{
+				ContainerHostname: ToStringPtr("present-container"),
+			},
+		}
+
 		reconciler = NewModelReconciler(k8sClient, ctrl.Log)
 
 		desired = &hostingv1.HostingDeployment{
@@ -552,13 +564,8 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 				Models: []commonv1.Model{
 					{
 						Name:             &modelName,
-						Containers:       []string{"present-container"},
+						Containers:       containers,
 						ExecutionRoleArn: ToStringPtr("xxx-yyy"),
-					},
-				},
-				Containers: []commonv1.ContainerDefinition{
-					{
-						ContainerHostname: ToStringPtr("present-container"),
 					},
 				},
 			},
@@ -621,6 +628,13 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 
 		reconciler = NewModelReconciler(k8sClient, ctrl.Log)
 
+		containers := []*commonv1.ContainerDefinition{
+			{
+				ContainerHostname: ToStringPtr("present-container"),
+				ModelDataUrl:      ToStringPtr("s3://bucket/model.tar.gz"),
+			},
+		}
+
 		desired = &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
@@ -638,14 +652,8 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 				Models: []commonv1.Model{
 					{
 						Name:             &modelName,
-						Containers:       []string{"present-container"},
+						Containers:       containers,
 						ExecutionRoleArn: ToStringPtr("xxx-yyy"),
-					},
-				},
-				Containers: []commonv1.ContainerDefinition{
-					{
-						ContainerHostname: ToStringPtr("present-container"),
-						ModelDataUrl:      ToStringPtr("s3://bucket/model.tar.gz"),
 					},
 				},
 			},
@@ -671,7 +679,7 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 	It("Updates Kubernetes models", func() {
 		newModelDataUrl := "s3://updated-bucket/model.tar.gz"
 		updated := desired.DeepCopy()
-		updated.Spec.Containers[0].ModelDataUrl = &newModelDataUrl
+		updated.Spec.Models[0].Containers[0].ModelDataUrl = &newModelDataUrl
 
 		err := reconciler.Reconcile(context.Background(), updated, true)
 		Expect(err).ToNot(HaveOccurred())

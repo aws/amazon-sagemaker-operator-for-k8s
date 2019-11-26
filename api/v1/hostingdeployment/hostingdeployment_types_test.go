@@ -72,8 +72,7 @@ var _ = Describe("HostingDeployment", func() {
 							VariantName:          ToStringPtr("variant-name"),
 						},
 					},
-					Models:     []commonv1.Model{},
-					Containers: []commonv1.ContainerDefinition{},
+					Models: []commonv1.Model{},
 				},
 			}
 
