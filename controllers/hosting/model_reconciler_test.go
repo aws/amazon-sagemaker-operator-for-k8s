@@ -111,7 +111,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Container hostnames must be unique."))
+		Expect(err.Error()).To(ContainSubstring("container hostnames must be unique."))
 	})
 
 	It("Returns an error if no model primary container is specified", func() {
