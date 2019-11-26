@@ -14,5 +14,13 @@ for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
   image_repository="${REPOSITORY_NAME}"
   stage="$(_jq '.stage')"
 
-  package_operator "$repository_account" "$region" "$image_repository" "$stage"
+  # Only build images that match the release pipeline stage
+  if [ "$stage" != "$PIPELINE_STAGE" ] && [ "$stage" != "all" ]; then
+    return 0
+  fi
+
+  # Only push to ECR repos if this is run on the prod pipeline
+  if [ "$PIPELINE_STAGE" == "prod" ]; then
+    deploy_from_alpha "$repository_account" "$region" "$image_repository"
+  fi
 done
