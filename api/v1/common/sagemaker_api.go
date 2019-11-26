@@ -371,7 +371,7 @@ type Model struct {
 	// +kubebuilder:validation:MinItems=1
 	Containers []*ContainerDefinition `json:"containers,omitempty"`
 
-	PrimaryContainer *string `json:"primaryContainer"`
+	PrimaryContainer *string `json:"primaryContainer,omitempty"`
 
 	// +kubebuilder:validation:MinLength=20
 	ExecutionRoleArn *string `json:"executionRoleArn"`

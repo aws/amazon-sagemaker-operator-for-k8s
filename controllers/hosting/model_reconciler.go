@@ -352,7 +352,7 @@ func (r *modelReconciler) getAndValidateContainerMap(model *commonv1.Model) (map
 		containerHostname := *container.ContainerHostname
 
 		if _, ok := containerMap[containerHostname]; ok {
-			return nil, fmt.Errorf("Container hostnames must be unique. Found multiple containers with hostname '%s'", containerHostname)
+			return nil, fmt.Errorf("Model '%s' container hostnames must be unique. Found multiple containers with hostname '%s'", *model.Name, containerHostname)
 		}
 
 		containerMap[containerHostname] = container.DeepCopy()

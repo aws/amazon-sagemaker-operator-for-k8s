@@ -449,7 +449,6 @@ spec:
                     type: object
                 required:
                 - name
-                - primaryContainer
                 - executionRoleArn
                 type: object
               type: array
