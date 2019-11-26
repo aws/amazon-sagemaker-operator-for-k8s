@@ -921,8 +921,7 @@ func createDeployment(k8sName, k8sNamespace string) *hostingv1.HostingDeployment
 					VariantName:          ToStringPtr("variant-name"),
 				},
 			},
-			Models:     []commonv1.Model{},
-			Containers: []commonv1.ContainerDefinition{},
+			Models: []commonv1.Model{},
 		},
 	}
 }

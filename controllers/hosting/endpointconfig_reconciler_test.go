@@ -299,6 +299,12 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 	BeforeEach(func() {
 		reconciler = NewEndpointConfigReconciler(k8sClient, ctrl.Log)
 		modelName = "model-name"
+		containers := []*commonv1.ContainerDefinition{
+			{
+				ContainerHostname: ToStringPtr("present-container"),
+				ModelDataUrl:      ToStringPtr("s3://bucket/model.tar.gz"),
+			},
+		}
 
 		desired = &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -319,14 +325,8 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 				Models: []commonv1.Model{
 					{
 						Name:             &modelName,
-						Containers:       []string{"present-container"},
+						Containers:       containers,
 						ExecutionRoleArn: ToStringPtr("xxx-yyy"),
-					},
-				},
-				Containers: []commonv1.ContainerDefinition{
-					{
-						ContainerHostname: ToStringPtr("present-container"),
-						ModelDataUrl:      ToStringPtr("s3://bucket/model.tar.gz"),
 					},
 				},
 			},
@@ -481,7 +481,6 @@ func createHostingDeployment(k8sName, k8sNamespace string) hostingv1.HostingDepl
 		},
 		Spec: hostingv1.HostingDeploymentSpec{
 			ProductionVariants: []commonv1.ProductionVariant{},
-			Containers:         []commonv1.ContainerDefinition{},
 			Models:             []commonv1.Model{},
 			Region:             ToStringPtr("us-east-1"),
 		},

@@ -45,8 +45,6 @@ type HostingDeploymentSpec struct {
 
 	Models []commonv1.Model `json:"models"`
 
-	Containers []commonv1.ContainerDefinition `json:"containers"`
-
 	Tags []commonv1.Tag `json:"tags,omitempty"`
 }
 
