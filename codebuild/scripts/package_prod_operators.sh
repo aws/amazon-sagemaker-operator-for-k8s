@@ -13,4 +13,6 @@ for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
   region="$(_jq '.region')"
   image_repository="${REPOSITORY_NAME}"
   stage="$(_jq '.stage')"
+
+  package_operator "$repository_account" "$region" "$image_repository" "$stage"
 done
