@@ -2,8 +2,6 @@
 
 set -e
 
-HAS_PUSHED_SMLOGS="false"
-
 # This function deploys a region-specific operator to an ECR prod repo from the existing
 # image in the alpha repository.
 # Parameter:
@@ -96,7 +94,7 @@ function package_operator()
   cp smlogs-kubectl-plugin/bin/kubectl-smlogs.linux.amd64 /tmp/sagemaker-k8s-operator/smlogs-plugin/linux.amd64/kubectl-smlogs
   cp smlogs-kubectl-plugin/bin/kubectl-smlogs.darwin.amd64 /tmp/sagemaker-k8s-operator/smlogs-plugin/darwin.amd64/kubectl-smlogs
 
-  if [ "$HAS_PUSHED_SMLOGS" == "false" ]; then
+  if [ "$SHOULD_PUSH_SMLOGS" == "true" ]; then
     # Create temp dirs per binary and put smlogs into it
     mkdir -p /tmp/kubectl-smlogs.linux.amd64
     mkdir -p /tmp/kubectl-smlogs.darwin.amd64
@@ -111,7 +109,6 @@ function package_operator()
       aws s3 cp kubectl-smlogs-plugin.linux.amd64.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/kubectl-smlogs-plugin.linux.amd64.tar.gz"
       aws s3 cp kubectl-smlogs-plugin.darwin.amd64.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/kubectl-smlogs-plugin.darwin.amd64.tar.gz"
     popd
-    HAS_PUSHED_SMLOGS="true"
   fi
 
   # Create a tar ball which has CRDs, smlog and sm spec generator binaries
