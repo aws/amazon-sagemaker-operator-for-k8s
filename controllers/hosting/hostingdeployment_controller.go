@@ -34,7 +34,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 
-	endpointconfigv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/endpointconfig"
 	hostingv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/hostingdeployment"
 	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
 	"go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil"
@@ -381,21 +380,16 @@ func (r *HostingDeploymentReconciler) reconcileEndpointResources(ctx reconcileRe
 func (r *HostingDeploymentReconciler) createCreateEndpointInput(ctx reconcileRequestContext) (*sagemaker.CreateEndpointInput, error) {
 	r.Log.Info("Create CreateEndpointInput")
 
-	namespacedName := GetKubernetesEndpointConfigNamespacedName(*ctx.Deployment)
-
-	var endpointConfig endpointconfigv1.EndpointConfig
-	if err := r.Client.Get(ctx, namespacedName, &endpointConfig); err != nil {
-		return nil, errors.Wrapf(err, "Unable to resolve SageMaker EndpointConfig name for EndpointConfig '%s'", namespacedName)
-	}
-
-	if endpointConfig.Status.SageMakerEndpointConfigName == "" {
-		return nil, fmt.Errorf("EndpointConfig '%s' does not have a SageMakerEndpointConfigName", namespacedName)
+	var endpointConfigName string
+	var err error
+	if endpointConfigName, err = ctx.EndpointConfigReconciler.GetSageMakerEndpointConfigName(ctx, ctx.Deployment); err != nil {
+		return nil, err
 	}
 
 	endpointName := GetSageMakerEndpointName(*ctx.Deployment)
 
 	createInput := &sagemaker.CreateEndpointInput{
-		EndpointConfigName: &endpointConfig.Status.SageMakerEndpointConfigName,
+		EndpointConfigName: &endpointConfigName,
 		EndpointName:       &endpointName,
 		Tags:               sdkutil.ConvertTagSliceToSageMakerTagSlice(ctx.Deployment.Spec.Tags),
 	}
