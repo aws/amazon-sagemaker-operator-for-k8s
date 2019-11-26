@@ -66,7 +66,7 @@ generate: controller-gen
 
 set-image:
 	@echo "Updating controller image"
-	cd config/default && kustomize edit set image controller=${IMG}
+	cd config/base && kustomize edit set image controller=${IMG}
 
 # Build the docker image
 docker-build: generate fmt vet manifests

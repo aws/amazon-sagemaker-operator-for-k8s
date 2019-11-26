@@ -15,7 +15,3 @@ patchesStrategicMerge:
 - manager_creds_patch.yaml
 resources:
 - ../base
-images:
-- name: controller
-  newName: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s
-  newTag: latest
