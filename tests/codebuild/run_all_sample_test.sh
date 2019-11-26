@@ -9,7 +9,6 @@ if [ "$FSX_ID" == "" ]; then
 fi
 
 # TODO: Automate creation/testing of EFS file systems for relevant jobs
-# TODO reenable batch transform tests
 
 # Inject environment variables into tests
 inject_variables testfiles/xgboost-mnist-trainingjob.yaml
@@ -20,7 +19,7 @@ inject_variables testfiles/xgboost-mnist-custom-endpoint.yaml
 inject_variables testfiles/xgboost-mnist-hpo.yaml
 inject_variables testfiles/spot-xgboost-mnist-hpo.yaml
 inject_variables testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
-# inject_variables testfiles/xgboost-mnist-batchtransform.yaml
+inject_variables testfiles/xgboost-mnist-batchtransform.yaml
 inject_variables testfiles/xgboost-hosting-deployment.yaml
 
 # Add all your new sample files below
@@ -34,7 +33,7 @@ run_test testfiles/xgboost-mnist-custom-endpoint.yaml
 run_test testfiles/xgboost-mnist-hpo.yaml
 run_test testfiles/spot-xgboost-mnist-hpo.yaml
 run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
-# run_test testfiles/xgboost-mnist-batchtransform.yaml
+run_test testfiles/xgboost-mnist-batchtransform.yaml
 run_test testfiles/xgboost-hosting-deployment.yaml
 
 # Verify test
@@ -47,5 +46,5 @@ verify_test trainingjob xgboost-mnist-custom-endpoint 10m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo 15m Completed
 verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 15m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 15m Completed
-# verify_test BatchTransformJob xgboost-mnist 10m Completed
+verify_test BatchTransformJob xgboost-mnist 10m Completed
 verify_test HostingDeployment hosting 20m InService
