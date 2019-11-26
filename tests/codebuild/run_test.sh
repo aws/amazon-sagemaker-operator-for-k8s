@@ -44,10 +44,10 @@ function verify_test()
 
   echo "Waiting for job to complete"
   timeout "${timeout}" bash -c \
-      'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i "$4" | wc -l)" -eq "1" ]; do \
+      'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i "$2" | wc -l)" -eq "1" ]; do \
           echo "Job $1 has not completed yet"; \
           sleep 5; \
-       done' "${crd_type}" "${crd_instance}"
+       done' "${crd_type}" "${crd_instance}" "${desired_status}"
 
   # Check weather job has completed or not
   if [ $? -ne 0 ]; then
