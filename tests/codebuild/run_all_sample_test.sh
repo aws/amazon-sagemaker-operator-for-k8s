@@ -48,3 +48,13 @@ verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 15m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 15m Completed
 verify_test BatchTransformJob xgboost-mnist 10m Completed
 verify_test HostingDeployment hosting 20m InService
+
+# Verify smlogs worked.
+if [ "$(kubectl smlogs trainingjob xgboost-mnist | wc -l)" -lt "1" ]; then
+    echo "smlogs trainingjob did not produce any output."
+    exit 1
+fi
+if [ "$(kubectl smlogs batchtransformjob xgboost-mnist | wc -l)" -lt "1" ]; then
+    echo "smlogs batchtransformjob did not produce any output."
+    exit 1
+fi
