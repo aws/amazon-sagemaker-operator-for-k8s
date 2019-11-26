@@ -3,7 +3,8 @@
 set -e
 
 # This function deploys a region-specific operator to an ECR prod repo from the existing
-# image in the alpha repository.
+# image in the alpha repository. The function also copies across the smlogs binaries
+# from the alpha tarball bucket into the production buckets.
 # Parameter:
 #    $1: The account ID for the ECR repo.
 #    $2: The region of the ECR repo.
@@ -96,7 +97,7 @@ function package_operator()
   cp smlogs-kubectl-plugin/bin/kubectl-smlogs.linux.amd64 /tmp/sagemaker-k8s-operator/smlogs-plugin/linux.amd64/kubectl-smlogs
   cp smlogs-kubectl-plugin/bin/kubectl-smlogs.darwin.amd64 /tmp/sagemaker-k8s-operator/smlogs-plugin/darwin.amd64/kubectl-smlogs
 
-  if [ "$SHOULD_PUSH_SMLOGS" == "true" ]; then
+  if [ "$SHOULD_PUSH_SMLOGS_ALPHA" == "true" ]; then
     # Create temp dirs per binary and put smlogs into it
     mkdir -p /tmp/kubectl-smlogs.linux.amd64
     mkdir -p /tmp/kubectl-smlogs.darwin.amd64
