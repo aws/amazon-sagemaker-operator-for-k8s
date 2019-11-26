@@ -430,25 +430,7 @@ spec:
                   name:
                     type: string
                   primaryContainer:
-                    properties:
-                      containerHostname:
-                        type: string
-                      environment:
-                        items:
-                          properties:
-                            name:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      image:
-                        type: string
-                      modelDataUrl:
-                        type: string
-                      modelPackageName:
-                        type: string
-                    type: object
+                    type: string
                   vpcConfig:
                     properties:
                       securityGroupIds:
@@ -467,6 +449,7 @@ spec:
                     type: object
                 required:
                 - name
+                - primaryContainer
                 - executionRoleArn
                 type: object
               type: array

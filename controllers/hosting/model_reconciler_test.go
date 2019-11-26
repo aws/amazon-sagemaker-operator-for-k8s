@@ -80,6 +80,8 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		containerHostname := "container-hostname"
 		k8sName := "k8s-deployment-name"
 		k8sNamespace := "k8s-namespace"
+		modelName := "model-name-1"
+
 		containers := []*commonv1.ContainerDefinition{
 			{
 				ContainerHostname: &containerHostname,
@@ -99,6 +101,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				ProductionVariants: []commonv1.ProductionVariant{},
 				Models: []commonv1.Model{
 					{
+						Name:       &modelName,
 						Containers: containers,
 					},
 				},
@@ -108,7 +111,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		err := reconciler.Reconcile(context.Background(), desired, true)
 
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Unable to interpret models: All models must have names"))
+		Expect(err.Error()).To(ContainSubstring("Container hostnames must be unique."))
 	})
 
 	It("Returns an error if no model primary container is specified", func() {
@@ -140,48 +143,6 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 		Expect(err.Error()).To(ContainSubstring("Unable to determine primary container for model"))
 	})
 
-	It("Returns an error if a container definition is missing", func() {
-
-		k8sName := "k8s-deployment-name"
-		k8sNamespace := "k8s-namespace"
-
-		containers := []*commonv1.ContainerDefinition{
-			{
-				ContainerHostname: ToStringPtr("missing-container"),
-			},
-			{
-				ContainerHostname: ToStringPtr("present-container"),
-			},
-		}
-
-		presentContainer := commonv1.ContainerDefinition{
-			ContainerHostname: ToStringPtr("present-container"),
-		}
-
-		desired := &hostingv1.HostingDeployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      k8sName,
-				Namespace: k8sNamespace,
-				UID:       types.UID(uuid.New().String()),
-			},
-			Spec: hostingv1.HostingDeploymentSpec{
-				ProductionVariants: []commonv1.ProductionVariant{},
-				Models: []commonv1.Model{
-					{
-						Name:             ToStringPtr("model-name"),
-						Containers:       containers,
-						PrimaryContainer: &presentContainer,
-					},
-				},
-			},
-		}
-
-		err := reconciler.Reconcile(context.Background(), desired, true)
-
-		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Unable to create model"))
-	})
-
 	It("Returns an error if the primary container definition is missing", func() {
 
 		k8sName := "k8s-deployment-name"
@@ -193,10 +154,6 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		primarycontainer := commonv1.ContainerDefinition{
-			ContainerHostname: ToStringPtr("missing-container"),
-		}
-
 		desired := &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      k8sName,
@@ -209,7 +166,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 					{
 						Name:             ToStringPtr("model-name"),
 						Containers:       containers,
-						PrimaryContainer: &primarycontainer,
+						PrimaryContainer: ToStringPtr("missing-container"),
 					},
 				},
 			},

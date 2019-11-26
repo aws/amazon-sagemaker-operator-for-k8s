@@ -481,8 +481,8 @@ func createHostingDeployment(k8sName, k8sNamespace string) hostingv1.HostingDepl
 		},
 		Spec: hostingv1.HostingDeploymentSpec{
 			ProductionVariants: []commonv1.ProductionVariant{},
-			Models: []commonv1.Model{},
-			Region: ToStringPtr("us-east-1"),
+			Models:             []commonv1.Model{},
+			Region:             ToStringPtr("us-east-1"),
 		},
 	}
 }
