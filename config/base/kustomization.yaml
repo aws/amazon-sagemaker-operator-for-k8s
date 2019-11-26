@@ -13,5 +13,5 @@ patchesStrategicMerge:
 # This is set by `make docker-build` but not when you build helm chart
 images:
 - name: controller
-  newName: ecr_repo/tag
+  newName: ecr_repo
   newTag: latest
