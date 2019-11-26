@@ -1,127 +1,83 @@
-# Introduction
-This README shows how to install the Amazon SageMaker Kubernetes Operator onto an existing Kubernetes cluster.
+# Amazon SageMaker Operators for Kubernetes
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/aws/amazon-sagemaker-operator-for-k8s?sort=semver)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/aws/amazon-sagemaker-operator-for-k8s)
 
-## Prerequisites
-* A running Kubernetes cluster.
-* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-* [kustomize](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md)
-* [AWS CLI](https://aws.amazon.com/cli/)
-* [Helm](https://helm.sh/docs/intro/install/)
-* IAM permissions to create users, attach policies to users, and create access keys OR existing IAM access keys for the operator to use.
+## Introduction
+Amazon SageMaker Operators for Kubernetes are operators that can be used to train machine learning models, optimize hyperparameters for a given model, run batch transform jobs over existing models, and set up inference endpoints. With these operators, users can manage their jobs in Amazon SageMaker from their Kubernetes cluster.
 
-# Simple installation
-To create a new IAM user and access key, use:
-```bash
-# Create an IAM user and access key. Use '--interactive' for IAM action prompts.
-$ ./setup_awscreds
-$ kustomize build config/default | kubectl apply -f -
+## Usage
+
+To train a model on SageMaker, first create the job specification as a YAML file.
+
+```yaml
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: TrainingJob
+metadata:
+  name: xgboost-mnist
+spec:
+    algorithmSpecification:
+        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
+        trainingInputMode: File
+    resourceConfig:
+        instanceCount: 1
+        instanceType: ml.m4.xlarge
+        volumeSizeInGB: 5
+    region: us-west-2
+    outputDataConfig:
+        s3OutputPath: s3://my-bucket/xgboost/
+    inputDataConfig:
+        - channelName: train
+          dataSource:
+            s3DataSource:
+                s3DataType: S3Prefix
+                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/train/
+                s3DataDistributionType: FullyReplicated
+          contentType: text/csv
+          compressionType: None
+        - channelName: validation
+          dataSource:
+            s3DataSource:
+                s3DataType: S3Prefix
+                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/validation/
+                s3DataDistributionType: FullyReplicated
+          contentType: text/csv
+          compressionType: None
+    roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+    stoppingCondition:
+        maxRuntimeInSeconds: 86400
+    hyperParameters:
+        - name: max_depth
+          value: "5"
+        - name: eta
+          value: "0.2"
+        - name: gamma
+          value: "4"
+        - name: min_child_weight
+          value: "6"
+        - name: silent
+          value: "0"
+        - name: objective
+          value: multi:softmax
+        - name: num_class
+          value: "10"
+        - name: num_round
+          value: "10"
 ```
 
-The output should look like the following:
-```bash
-$ ./setup_awscreds
-OPERATOR_AWS_ACCESS_KEY_ID and OPERATOR_AWS_SECRET_ACCESS_KEY required but not provided. Creating an AWS Access Key.
-Creating IAM user 'sagemaker-k8s-operator-manager'
-User 'sagemaker-k8s-operator-manager' created.
-Attaching policy 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess' to IAM user 'sagemaker-k8s-operator-manager'
-Policy 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess' attached to IAM user 'sagemaker-k8s-operator-manager'.
-Creating access key for IAM user 'sagemaker-k8s-operator-manager'
-Created access key 'AKIAIOSFODNN7EXAMPLE' for user 'sagemaker-k8s-operator-manager'
-Storing access key in ./config/default/awscreds.env.
+Update t
 
-$ kustomize build config/default | kubectl apply -f -
-namespace/sagemaker-k8s-operator-system created
-customresourcedefinition.apiextensions.k8s.io/batchtransformjobs.sagemaker.aws.amazon.com created
-customresourcedefinition.apiextensions.k8s.io/endpointconfigs.sagemaker.aws.amazon.com created
-customresourcedefinition.apiextensions.k8s.io/hostingdeployments.sagemaker.aws.amazon.com created
-customresourcedefinition.apiextensions.k8s.io/hyperparametertuningjobs.sagemaker.aws.amazon.com created
-customresourcedefinition.apiextensions.k8s.io/models.sagemaker.aws.amazon.com created
-customresourcedefinition.apiextensions.k8s.io/trainingjobs.sagemaker.aws.amazon.com created
-role.rbac.authorization.k8s.io/sagemaker-k8s-operator-leader-election-role created
-clusterrole.rbac.authorization.k8s.io/sagemaker-k8s-operator-manager-role created
-clusterrole.rbac.authorization.k8s.io/sagemaker-k8s-operator-proxy-role created
-rolebinding.rbac.authorization.k8s.io/sagemaker-k8s-operator-leader-election-rolebinding created
-clusterrolebinding.rbac.authorization.k8s.io/sagemaker-k8s-operator-manager-rolebinding created
-clusterrolebinding.rbac.authorization.k8s.io/sagemaker-k8s-operator-proxy-rolebinding created
-secret/sagemaker-k8s-operator-awscreds-tf6g7ct79h created
-service/sagemaker-k8s-operator-controller-manager-metrics-service created
-deployment.apps/sagemaker-k8s-operator-controller-manager created
-```
+First, create a training job specification in a YAML file. See [samples/xgboost-mnist-trainingjob.yaml](samples/xgboost-mnist-trainingjob.yaml). Replace 
+To train a model on SageMaker from Kubernetes. 
 
-Note: `./setup_awscreds` will create an IAM user with SageMaker access, and create a programmatic access key for that user. To save the access/secret key as an AWS profile, open the file `./config/default/awscreds.env` and save the keys using `aws configure --profile sagemaker-k8s-operator`.
+## Getting Started
+For up-to-date information about installing and configuring the operator, check out our [user guide]().
 
-## Verify installation
-
-Run the following to verify that the CRD was installed:
-```bash
-$ kubectl get crd | grep sagemaker
-batchtransformjobs.sagemaker.aws.amazon.com         2019-10-30T17:12:34Z
-endpointconfigs.sagemaker.aws.amazon.com            2019-10-30T17:12:34Z
-hostingdeployments.sagemaker.aws.amazon.com         2019-10-30T17:12:34Z
-hyperparametertuningjobs.sagemaker.aws.amazon.com   2019-10-30T17:12:34Z
-models.sagemaker.aws.amazon.com                     2019-10-30T17:12:34Z
-trainingjobs.sagemaker.aws.amazon.com               2019-10-30T17:12:34Z
-```
-
-Run the following to verify that the controller container is running:
-```bash
-$ kubectl get pods -n sagemaker-k8s-operator-system
-NAME                                                         READY   STATUS    RESTARTS   AGE
-sagemaker-k8s-operator-controller-manager-85497f7766-87qwq   2/2     Running   0          50s
-```
-
-# Custom IAM user installation
-If you want to use an existing IAM user, you can set environment variables and `setup_awscreds` will use them.
-```bash
-# Install operator with custom access keys.
-$ OPERATOR_AWS_ACCESS_KEY_ID=xxx OPERATOR_AWS_SECRET_KEY=yyy ./setup_awscreds
-
-# Install operator using default AWS profile.
-$ OPERATOR_AWS_PROFILE="your-aws-profile-name" ./setup_awscreds
-```
-
-# Uninstall
-To remove the operator from your cluster, first stop all jobs:
-```bash
-# Delete any jobs before uninstallation for proper cleanup. This will stop the jobs in SageMaker.
-$ kubectl delete --all --all-namespaces hyperparametertuningjobs.sagemaker.aws.amazon.com
-$ kubectl delete --all --all-namespaces trainingjobs.sagemaker.aws.amazon.com
-```
-
-Then, delete the resources:
-```bash
-$ kustomize build config/default | kubectl delete -f -
-namespace "sagemaker-k8s-operator-system" deleted
-customresourcedefinition.apiextensions.k8s.io "batchtransformjobs.sagemaker.aws.amazon.com" deleted
-customresourcedefinition.apiextensions.k8s.io "endpointconfigs.sagemaker.aws.amazon.com" deleted
-customresourcedefinition.apiextensions.k8s.io "hostingdeployments.sagemaker.aws.amazon.com" deleted
-customresourcedefinition.apiextensions.k8s.io "hyperparametertuningjobs.sagemaker.aws.amazon.com" deleted
-customresourcedefinition.apiextensions.k8s.io "models.sagemaker.aws.amazon.com" deleted
-customresourcedefinition.apiextensions.k8s.io "trainingjobs.sagemaker.aws.amazon.com" deleted
-role.rbac.authorization.k8s.io "sagemaker-k8s-operator-leader-election-role" deleted
-clusterrole.rbac.authorization.k8s.io "sagemaker-k8s-operator-manager-role" deleted
-clusterrole.rbac.authorization.k8s.io "sagemaker-k8s-operator-proxy-role" deleted
-rolebinding.rbac.authorization.k8s.io "sagemaker-k8s-operator-leader-election-rolebinding" deleted
-clusterrolebinding.rbac.authorization.k8s.io "sagemaker-k8s-operator-manager-rolebinding" deleted
-clusterrolebinding.rbac.authorization.k8s.io "sagemaker-k8s-operator-proxy-rolebinding" deleted
-secret "sagemaker-k8s-operator-awscreds-tf6g7ct79h" deleted
-service "sagemaker-k8s-operator-controller-manager-metrics-service" deleted
-deployment.apps "sagemaker-k8s-operator-controller-manager" deleted
-```
-This may take some time if you have SageMaker jobs running via the operator.
-
-You may then delete the IAM user created during installation with `delete_iam_user`:
-
-```bash
-$ ./delete_iam_user --interactive
-Delete IAM user 'sagemaker-k8s-operator-manager'? [y/n] y
-Deleting access keys from IAM user 'sagemaker-k8s-operator-manager'
-Delete 1 IAM access keys that belong to user 'sagemaker-k8s-operator-manager'? [y/n] y
-Deleting 1 IAM access keys that belong to user 'sagemaker-k8s-operator-manager'
-Access key 'AKIAIOSFODNN7EXAMPLE' deleted.
-Detaching policy 'arn:aws:iam::aws:policy/AmazonSageMakerFullAccess' from IAM user 'sagemaker-k8s-operator-manager'
-```
+## Contributing
+`amazon-sagemaker-operator-for-k8s` is an open source project. See [CONTRIBUTING](https://github.com/aws/amazon-sagemaker-operator-for-k8s/blob/master/CONTRIBUTING.md) for details.
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is distributed under the
+[Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0),
+see [LICENSE](https://github.com/aws/amazon-sagemaker-operator-for-k8s/blob/master/LICENSE) and [NOTICE](https://github.com/aws/amazon-sagemaker-operator-for-k8s/blob/master/NOTICE) for more information.
