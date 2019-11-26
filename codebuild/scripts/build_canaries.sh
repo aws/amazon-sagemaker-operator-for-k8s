@@ -13,7 +13,7 @@ function build_canary()
   local stage="$2"
 
   # Match stage to pipeline type
-  if [ "$stage" != "$STAGE" ]; then
+  if [ "$stage" != "$PIPELINE_STAGE" ]; then
     return
   fi
 
