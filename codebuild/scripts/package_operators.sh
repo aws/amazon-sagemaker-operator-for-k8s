@@ -70,7 +70,7 @@ function package_operator()
   fi
 
   # Only push to ECR repos if this is run on the prod pipeline
-  if [ "$PIPELINE_STAGE" == "prod" ]; then
+  if [ "$stage" == "prod" ] && [ "$PIPELINE_STAGE" == "prod" ]; then
     deploy_from_alpha "$account_id" "$account_region" "$image_repository"
   fi
 
