@@ -8,70 +8,45 @@ Amazon SageMaker Operators for Kubernetes are operators that can be used to trai
 
 ## Usage
 
-To train a model on SageMaker, first create the job specification as a YAML file.
+First, you must [install the operators](). After installation is complete, create a TrainingJob YAML specification by following one of the samples, like [samples/xgboost-mnist-trainingjob.yaml](./samples/xgboost-mnist-trainingjob.yaml). Then, use `kubectl` to create and monitor the progress of your job:
 
-```yaml
-apiVersion: sagemaker.aws.amazon.com/v1
-kind: TrainingJob
-metadata:
-  name: xgboost-mnist
-spec:
-    algorithmSpecification:
-        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
-        trainingInputMode: File
-    resourceConfig:
-        instanceCount: 1
-        instanceType: ml.m4.xlarge
-        volumeSizeInGB: 5
-    region: us-west-2
-    outputDataConfig:
-        s3OutputPath: s3://my-bucket/xgboost/
-    inputDataConfig:
-        - channelName: train
-          dataSource:
-            s3DataSource:
-                s3DataType: S3Prefix
-                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/train/
-                s3DataDistributionType: FullyReplicated
-          contentType: text/csv
-          compressionType: None
-        - channelName: validation
-          dataSource:
-            s3DataSource:
-                s3DataType: S3Prefix
-                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/validation/
-                s3DataDistributionType: FullyReplicated
-          contentType: text/csv
-          compressionType: None
-    roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    stoppingCondition:
-        maxRuntimeInSeconds: 86400
-    hyperParameters:
-        - name: max_depth
-          value: "5"
-        - name: eta
-          value: "0.2"
-        - name: gamma
-          value: "4"
-        - name: min_child_weight
-          value: "6"
-        - name: silent
-          value: "0"
-        - name: objective
-          value: multi:softmax
-        - name: num_class
-          value: "10"
-        - name: num_round
-          value: "10"
+```bash
+$ kubectl apply -f xgboost-mnist-trainingjob.yaml
+trainingjob.sagemaker.aws.amazon.com/xgboost-mnist created
+
+$ kubectl get trainingjob
+NAME            STATUS       SECONDARY-STATUS   CREATION-TIME          SAGEMAKER-JOB-NAME
+xgboost-mnist   InProgress   Starting           2019-11-26T23:38:11Z   xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06
 ```
 
-Update t
+Once the job starts training, you can use a `kubectl` plugin to stream training logs:
 
-First, create a training job specification in a YAML file. See [samples/xgboost-mnist-trainingjob.yaml](samples/xgboost-mnist-trainingjob.yaml). Replace 
-To train a model on SageMaker from Kubernetes. 
+```bash
+$ kubectl get trainingjob
+NAME            STATUS       SECONDARY-STATUS   CREATION-TIME          SAGEMAKER-JOB-NAME
+xgboost-mnist   InProgress   Training           2019-11-26T23:38:11Z   xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06
 
-## Getting Started
-For up-to-date information about installing and configuring the operator, check out our [user guide]().
+$ kubectl smlogs trainingjob xgboost-mnist | head -n 5
+"xgboost-mnist" has SageMaker TrainingJobName "xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06" in region "us-east-2", status "InProgress" and secondary status "Training"
+xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06/algo-1-1574811611 2019-11-26 15:41:13.449 -0800 PST Arguments: train
+xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06/algo-1-1574811611 2019-11-26 15:41:13.449 -0800 PST [2019-11-26:23:41:10:INFO] Running standalone xgboost training.
+xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06/algo-1-1574811611 2019-11-26 15:41:13.45 -0800 PST [2019-11-26:23:41:10:INFO] File size need to be processed in the node: 1122.95mb. Available memory size in the node: 8501.08mb
+xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06/algo-1-1574811611 2019-11-26 15:41:13.45 -0800 PST [2019-11-26:23:41:10:INFO] Determined delimiter of CSV input is ','
+xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06/algo-1-1574811611 2019-11-26 15:41:13.45 -0800 PST [23:41:10] S3DistributionType set as FullyReplicated
+```
+
+The Amazon SageMaker Operators for Kubernetes enable management of SageMaker TrainingJobs, HyperParameterTuningJobs, BatchTransformJobs and HostingDeployments (Endpoints). Create and monitor them using the same `kubectl` tool as above.
+
+To install the operators onto your Kubernetes cluster, follow our [User Guide]().
+
+### YAML Examples
+
+To make a YAML spec, follow one of the below examples as a guide. Replace values like RoleARN, S3 input buckets and S3 output buckets with values that correspond to your account.
+
+* [BatchTransformJob](./samples/xgboost-mnist-batchtransform.yaml)
+* [HostingDeployment (Endpoint)](./samples/xgboost-mnist-hostingdeployment.yaml)
+* [HyperParameterTuningJob](./samples/xgboost-mnist-hpo.yaml)
+* [TrainingJob](./samples/xgboost-mnist-trainingjob.yaml)
 
 ## Contributing
 `amazon-sagemaker-operator-for-k8s` is an open source project. See [CONTRIBUTING](https://github.com/aws/amazon-sagemaker-operator-for-k8s/blob/master/CONTRIBUTING.md) for details.
