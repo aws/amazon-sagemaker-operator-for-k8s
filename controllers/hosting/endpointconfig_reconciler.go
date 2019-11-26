@@ -218,7 +218,11 @@ func (r *endpointConfigReconciler) resolveSageMakerModelName(ctx context.Context
 	}
 
 	if model.Status.SageMakerModelName == "" {
-		return nil, fmt.Errorf("Model '%s' does not have a SageMakerModelName", namespacedName)
+		causedBy := ""
+		if model.Status.Additional != "" {
+			causedBy = fmt.Sprintf("Caused by: %s", model.Status.Additional)
+		}
+		return nil, fmt.Errorf("Model '%s' does not have a SageMakerModelName. %s", namespacedName, causedBy)
 	}
 
 	return &model.Status.SageMakerModelName, nil
@@ -347,8 +351,12 @@ func (r *endpointConfigReconciler) getSageMakerEndpointConfigName(ctx context.Co
 
 	name := existingEndpointConfig.Status.SageMakerEndpointConfigName
 	if name == "" {
-		return "", fmt.Errorf("Awaiting EndpointConfig name for '%s' to not be empty", key)
-	} else {
-		return name, nil
+		causedBy := ""
+		if existingEndpointConfig.Status.Additional != "" {
+			causedBy = fmt.Sprintf("Caused by: %s", existingEndpointConfig.Status.Additional)
+		}
+		return "", fmt.Errorf("EndpointConfig '%s' does not have a name. %s", key, causedBy)
 	}
+
+	return name, nil
 }
