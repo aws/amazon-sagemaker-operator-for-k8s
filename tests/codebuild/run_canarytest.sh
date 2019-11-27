@@ -10,6 +10,14 @@ CLUSTER_VERSION=${CLUSTER_VERSION:-1.12}
 # Verbose trace of commands, helpful since test iteration takes a long time.
 set -x 
 
+function delete_tests {
+    # Stop jobs so we can do PrivateLink test.
+    kubectl delete hyperparametertuningjob --all
+    kubectl delete trainingjob --all
+    kubectl delete batchtransformjob --all
+    kubectl delete hostingdeployment --all
+}
+
 # A function to delete cluster, if cluster was not launched this will fail, so test will fail ultimately too
 function cleanup {
     # We want to run every command in this function, even if some fail.
@@ -21,6 +29,8 @@ function cleanup {
     # Describe, if the test fails the Additional field might have more helpful info.
     echo "trainingjob description:"
     kubectl describe trainingjob
+
+    delete_tests
 
     # Tear down the cluster if we set it up.
     echo "need_setup_cluster is true, tearing down cluster we created."
@@ -80,10 +90,7 @@ kubectl \
 # Run the integration test file
 ./run_all_sample_canary_tests.sh
 
-# Stop jobs so we can do PrivateLink test.
-kubectl delete hyperparametertuningjob --all
-kubectl delete trainingjob --all
-kubectl delete BatchTransformJob --all
+delete_tests
 
 # Send results back to results bucket
 FILE_NAME=`TZ=UTC date +%Y-%m-%d-%H-%M-%S`
