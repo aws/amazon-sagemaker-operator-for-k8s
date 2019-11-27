@@ -4023,7 +4023,7 @@ spec:
               name: sagemaker-k8s-operator-awscreds-d7dhb26dgf
         - name: AWS_DEFAULT_SAGEMAKER_ENDPOINT
           value: ""
-        image: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s:latest
+        image: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s:v1.0
         imagePullPolicy: Always
         name: manager
         resources:
