@@ -28,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	cwlogs "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	transformjobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/batchtransformjob"
 	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
 	trainingjobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/trainingjob"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +56,7 @@ func TestCompleteVerifiesKubeConfigPath(t *testing.T) {
 	}
 }
 
-func TestCompleteVerifiesExactlyOneResourceName(t *testing.T) {
+func TestTrainingCompleteVerifiesExactlyOneResourceName(t *testing.T) {
 	tables := []struct {
 		args         []string
 		expectsError bool
@@ -86,7 +87,7 @@ func TestCompleteVerifiesExactlyOneResourceName(t *testing.T) {
 	}
 }
 
-func TestValidateVerifiesJobName(t *testing.T) {
+func TestTrainingValidateVerifiesJobName(t *testing.T) {
 
 	fakeStreams := genericclioptions.NewTestIOStreamsDiscard()
 	o := NewSmLogsOptions(fakeStreams)
@@ -118,7 +119,7 @@ func TestValidateVerifiesJobName(t *testing.T) {
 	}
 }
 
-func TestRunPrintsLogs(t *testing.T) {
+func TestTrainingRunPrintsLogs(t *testing.T) {
 
 	tables := []struct {
 		mockResponses            []mockFilterLogEventsResponse
@@ -248,6 +249,199 @@ func TestRunPrintsLogs(t *testing.T) {
 	}
 }
 
+func TestTransformRunPrintsLogs(t *testing.T) {
+
+	tables := []struct {
+		mockResponses            []mockFilterLogEventsResponse
+		requestedK8sJobName      string
+		requestedK8sJobNamespace string
+		mockSmJob                *transformjobv1.BatchTransformJob
+		expectsError             bool
+	}{
+		// Verify base success case.
+		{[]mockFilterLogEventsResponse{
+			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{
+				createFilteredLogEvent("eventId1", 123123, "logStreamName1", "message1", 234234),
+				createFilteredLogEvent("eventId2", 897987, "logStreamName2", "message2", 3456456),
+			}),
+		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), false},
+
+		// Verify correct behavior when k8s name does not exist.
+		{[]mockFilterLogEventsResponse{}, "k8s-name-does-not-exist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), true},
+
+		// Verify correct behavior when k8s namespace does not exist.
+		{[]mockFilterLogEventsResponse{}, "k8s-xgboost-mnist", "namespace-does-not-exist", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), true},
+
+		// Verify that second request is made when token is provided
+		{[]mockFilterLogEventsResponse{
+			createMockFilterLogEventsResponse("nextToken1", []cwlogs.FilteredLogEvent{
+				createFilteredLogEvent("eventId1", 123123, "logStreamName1", "message1", 234234),
+				createFilteredLogEvent("eventId2", 897987, "logStreamName2", "message2", 3456456),
+			}),
+			createMockFilterLogEventsResponse("nextToken2", []cwlogs.FilteredLogEvent{
+				createFilteredLogEvent("eventId3", 235345, "logStreamName3", "message3", 5675658),
+				createFilteredLogEvent("eventId4", 234111, "logStreamName4", "message4", 2101010),
+			}),
+			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), false},
+
+		// Verify no output and no error when an empty response is provided.
+		{[]mockFilterLogEventsResponse{
+			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), false},
+
+		// Verify API failure causes logger to return error.
+		{[]mockFilterLogEventsResponse{
+			createErrorMockFilterLogEventsResponse("CloudWatchApi mock 500 failure", 500, "request id"),
+		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), true},
+
+		// Verify API 404 response causes logger to return error.
+		{[]mockFilterLogEventsResponse{
+			createErrorMockFilterLogEventsResponse("CloudWatchApi mock 404 failure", 404, "request id"),
+		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), true},
+
+		// Verify error output and when empty region is empty
+		{[]mockFilterLogEventsResponse{
+			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), nil), true},
+
+		// Verify error output and when training jon is empty
+		{[]mockFilterLogEventsResponse{
+			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", nil, aws.String("us-east-1")), true},
+	}
+
+	for _, test := range tables {
+		cmd := &cobra.Command{}
+		args := []string{}
+		fakeStreams, _, stdout, _ := genericclioptions.NewTestIOStreams()
+
+		o := NewSmLogsOptions(fakeStreams)
+		installMockCloudWatchLogsClient(o, t, test.mockResponses)
+		installMockK8sClientforTransformJob(o, t, test.mockSmJob)
+
+		o.k8sJobName = test.requestedK8sJobName
+		o.configFlags.Namespace = &test.requestedK8sJobNamespace
+		o.hideLogStreamName = false
+
+		// Should include tests for tail functionality, will need to mock Time.Sleep.
+		// Can use something like https://github.com/jonboulle/clockwork .
+		o.tail = false
+		o.logSearchPrefix = ""
+
+		err := o.RunTransform(cmd, args)
+
+		if test.expectsError {
+			if err == nil {
+				t.Error("Test expected error but error was nil")
+			} else {
+				continue
+			}
+		}
+
+		if !test.expectsError && err != nil {
+			t.Errorf("Test did not expect error but error was: '%s'", err.Error())
+		}
+
+		// Verify correct order and contents of stdout lines.
+		splitStdout := strings.Split(stdout.String(), "\n")
+		stdoutIndex := 0
+		for _, mockLogResponse := range test.mockResponses {
+
+			if mockLogResponse.err != nil {
+				continue
+			}
+
+			for _, logEvent := range mockLogResponse.data.Events {
+
+				if stdoutIndex >= len(splitStdout) {
+					t.Error("Exected more log lines to be printed, but did not find any more on stdout")
+					continue
+				}
+
+				if !strings.Contains(splitStdout[stdoutIndex], *logEvent.Message) {
+					t.Errorf("Expected stdout line '%s' to contain message '%s' but it did not", splitStdout[stdoutIndex], *logEvent.Message)
+				}
+
+				timestampInNano := *logEvent.Timestamp * 1e6
+				utcTimestamp := time.Unix(0, timestampInNano).String()
+				if !strings.Contains(splitStdout[stdoutIndex], utcTimestamp) {
+					t.Errorf("Expected stdout line '%s' to contain timestamp '%s' but it did not", splitStdout[stdoutIndex], utcTimestamp)
+				}
+
+				if !strings.Contains(splitStdout[stdoutIndex], *logEvent.LogStreamName) {
+					t.Errorf("Expected stdout line '%s' to contain logStreamName '%s' but it did not", splitStdout[stdoutIndex], *logEvent.LogStreamName)
+				}
+
+				stdoutIndex++
+			}
+		}
+	}
+}
+
+func TestTransformCompleteVerifiesExactlyOneResourceName(t *testing.T) {
+	tables := []struct {
+		args         []string
+		expectsError bool
+	}{
+		{[]string{"one", "two"}, true},
+		{[]string{}, true},
+		{[]string{"one"}, false},
+	}
+
+	fakeStreams := genericclioptions.NewTestIOStreamsDiscard()
+	o := NewSmLogsOptions(fakeStreams)
+
+	cmd := cobra.Command{}
+
+	for _, test := range tables {
+		err := o.CompleteTransform(&cmd, test.args)
+
+		if test.expectsError {
+			if err == nil {
+				t.Errorf("Expected error, error not found for args: [%s] ", strings.Join(test.args, ","))
+			}
+		} else {
+			// TODO Cannot use until we have better mocking.
+			//if err != nil {
+			//	t.Errorf("Expected no error, error found for args: [%s]", strings.Join(test.args, ","))
+			//}
+		}
+	}
+}
+
+func TestTransformValidateVerifiesJobName(t *testing.T) {
+
+	fakeStreams := genericclioptions.NewTestIOStreamsDiscard()
+	o := NewSmLogsOptions(fakeStreams)
+	cmd := cobra.Command{}
+	args := []string{}
+
+	tables := []struct {
+		jobName      string
+		expectsError bool
+	}{
+		{"", true},
+		{"nonempty", false},
+	}
+
+	for _, test := range tables {
+		o.k8sJobName = test.jobName
+		err := o.ValidateTransform(&cmd, args)
+
+		if test.expectsError {
+			if err == nil {
+				t.Errorf("Validate expected to return error for jobName '%s', but it returned nil", test.jobName)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("Validate expected to return nil error for jobName '%s', but it returned error %s", test.jobName, err.Error())
+			}
+		}
+
+	}
+}
+
 // Install a mocked CWLogs client into SmLogsOptions. The client will be configured to return the responses.
 func installMockCloudWatchLogsClient(o *SmLogsOptions, t *testing.T, responses []mockFilterLogEventsResponse) {
 	nextToReturn := 0
@@ -291,6 +485,38 @@ func createTrainingJob(k8sJobName string, namespace string, trainingJobName *str
 			Region:          region,
 		},
 		Status: trainingjobv1.TrainingJobStatus{},
+	}
+}
+
+// Install a mocked K8s client into SmLogsOptions. It will include the smJob in the fake etcd.
+func installMockK8sClientforTransformJob(o *SmLogsOptions, t *testing.T, smJob *transformjobv1.BatchTransformJob) {
+	scheme := runtime.NewScheme()
+	if err := commonv1.AddToScheme(scheme); err != nil {
+		t.Errorf("Unable to add commonv1 to scheme: " + err.Error())
+	}
+	o.k8sClient = fakeK8sClient.NewFakeClientWithScheme(scheme, smJob)
+}
+
+// Helper function to concisely create a TransformJob using only the inputs we care about for testing.
+func createTransformJob(k8sJobName string, namespace string, transformJobName *string, region *string) *transformjobv1.BatchTransformJob {
+	var uid string
+	if transformJobName != nil {
+		uid = *transformJobName
+	}
+
+	uid = uid + k8sJobName
+
+	return &transformjobv1.BatchTransformJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sJobName,
+			Namespace: namespace,
+			UID:       types.UID(uid),
+		},
+		Spec: transformjobv1.BatchTransformJobSpec{
+			TransformJobName: transformJobName,
+			Region:           region,
+		},
+		Status: transformjobv1.BatchTransformJobStatus{},
 	}
 }
 
