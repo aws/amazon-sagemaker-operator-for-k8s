@@ -148,9 +148,10 @@ func (r *TrainingJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 					log.Info("Training job does not exist in sagemaker, removing finalizer")
 					return r.removeFinalizerAndUpdate(ctx, state, log)
 				}
-				// handle the 500 or unrecoverable API Error
-				return r.handleSageMakerApiError(awsErr, ctx, log, state, cwLogUrl)
 			}
+
+			// handle the 500 or unrecoverable API Error
+			return r.handleSageMakerApiError(descErr, ctx, log, state, cwLogUrl)
 		}
 	}
 
@@ -159,14 +160,16 @@ func (r *TrainingJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error)
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// TODO Refactor this error checking. `descErr` can not be of type `RequestFailure` if, for example, the client is
 	// given bad configuration.
-	if ok {
-		// If training job does not yet exist, we need to create it.
-		if r.isSageMaker404Response(awsErr) {
-			log.Info("Training job does not yet exist in SageMaker, going to create it")
-			return r.createSageMakerTrainingJob(ctx, log, state, sageMakerClient, cwLogUrl)
+	if descErr != nil {
+		if ok {
+			// If training job does not yet exist, we need to create it.
+			if r.isSageMaker404Response(awsErr) {
+				log.Info("Training job does not yet exist in SageMaker, going to create it")
+				return r.createSageMakerTrainingJob(ctx, log, state, sageMakerClient, cwLogUrl)
+			}
 		}
 		// handle the 500 and unrecoverable API error
-		return r.handleSageMakerApiError(awsErr, ctx, log, state, cwLogUrl)
+		return r.handleSageMakerApiError(descErr, ctx, log, state, cwLogUrl)
 	}
 
 	trainingJobDescription := describeResponse.DescribeTrainingJobOutput
@@ -298,10 +301,7 @@ func (r *TrainingJobReconciler) createSageMakerTrainingJob(ctx context.Context, 
 	if _, err := createTrainingJobRequest.Send(ctx); err == nil {
 		return RequeueImmediately()
 	} else {
-
-		awsErr, _ := err.(awserr.RequestFailure)
-		// ok will be true, else we have sdk bug
-		return r.handleSageMakerApiError(awsErr, ctx, log, state, cwUrl)
+		return r.handleSageMakerApiError(err, ctx, log, state, cwUrl)
 	}
 }
 
@@ -320,9 +320,8 @@ func (r *TrainingJobReconciler) deleteTrainingJobIfFinalizerExists(ctx context.C
 				TrainingJobName: state.Spec.TrainingJobName,
 			})
 			_, err := req.Send(ctx)
-			awsErr, ok := err.(awserr.RequestFailure)
-			if ok {
-				return r.handleSageMakerApiError(awsErr, ctx, log, state, cwUrl)
+			if err != nil {
+				return r.handleSageMakerApiError(err, ctx, log, state, cwUrl)
 			}
 
 			return RequeueImmediately()
@@ -380,28 +379,31 @@ func (r *TrainingJobReconciler) updateJobStatus(ctx context.Context, log logr.Lo
 }
 
 // Retry on transient SM API error, fail permanently on other error
-func (r *TrainingJobReconciler) handleSageMakerApiError(awsErr awserr.RequestFailure, ctx context.Context, log logr.Logger, state trainingjobv1.TrainingJob, cwLogUrl string) (ctrl.Result, error) {
+func (r *TrainingJobReconciler) handleSageMakerApiError(err error, ctx context.Context, log logr.Logger, state trainingjobv1.TrainingJob, cwLogUrl string) (ctrl.Result, error) {
 	log = log.WithName("handleSageMakerApiError")
+	awsErr, ok := err.(awserr.RequestFailure)
 
-	if awsErr.StatusCode() >= 500 {
-		log.Error(awsErr, "SageMaker server API error, will retry")
-		return RequeueAfterInterval(r.PollInterval, awsErr)
-	} else if r.isSageMaker429Response(awsErr) {
-		log.Info("SageMaker rate limit exceeded, will retry", "err", awsErr)
-		return RequeueAfterInterval(r.PollInterval, awsErr)
-	} else {
-		log.Error(awsErr, "Handling unrecoverable sagemaker API error")
-
-		etcdUpdateErr := r.updateJobStatus(ctx, log, state, trainingjobv1.TrainingJobStatus{
-			SageMakerTrainingJobName: *state.Spec.TrainingJobName,
-			TrainingJobStatus:        string(sagemaker.TrainingJobStatusFailed),
-			Additional:               awsErr.Error(),
-			LastCheckTime:            Now(),
-			CloudWatchLogUrl:         cwLogUrl,
-		})
-
-		return RequeueIfError(etcdUpdateErr)
+	if ok {
+		if awsErr.StatusCode() >= 500 {
+			log.Error(awsErr, "SageMaker server API error, will retry")
+			return RequeueAfterInterval(r.PollInterval, awsErr)
+		} else if r.isSageMaker429Response(awsErr) {
+			log.Info("SageMaker rate limit exceeded, will retry", "err", awsErr)
+			return RequeueAfterInterval(r.PollInterval, awsErr)
+		}
 	}
+
+	log.Error(err, "Handling unrecoverable sagemaker API error")
+
+	etcdUpdateErr := r.updateJobStatus(ctx, log, state, trainingjobv1.TrainingJobStatus{
+		SageMakerTrainingJobName: *state.Spec.TrainingJobName,
+		TrainingJobStatus:        string(sagemaker.TrainingJobStatusFailed),
+		Additional:               err.Error(),
+		LastCheckTime:            Now(),
+		CloudWatchLogUrl:         cwLogUrl,
+	})
+
+	return RequeueIfError(etcdUpdateErr)
 }
 
 func (r *TrainingJobReconciler) SetupWithManager(mgr ctrl.Manager) error {

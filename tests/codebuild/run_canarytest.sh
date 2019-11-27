@@ -54,21 +54,19 @@ tar -xf sagemaker-k8s-operator.tar.gz
 # jump to the root dir of operator
 pushd sagemaker-k8s-operator
 
-# Setup the PATH for smlogs
-mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
+    # Setup the PATH for smlogs
+    mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
 
-# Goto directory that holds the CRD  
-pushd sagemaker-k8s-operator-install-scripts
-# Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in task definition, we will not create new user
-./setup_awscreds
+    # Goto directory that holds the CRD  
+    pushd sagemaker-k8s-operator-install-scripts
+        # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in task definition, we will not create new user
+        ./setup_awscreds
 
-echo "Deploying the operator"
-kustomize build config/default | kubectl apply -f -
+        echo "Deploying the operator"
+        kustomize build config/default | kubectl apply -f -
 
-# Come out from CRD dir sagemaker-k8s-operator-install-scripts
-popd 
+    popd 
 
-# Come out from sagemaker-k8s-operator, the current dir will be source repo
 popd 
 
 echo "Waiting for controller pod to be Ready"
@@ -80,7 +78,7 @@ kubectl \
     -n sagemaker-k8s-operator-system 
 
 # Run the integration test file
-cd tests && ./run_all_sample_canary_tests.sh
+./run_all_sample_canary_tests.sh
 
 # Stop jobs so we can do PrivateLink test.
 kubectl delete hyperparametertuningjob --all
