@@ -6,7 +6,7 @@ source run_test.sh
 inject_variables tests/xgboost-mnist-trainingjob.yaml
 inject_variables tests/xgboost-mnist-hpo.yaml
 inject_variables tests/xgboost-mnist-batchtransform.yaml
-inject_variables testfiles/xgboost-hosting-deployment.yaml
+inject_variables tests/xgboost-hosting-deployment.yaml
 
 # Add all your new sample files below
 # Run test
@@ -14,7 +14,7 @@ inject_variables testfiles/xgboost-hosting-deployment.yaml
 run_test tests/xgboost-mnist-trainingjob.yaml
 run_test tests/xgboost-mnist-hpo.yaml
 run_test tests/xgboost-mnist-batchtransform.yaml
-run_test testfiles/xgboost-hosting-deployment.yaml
+run_test tests/xgboost-hosting-deployment.yaml
 
 # Verify test
 # Format: `verify_test <type of job> <Job's metadata name> <timeout to complete the test>`` 
