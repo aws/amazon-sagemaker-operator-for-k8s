@@ -43,6 +43,7 @@ undeploy: manifests
 	kubectl delete --all --all-namespaces hyperparametertuningjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces trainingjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces batchtransformjobs.sagemaker.aws.amazon.com || true
+	kubectl delete --all --all-namespaces hostingdeployments.sagemaker.aws.amazon.com || true
 	@# Need to make sure awscreds.env exists, otherwise kustomize will fail.
 	touch config/default/awscreds.env
 	kustomize build config/default | kubectl delete -f -
@@ -87,6 +88,4 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 create-installers: set-image
-	OPERATOR_AWS_ACCESS_KEY_ID=XXX OPERATOR_AWS_SECRET_ACCESS_KEY=YYY ./scripts/setup_awscreds
-	kustomize build config/default > release/credsbased/installer.yaml
 	kustomize build config/rolebasedcreds > release/rolebased/installer.yaml

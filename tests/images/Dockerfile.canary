@@ -43,9 +43,10 @@ ENV RESULT_BUCKET=$RESULT_BUCKET
 RUN mkdir -p /app
 WORKDIR /app/tests
 
-COPY codebuild/canarytests/xgboost-mnist-hpo.yaml .
-COPY codebuild/canarytests/xgboost-mnist-trainingjob.yaml .
-COPY codebuild/canarytests/xgboost-mnist-batchtransform.yaml .
+COPY codebuild/testfiles/xgboost-mnist-hpo.yaml .
+COPY codebuild/testfiles/xgboost-mnist-trainingjob.yaml .
+COPY codebuild/testfiles/xgboost-mnist-batchtransform.yaml .
+COPY codebuild/testfiles/xgboost-hosting-deployment.yaml .
 
 WORKDIR /app
 
