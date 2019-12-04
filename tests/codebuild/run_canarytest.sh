@@ -5,7 +5,11 @@
 # Build environment `Docker image` has all prerequisite setup and credentials are being passed using AWS system manager
 
 CLUSTER_REGION=${CLUSTER_REGION:-us-east-1}
-CLUSTER_VERSION=${CLUSTER_VERSION:-1.12}
+CLUSTER_VERSION=${CLUSTER_VERSION:-1.13}
+
+# Define the list of optional subnets for the EKS test cluster
+CLUSTER_PUBLIC_SUBNETS=${CLUSTER_PUBLIC_SUBNETS:-}
+CLUSTER_PRIVATE_SUBNETS=${CLUSTER_PRIVATE_SUBNETS:-}
 
 # Verbose trace of commands, helpful since test iteration takes a long time.
 set -x 
@@ -51,9 +55,10 @@ echo "Launching canary test for ${COMMIT_SHA}"
 echo "Launching the cluster"
 readonly cluster_name="sagemaker-k8s-pipeline-"$(date '+%Y-%m-%d-%H-%M-%S')""
 
-# By default eksctl picks random AZ, which time to time leads to  capacity issue.
-# Generally 1a, 1b, 1c are topmost available AZ, hence specifying it explicitly 
-eksctl create cluster "${cluster_name}" --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${CLUSTER_REGION}" --auto-kubeconfig --version ${CLUSTER_VERSION} 
+eksctl_args=( --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${CLUSTER_REGION}" --auto-kubeconfig --version "${CLUSTER_VERSION}" )
+[ "${CLUSTER_PUBLIC_SUBNETS}" != "" ] && eksctl_args+=( --vpc-public-subnets="${CLUSTER_PUBLIC_SUBNETS}" )
+[ "${CLUSTER_PRIVATE_SUBNETS}" != "" ] && eksctl_args+=( --vpc-private-subnets="${CLUSTER_PRIVATE_SUBNETS}" )
+eksctl create cluster "${cluster_name}" "${eksctl_args[@]}"
 
 echo "Setting kubeconfig"
 export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
