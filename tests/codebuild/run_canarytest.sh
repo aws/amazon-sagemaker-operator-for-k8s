@@ -53,7 +53,7 @@ echo "Launching canary test for ${COMMIT_SHA}"
 
 # Launch EKS cluster if we need to and define cluster_name,CLUSTER_REGION.
 echo "Launching the cluster"
-readonly cluster_name="sagemaker-k8s-pipeline-"$(date '+%Y-%m-%d-%H-%M-%S')""
+readonly cluster_name="sagemaker-k8s-canary-"$(date '+%Y-%m-%d-%H-%M-%S')""
 
 eksctl_args=( --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${CLUSTER_REGION}" --auto-kubeconfig --version "${CLUSTER_VERSION}" )
 [ "${CLUSTER_PUBLIC_SUBNETS}" != "" ] && eksctl_args+=( --vpc-public-subnets="${CLUSTER_PUBLIC_SUBNETS}" )
