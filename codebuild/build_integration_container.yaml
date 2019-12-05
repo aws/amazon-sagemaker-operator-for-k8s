@@ -2,12 +2,12 @@
 
 version: 0.2      
 phases:
+  install:
+    commands:
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
   build:
     commands:
-       # Docker engine takes few seconds to start
-       - service docker start 
-       # TODO: Make it polling
-       - sleep 1
        # Add AWSCLI and bash
        - (apk add --update python python-dev py-pip build-base bash && pip install awscli --upgrade)
        # Build new integration test container
