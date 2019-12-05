@@ -1,3 +1,5 @@
+# This CodeBuild project is run using the docker:stable-dind container
+
 version: 0.2      
 phases:
   build:
@@ -5,4 +7,4 @@ phases:
        - (apk update && apk add bash)
        - (apk add --update python python-dev py-pip build-base && pip install awscli --upgrade --user)
        # Build new integration test container
-       - (IMG=$INTEGRATION_CONTAINER_REPOSITORY bash codebuild/build_deploy_integration_container.sh)
+       - (IMG=$INTEGRATION_CONTAINER_REPOSITORY bash codebuild/scripts/build_deploy_integration_container.sh)
