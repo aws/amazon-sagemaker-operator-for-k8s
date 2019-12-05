@@ -4,7 +4,11 @@ version: 0.2
 phases:
   build:
     commands:
-       - (apk update && apk add bash)
-       - (apk add --update python python-dev py-pip build-base && pip install awscli --upgrade)
+       # Docker engine takes few seconds to start
+       - sudo service docker start 
+       # TODO: Make it polling
+       - sleep 1
+       # Add AWSCLI and bash
+       - (apk add --update python python-dev py-pip build-base bash && pip install awscli --upgrade)
        # Build new integration test container
        - (IMG=$INTEGRATION_CONTAINER_REPOSITORY bash codebuild/scripts/build_deploy_integration_container.sh)
