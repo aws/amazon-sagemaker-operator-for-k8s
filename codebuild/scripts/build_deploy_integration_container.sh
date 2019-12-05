@@ -3,7 +3,9 @@
 set -x
 
 # Build new integration test container
-IMG=$INTEGRATION_CONTAINER_REPOSITORY bash tests/build_integration.sh
+pushd tests
+IMG=$INTEGRATION_CONTAINER_REPOSITORY bash build_integration.sh
+popd
 
 # Log into ECR
 $(aws ecr get-login --no-include-email --region $REGION --registry-ids $AWS_ACCOUNT_ID)
