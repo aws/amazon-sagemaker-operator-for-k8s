@@ -1,0 +1,6 @@
+version: 0.2      
+phases:
+  build:
+    commands:
+       # Build new integration test container
+       - (IMG=$INTEGRATION_CONTAINER_REPOSITORY bash codebuild/build_deploy_integration_container.sh)
