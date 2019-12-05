@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# This script will build the integration test container. This container contains
+# all the tools necessary for running the build and test steps for each of the
+# CodeBuild projects. The script will also tag the container with the latest
+# commit SHA, and with the "latest" tag, then push to an ECR repository.
+
 set -x
 
 # Build new integration test container
