@@ -5,7 +5,7 @@ phases:
   build:
     commands:
        # Docker engine takes few seconds to start
-       - sudo service docker start 
+       - service docker start 
        # TODO: Make it polling
        - sleep 1
        # Add AWSCLI and bash
