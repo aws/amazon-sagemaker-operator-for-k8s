@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 # Build new integration test container
 IMG=$INTEGRATION_CONTAINER_REPOSITORY bash tests/build_integration.sh
 
