@@ -2,6 +2,14 @@
 
 set -e
 
+source deployment_variables.sh
+
+# Define alpha artifact locations
+ALPHA_BUCKET_PREFIX="$(printf $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION)"
+
+ALPHA_LINUX_BINARY_PATH="$(printf $ALPHA_LINUX_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX)"
+ALPHA_DARWIN_BINARY_PATH="$(printf $ALPHA_DARWIN_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX)"
+
 # This function will pull an existing image + tag and push it with a new tag.
 # Parameter:
 #    $1: The repository and image to pull from.
@@ -16,6 +24,22 @@ function retag_image()
   docker pull $image:$old_tag
   docker tag $image:$old_tag $image:$new_tag
   docker push $image:$new_tag
+}
+
+# This function will push artifacts to their own folder with a given tag.
+# Parameter:
+#    $1: The new tag to push for the artifacts.
+#    $2: The region of the new artifacts.
+function retag_binaries()
+{
+  local new_tag="$1"
+  local region="$2"
+
+  local release_bucket="$(printf $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $region)"
+  local binary_prefix="$(printf $RELEASE_BINARY_PREFIX_FMT $release_bucket)"
+
+  aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix $new_tag)" $PUBLIC_CP_ARGS
+  aws s3 cp "$ALPHA_DARWIN_BINARY_PATH" "$(printf $RELEASE_DARWIN_BINARY_PATH_FMT $binary_prefix $new_tag)" $PUBLIC_CP_ARGS
 }
 
 GIT_TAG="$(git describe --tags --exact-match 2>/dev/null)"
@@ -56,6 +80,10 @@ for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
   retag_image "$image" "$old_tag" "$full_tag"
   retag_image "$image" "$old_tag" "$minor_tag"
   retag_image "$image" "$old_tag" "$major_tag"
+
+  retag_binaries "$full_tag" "$region"
+  retag_binaries "$minor_tag" "$region"
+  retag_binaries "$major_tag" "$region"
 
   echo "Finished tagging $region with $full_tag"
 done
