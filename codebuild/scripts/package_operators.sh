@@ -2,7 +2,7 @@
 
 set -e
 
-source deployment_variables.sh
+source codebuild/scripts/deployment_variables.sh
 
 # Define alpha artifact locations
 ALPHA_BUCKET_PREFIX="$(printf $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION)"
