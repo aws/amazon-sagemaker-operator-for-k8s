@@ -53,15 +53,24 @@ echo "Launching canary test for ${COMMIT_SHA}"
 
 # Launch EKS cluster if we need to and define cluster_name,CLUSTER_REGION.
 echo "Launching the cluster"
-readonly cluster_name="sagemaker-k8s-canary-"$(date '+%Y-%m-%d-%H-%M-%S')""
 
-eksctl_args=( --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${CLUSTER_REGION}" --auto-kubeconfig --version "${CLUSTER_VERSION}" )
-[ "${CLUSTER_PUBLIC_SUBNETS}" != "" ] && eksctl_args+=( --vpc-public-subnets="${CLUSTER_PUBLIC_SUBNETS}" )
-[ "${CLUSTER_PRIVATE_SUBNETS}" != "" ] && eksctl_args+=( --vpc-private-subnets="${CLUSTER_PRIVATE_SUBNETS}" )
-eksctl create cluster "${cluster_name}" "${eksctl_args[@]}"
+cluster_name="sagemaker-k8s-canary-"$(date '+%Y-%m-%d-%H-%M-%S')""
 
-echo "Setting kubeconfig"
-export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
+if [ -z "${USE_EXISTING_CLUSTER}" ]
+then 
+   eksctl_args=( --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${CLUSTER_REGION}" --auto-kubeconfig --version "${CLUSTER_VERSION}" )
+   [ "${CLUSTER_PUBLIC_SUBNETS}" != "" ] && eksctl_args+=( --vpc-public-subnets="${CLUSTER_PUBLIC_SUBNETS}" )
+   [ "${CLUSTER_PRIVATE_SUBNETS}" != "" ] && eksctl_args+=( --vpc-private-subnets="${CLUSTER_PRIVATE_SUBNETS}" )
+
+   eksctl create cluster "${cluster_name}" "${eksctl_args[@]}"
+
+   echo "Setting kubeconfig"
+   export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
+else
+   cluster_name="non-ephemeral-cluster"
+   aws eks update-kubeconfig --name "${cluster_name}" --region "${CLUSTER_REGION}"
+fi
+
 
 # Download the CRD
 tar -xf sagemaker-k8s-operator.tar.gz
