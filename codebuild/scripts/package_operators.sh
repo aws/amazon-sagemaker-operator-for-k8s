@@ -1,13 +1,14 @@
 #!/bin/bash
 
-set -e
-
 source codebuild/scripts/deployment_variables.sh
 
+set -e
+
 # Define alpha artifact locations
-ALPHA_BUCKET_PREFIX="$(printf $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION)"
-ALPHA_LINUX_BINARY_PATH="$(printf $ALPHA_LINUX_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX)"
-ALPHA_DARWIN_BINARY_PATH="$(printf $ALPHA_DARWIN_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX)"
+printf -v ALPHA_BUCKET_PREFIX $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION
+
+printf -v ALPHA_LINUX_BINARY_PATH $ALPHA_LINUX_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
+printf -v ALPHA_DARWIN_BINARY_PATH $ALPHA_DARWIN_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
 
 # This function deploys a region-specific operator to an ECR prod repo from the existing
 # image in the alpha repository. The function also copies across the smlogs binaries
@@ -41,8 +42,8 @@ function deploy_from_alpha()
   docker push ${dest_ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
   docker push ${dest_ecr_image}:latest
 
-  local bucket_name="$(printf $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $account_region)"
-  local binary_prefix="$(printf $RELEASE_BINARY_PREFIX_FMT $bucket_name)"
+  printf -v bucket_name $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $account_region
+  printf -v binary_prefix $RELEASE_BINARY_PREFIX_FMT $bucket_name
 
   # Copy across the binaries and set as latest
   aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix $CODEBUILD_RESOLVED_SOURCE_VERSION)" $PUBLIC_CP_ARGS

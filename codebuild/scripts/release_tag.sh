@@ -1,14 +1,14 @@
 #!/bin/bash
 
-set -e
-
 source codebuild/scripts/deployment_variables.sh
 
-# Define alpha artifact locations
-ALPHA_BUCKET_PREFIX="$(printf $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION)"
+set -e
 
-ALPHA_LINUX_BINARY_PATH="$(printf $ALPHA_LINUX_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX)"
-ALPHA_DARWIN_BINARY_PATH="$(printf $ALPHA_DARWIN_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX)"
+# Define alpha artifact locations
+printf -v ALPHA_BUCKET_PREFIX $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION
+
+printf -v ALPHA_LINUX_BINARY_PATH $ALPHA_LINUX_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
+printf -v ALPHA_DARWIN_BINARY_PATH $ALPHA_DARWIN_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
 
 # This function will pull an existing image + tag and push it with a new tag.
 # Parameter:
@@ -35,8 +35,8 @@ function retag_binaries()
   local new_tag="$1"
   local region="$2"
 
-  local release_bucket="$(printf $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $region)"
-  local binary_prefix="$(printf $RELEASE_BINARY_PREFIX_FMT $release_bucket)"
+  printf -v release_bucket $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $region
+  printf -v binary_prefix $RELEASE_BINARY_PREFIX_FMT $release_bucket
 
   aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix $new_tag)" $PUBLIC_CP_ARGS
   aws s3 cp "$ALPHA_DARWIN_BINARY_PATH" "$(printf $RELEASE_DARWIN_BINARY_PATH_FMT $binary_prefix $new_tag)" $PUBLIC_CP_ARGS
