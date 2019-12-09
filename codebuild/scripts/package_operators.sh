@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source codebuild/scripts/deployment_variables.sh
+source codebuild/scripts/deployment_constants.sh
 
 set -e
 
