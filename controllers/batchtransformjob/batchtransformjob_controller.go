@@ -155,7 +155,7 @@ func (r *BatchTransformJobReconciler) reconcileJob(ctx reconcileRequestContext) 
 	} else {
 
 		ctx.Log.Info("Error getting batchtransformjob state in SageMaker", "requestErr", requestErr)
-		return r.handleSageMakerApiFailure(ctx, requestErr)
+		return r.handleSageMakerApiFailure(ctx, requestErr, false)
 	}
 
 }
@@ -180,12 +180,9 @@ func (r *BatchTransformJobReconciler) reconcileJobDeletion(ctx reconcileRequestC
 		} else {
 			// Case 2
 			log.Info("Sagemaker returns 4xx or 5xx or unrecoverable API Error")
-			if requestErr.StatusCode() == 400 {
-				// handleSageMakerAPIFailure does not removes the finalizer
-				r.removeFinalizerAndUpdate(ctx)
-			}
+
 			// Handle the 500 or unrecoverable API Error
-			return r.handleSageMakerApiFailure(ctx, requestErr)
+			return r.handleSageMakerApiFailure(ctx, requestErr, true)
 		}
 	} else {
 		log.Info("Job exists in Sagemaker, lets delete it")
@@ -227,7 +224,7 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 		_, err := req.Send(ctx)
 		if err != nil {
 			log.Error(err, "Unable to stop the job in sagemaker", "context", ctx)
-			return r.handleSageMakerApiFailure(ctx, err)
+			return r.handleSageMakerApiFailure(ctx, err, false)
 		}
 
 		return RequeueImmediately()
@@ -301,7 +298,7 @@ func (r *BatchTransformJobReconciler) reconcileSpecWithDescription(ctx reconcile
 	return NoRequeue()
 }
 
-func (r *BatchTransformJobReconciler) handleSageMakerApiFailure(ctx reconcileRequestContext, apiErr error) (ctrl.Result, error) {
+func (r *BatchTransformJobReconciler) handleSageMakerApiFailure(ctx reconcileRequestContext, apiErr error, allowRemoveFinalizer bool) (ctrl.Result, error) {
 	if err := r.updateJobStatus(ctx, batchtransformjobv1.BatchTransformJobStatus{
 		Additional:                apiErr.Error(),
 		LastCheckTime:             Now(),
@@ -316,6 +313,11 @@ func (r *BatchTransformJobReconciler) handleSageMakerApiFailure(ctx reconcileReq
 			ctx.Log.Info("SageMaker rate limit exceeded, will retry", "err", awsErr)
 			return RequeueAfterInterval(r.PollInterval, nil)
 		} else if awsErr.StatusCode() == 400 {
+
+			if allowRemoveFinalizer {
+				return r.removeFinalizerAndUpdate(ctx)
+			}
+
 			return NoRequeue()
 		} else {
 			return RequeueAfterInterval(r.PollInterval, nil)
@@ -357,7 +359,7 @@ func (r *BatchTransformJobReconciler) createBatchTransformJob(ctx reconcileReque
 		return RequeueImmediately()
 	}
 	ctx.Log.Info("Unable to create Transform job", "createError", createError)
-	return r.handleSageMakerApiFailure(ctx, createError)
+	return r.handleSageMakerApiFailure(ctx, createError, false)
 }
 
 func (r *BatchTransformJobReconciler) getSageMakerDescription(ctx reconcileRequestContext) (*sagemaker.DescribeTransformJobOutput, awserr.RequestFailure) {

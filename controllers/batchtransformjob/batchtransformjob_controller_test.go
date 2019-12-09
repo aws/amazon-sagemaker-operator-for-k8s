@@ -444,6 +444,34 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 		Expect(job.Status.TransformJobStatus).To(ContainSubstring(string(sagemaker.TransformJobStatusStopping)))
 	})
 
+	It("should update the status and retry if SageMaker throttles", func() {
+		rateExceededMessage := "Rate exceeded"
+		// Setup mock responses.
+		sageMakerClient := builder.
+			AddDescribeTransformJobErrorResponse("ThrottlingException", 400, "request id", rateExceededMessage).
+			Build()
+
+		// Instantiate controller and reconciliation request.
+		controller := createTransformJobReconcilerForSageMakerClient(k8sClient, sageMakerClient, 1)
+		request := CreateReconciliationRequest(job.ObjectMeta.Name, job.ObjectMeta.Namespace)
+
+		// Run test and verify expectations.
+		reconciliationResult, err := controller.Reconcile(request)
+
+		Expect(receivedRequests.Len()).To(Equal(1))
+		Expect(err).ToNot(HaveOccurred())
+		Expect(reconciliationResult.Requeue).To(Equal(false))
+		Expect(reconciliationResult.RequeueAfter).To(Equal(controller.PollInterval))
+
+		// Verify status is updated.
+		err = k8sClient.Get(context.Background(), types.NamespacedName{
+			Namespace: job.ObjectMeta.Namespace,
+			Name:      job.ObjectMeta.Name,
+		}, job)
+
+		Expect(job.Status.Additional).To(ContainSubstring(rateExceededMessage))
+	})
+
 	It("should remove the finalizer and not requeue if the job is stopped", func() {
 		description.TransformJobStatus = sagemaker.TransformJobStatusStopped
 		// Setup mock responses.
