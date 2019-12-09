@@ -161,7 +161,7 @@ func (r *HyperparameterTuningJobReconciler) reconcileJob(ctx reconcileRequestCon
 	} else {
 
 		ctx.Log.Info("Error getting HPO state in SageMaker", "requestErr", requestErr)
-		return r.handleSageMakerApiFailure(ctx, requestErr)
+		return r.handleSageMakerApiFailure(ctx, requestErr, false)
 	}
 }
 
@@ -184,12 +184,8 @@ func (r *HyperparameterTuningJobReconciler) reconcileJobDeletion(ctx reconcileRe
 		} else {
 			// Case 2
 			log.Info("Sagemaker returns 4xx or 5xx or unrecoverable API Error")
-			if requestErr.StatusCode() == 400 {
-				// handleSageMakerAPIFailure does not removes the finalizer
-				r.removeFinalizerAndUpdate(ctx)
-			}
 			// Handle the 500 or unrecoverable API Error
-			return r.handleSageMakerApiFailure(ctx, requestErr)
+			return r.handleSageMakerApiFailure(ctx, requestErr, true)
 		}
 	} else {
 		log.Info("Job exists in Sagemaker, lets delete it")
@@ -231,7 +227,7 @@ func (r *HyperparameterTuningJobReconciler) deleteHyperparameterTuningJobIfFinal
 		_, err := req.Send(ctx)
 		if err != nil {
 			log.Error(err, "Unable to stop the job in sagemaker", "context", ctx)
-			return r.handleSageMakerApiFailure(ctx, err)
+			return r.handleSageMakerApiFailure(ctx, err, false)
 		}
 
 		return RequeueImmediately()
@@ -321,13 +317,13 @@ func (r *HyperparameterTuningJobReconciler) createHyperParameterTuningJob(ctx re
 		return RequeueImmediately()
 	} else {
 		ctx.Log.Info("Unable to create HPO job", "createError", createError)
-		return r.handleSageMakerApiFailure(ctx, createError)
+		return r.handleSageMakerApiFailure(ctx, createError, false)
 
 	}
 }
 
 // Update job status with error. If error had a 400 HTTP error code then do not requeue, otherwise requeue after interval.
-func (r *HyperparameterTuningJobReconciler) handleSageMakerApiFailure(ctx reconcileRequestContext, apiErr error) (ctrl.Result, error) {
+func (r *HyperparameterTuningJobReconciler) handleSageMakerApiFailure(ctx reconcileRequestContext, apiErr error, allowRemoveFinalizer bool) (ctrl.Result, error) {
 
 	if err := r.updateJobStatus(ctx, hpojobv1.HyperparameterTuningJobStatus{
 		Additional:                           apiErr.Error(),
@@ -344,6 +340,11 @@ func (r *HyperparameterTuningJobReconciler) handleSageMakerApiFailure(ctx reconc
 			ctx.Log.Info("SageMaker rate limit exceeded, will retry", "err", awsErr)
 			return RequeueAfterInterval(r.PollInterval, nil)
 		} else if awsErr.StatusCode() == 400 {
+
+			if allowRemoveFinalizer {
+				return r.removeFinalizerAndUpdate(ctx)
+			}
+
 			return NoRequeue()
 		} else {
 			return RequeueAfterInterval(r.PollInterval, nil)
