@@ -274,9 +274,9 @@ func (m *MockSageMakerClientBuilder) AddDescribeEndpointErrorResponse(code strin
 }
 
 // Add a DescribeTrainingJob error response to the client.
-func (m *MockSageMakerClientBuilder) AddDescribeTransformJobErrorResponse(code string, statusCode int, reqId string) *MockSageMakerClientBuilder {
+func (m *MockSageMakerClientBuilder) AddDescribeTransformJobErrorResponse(code string, statusCode int, reqId, message string) *MockSageMakerClientBuilder {
 	m.responses.PushBack(describeTransformJobResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, "mock error message", fmt.Errorf(code)), statusCode, reqId),
+		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
 		data: nil,
 	})
 	return m

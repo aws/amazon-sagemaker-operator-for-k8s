@@ -1,6 +1,14 @@
 #!/bin/bash
 
+source codebuild/scripts/deployment_constants.sh
+
 set -e
+
+# Define alpha artifact locations
+printf -v ALPHA_BUCKET_PREFIX $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION
+
+printf -v ALPHA_LINUX_BINARY_PATH $ALPHA_LINUX_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
+printf -v ALPHA_DARWIN_BINARY_PATH $ALPHA_DARWIN_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
 
 # This function will pull an existing image + tag and push it with a new tag.
 # Parameter:
@@ -18,10 +26,26 @@ function retag_image()
   docker push $image:$new_tag
 }
 
-CODEBUILD_GIT_TAG="$(git describe --tags --exact-match 2>/dev/null)"
+# This function will push artifacts to their own folder with a given tag.
+# Parameter:
+#    $1: The new tag to push for the artifacts.
+#    $2: The region of the new artifacts.
+function retag_binaries()
+{
+  local new_tag="$1"
+  local region="$2"
+
+  printf -v release_bucket $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $region
+  printf -v binary_prefix $RELEASE_BINARY_PREFIX_FMT $release_bucket
+
+  aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix $new_tag)" $PUBLIC_CP_ARGS
+  aws s3 cp "$ALPHA_DARWIN_BINARY_PATH" "$(printf $RELEASE_DARWIN_BINARY_PATH_FMT $binary_prefix $new_tag)" $PUBLIC_CP_ARGS
+}
+
+GIT_TAG="$(git describe --tags --exact-match 2>/dev/null)"
 
 # Only run the release process for tagged commits
-if [ "$CODEBUILD_GIT_TAG" == "" ]; then
+if [ "$GIT_TAG" == "" ]; then
   exit 0
 fi
 
@@ -45,9 +69,21 @@ for row in $(echo ${ACCOUNTS_ESCAPED} | jq -r '.[] | @base64'); do
 
   image=${repository_account}.dkr.ecr.${region}.amazonaws.com/${image_repository}
   old_tag="${CODEBUILD_RESOLVED_SOURCE_VERSION}"
-  new_tag="${CODEBUILD_GIT_TAG}"
+  full_tag="${GIT_TAG}"
 
-  echo "Tagging $image:$old_tag to $image:$new_tag"
+  # Get minor and major version tags
+  [[ $GIT_TAG =~ ^v[0-9]+\.[0-9]+ ]] && minor_tag="${BASH_REMATCH[0]}"
+  [[ $GIT_TAG =~ ^v[0-9]+ ]] && major_tag="${BASH_REMATCH[0]}"
 
-  retag_image "$image" "$old_tag" "$new_tag"
+  echo "Tagging $region with $full_tag"
+
+  retag_image "$image" "$old_tag" "$full_tag"
+  retag_image "$image" "$old_tag" "$minor_tag"
+  retag_image "$image" "$old_tag" "$major_tag"
+
+  retag_binaries "$full_tag" "$region"
+  retag_binaries "$minor_tag" "$region"
+  retag_binaries "$major_tag" "$region"
+
+  echo "Finished tagging $region with $full_tag"
 done

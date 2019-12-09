@@ -1,10 +1,10 @@
 # Amazon SageMaker Operators for Kubernetes
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/aws/amazon-sagemaker-operator-for-k8s?sort=semver)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/aws/amazon-sagemaker-operator-for-k8s)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/aws/amazon-sagemaker-operator-for-k8s?sort=semver&logo=amazon-aws&color=232F3E)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg?color=success)](http://www.apache.org/licenses/LICENSE-2.0)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/aws/amazon-sagemaker-operator-for-k8s?color=69D7E5)
 
 ## Introduction
-Amazon SageMaker Operators for Kubernetes are operators that can be used to train machine learning models, optimize hyperparameters for a given model, run batch transform jobs over existing models, and set up inference endpoints. With these operators, users can manage their jobs in Amazon SageMaker from their Kubernetes cluster.
+Amazon SageMaker Operators for Kubernetes are operators that can be used to train machine learning models, optimize hyperparameters for a given model, run batch transform jobs over existing models, and set up inference endpoints. With these operators, users can manage their jobs in Amazon SageMaker from their Kubernetes cluster in Amazon Elastic Kubernetes Service [EKS](http://aws.amazon.com/eks).
 
 ## Usage
 
