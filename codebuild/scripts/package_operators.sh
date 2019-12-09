@@ -1,6 +1,14 @@
 #!/bin/bash
 
+source codebuild/scripts/deployment_constants.sh
+
 set -e
+
+# Define alpha artifact locations
+printf -v ALPHA_BUCKET_PREFIX $ALPHA_BINARY_PREFIX_FMT $ALPHA_TARBALL_BUCKET $CODEBUILD_RESOLVED_SOURCE_VERSION
+
+printf -v ALPHA_LINUX_BINARY_PATH $ALPHA_LINUX_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
+printf -v ALPHA_DARWIN_BINARY_PATH $ALPHA_DARWIN_BINARY_PATH_FMT $ALPHA_BUCKET_PREFIX
 
 # This function deploys a region-specific operator to an ECR prod repo from the existing
 # image in the alpha repository. The function also copies across the smlogs binaries
@@ -34,18 +42,15 @@ function deploy_from_alpha()
   docker push ${dest_ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
   docker push ${dest_ecr_image}:latest
 
-  local bucket_name="${RELEASE_TARBALL_BUCKET_PREFIX}-${account_region}"
-  local binary_prefix="s3://${bucket_name}/kubectl-smlogs-plugin"
-  local alpha_prefix="s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}"
-
-  local cp_args="--acl public-read"
+  printf -v bucket_name $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $account_region
+  printf -v binary_prefix $RELEASE_BINARY_PREFIX_FMT $bucket_name
 
   # Copy across the binaries and set as latest
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.linux.amd64.tar.gz" "${binary_prefix}/${CODEBUILD_RESOLVED_SOURCE_VERSION}/linux.amd64.tar.gz" ${cp_args}
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.linux.amd64.tar.gz" "${binary_prefix}/latest/linux.amd64.tar.gz" ${cp_args}
+  aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix $CODEBUILD_RESOLVED_SOURCE_VERSION)" $PUBLIC_CP_ARGS
+  aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix latest)" $PUBLIC_CP_ARGS
 
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.darwin.amd64.tar.gz" "${binary_prefix}/${CODEBUILD_RESOLVED_SOURCE_VERSION}/darwin.amd64.tar.gz" ${cp_args}
-  aws s3 cp "${alpha_prefix}/kubectl-smlogs-plugin.darwin.amd64.tar.gz" "${binary_prefix}/latest/darwin.amd64.tar.gz" ${cp_args}
+  aws s3 cp "$ALPHA_DARWIN_BINARY_PATH" "$(printf $RELEASE_DARWIN_BINARY_PATH_FMT $binary_prefix $CODEBUILD_RESOLVED_SOURCE_VERSION)" $PUBLIC_CP_ARGS
+  aws s3 cp "$ALPHA_DARWIN_BINARY_PATH" "$(printf $RELEASE_DARWIN_BINARY_PATH_FMT $binary_prefix latest)" $PUBLIC_CP_ARGS
 }
 
 # This function builds, packages and deploys a region-specific operator to an ECR repo and output bucket.
@@ -109,8 +114,8 @@ function package_operator()
       tar cvzf kubectl-smlogs-plugin.linux.amd64.tar.gz kubectl-smlogs.linux.amd64
       tar cvzf kubectl-smlogs-plugin.darwin.amd64.tar.gz kubectl-smlogs.darwin.amd64
 
-      aws s3 cp kubectl-smlogs-plugin.linux.amd64.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/kubectl-smlogs-plugin.linux.amd64.tar.gz"
-      aws s3 cp kubectl-smlogs-plugin.darwin.amd64.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/kubectl-smlogs-plugin.darwin.amd64.tar.gz"
+      aws s3 cp kubectl-smlogs-plugin.linux.amd64.tar.gz "$ALPHA_LINUX_BINARY_PATH"
+      aws s3 cp kubectl-smlogs-plugin.darwin.amd64.tar.gz "$ALPHA_DARWIN_BINARY_PATH"
     popd
   fi
 
@@ -119,6 +124,6 @@ function package_operator()
     tar cvzf sagemaker-k8s-operator.tar.gz sagemaker-k8s-operator
 
     # Upload the final tar ball to s3 with standard name and git SHA
-    aws s3 cp sagemaker-k8s-operator.tar.gz "s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-${account_region}${tarball_suffix}.tar.gz"
+    aws s3 cp sagemaker-k8s-operator.tar.gz "$ALPHA_BUCKET_PREFIX/sagemaker-k8s-operator-${account_region}${tarball_suffix}.tar.gz"
   popd
 }

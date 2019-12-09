@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -x
-
 source codebuild/scripts/package_operators.sh
+
+set -x
 
 # Login to alpha ECR
 $(aws ecr get-login --no-include-email --region $ALPHA_REPOSITORY_REGION --registry-ids $ALPHA_ACCOUNT_ID)
