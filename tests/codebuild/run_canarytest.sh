@@ -36,9 +36,12 @@ function cleanup {
 
     delete_tests
 
-    # Tear down the cluster if we set it up.
-    echo "need_setup_cluster is true, tearing down cluster we created."
-    eksctl delete cluster --name "${cluster_name}" --region "${CLUSTER_REGION}"
+    if [ -z "${USE_EXISTING_CLUSTER}" ]
+    then
+        # Tear down the cluster if we set it up.
+        echo "USE_EXISTING_CLUSTER is true, tearing down cluster we created."
+        eksctl delete cluster --name "${cluster_name}" --region "${CLUSTER_REGION}"
+    fi
 }
 
 # Set the trap to clean up resources
