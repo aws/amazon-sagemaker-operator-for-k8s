@@ -1,7 +1,7 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: BatchTransformJob
 metadata:
-  name: xgboost-mnist
+  name: xgboost-mnist-batch
 spec:
   region: us-west-2
   modelName: sagemaker-mnist-model
@@ -10,7 +10,7 @@ spec:
     dataSource:
       s3DataSource:
         s3DataType: S3Prefix
-        s3Uri: s3://sagemaker-sample-data-us-west-2/batch-transform/mnist-1000-samples 
+        s3Uri: s3://{DATA_BUCKET}/batch-transform/mnist-1000-samples 
   transformOutput:
     s3OutputPath: s3://{DATA_BUCKET}/batch-model 
   transformResources:
