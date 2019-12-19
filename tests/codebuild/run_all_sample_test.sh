@@ -35,12 +35,7 @@ run_test testfiles/xgboost-mnist-hpo.yaml
 run_test testfiles/spot-xgboost-mnist-hpo.yaml
 run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
 run_test testfiles/xgboost-model.yaml
-# We need to get sagemaker model before running batch transform
-verify_test Model xgboost-model 1m Created
-sagemaker_model=""
-get_sagemaker_model_from_k8s_model xgboost-model sagemaker_model
-sed -i "s/xgboost-model/${sagemaker_model}/g" testfiles/xgboost-mnist-batchtransform.yaml
-run_test testfiles/xgboost-mnist-batchtransform.yaml
+run_batch_transform_test
 run_test testfiles/xgboost-hosting-deployment.yaml
 
 # Verify test
@@ -61,7 +56,7 @@ if [ "$(kubectl smlogs trainingjob xgboost-mnist | wc -l)" -lt "1" ]; then
     echo "smlogs trainingjob did not produce any output."
     exit 1
 fi
-if [ "$(kubectl smlogs batchtransformjob xgboost-mnist | wc -l)" -lt "1" ]; then
+if [ "$(kubectl smlogs batchtransformjob xgboost-batch | wc -l)" -lt "1" ]; then
     echo "smlogs batchtransformjob did not produce any output."
     exit 1
 fi
