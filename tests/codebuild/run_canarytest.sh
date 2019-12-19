@@ -19,6 +19,7 @@ function delete_tests {
     kubectl delete hyperparametertuningjob --all
     kubectl delete trainingjob --all
     kubectl delete batchtransformjob --all
+    kubectl delete model --all
     kubectl delete hostingdeployment --all
 }
 

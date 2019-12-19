@@ -6,6 +6,23 @@ function run_test()
    kubectl apply -f "$1"
 }
 
+# This function gets the sagemaker model name from k8s model
+# Parameter:
+#    $1: Name of k8s model
+#    $2: Variable to store sagemaker model
+# e.g. get_sagemaker_model_from_k8s_model k8s_model sm_model
+#    This will populate the sm_model variable with sagemaker model.
+function get_sagemaker_model_from_k8s_model()
+{
+  local k8s_model_name="$1"
+  sagemaker_model_name="$2"
+  # Get the second line and 3rd column, since valid output will be following
+  # NAME                    STATUS    SAGE-MAKER-MODEL-NAME
+  # xgboost-model           Created   model-5c06b18921e411ea91230292f5024981
+  sagemaker_model_name=$(kubectl get model $k8s_model_name | sed -n '2 p' |  awk '{print $3}') 
+  echo "k8s_model: $k8s_model_name, sagemaker_model: $sagemaker_model_name"
+}
+
 # This function verifies that job has started and not failed
 # Parameter:
 #    $1: Kind of CRD

@@ -47,6 +47,7 @@ COPY codebuild/testfiles/xgboost-mnist-hpo.yaml .
 COPY codebuild/testfiles/xgboost-mnist-trainingjob.yaml .
 COPY codebuild/testfiles/xgboost-mnist-batchtransform.yaml .
 COPY codebuild/testfiles/xgboost-hosting-deployment.yaml .
+COPY codebuild/testfiles/xgboost-model.yaml .
 
 WORKDIR /app
 

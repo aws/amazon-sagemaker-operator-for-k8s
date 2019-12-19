@@ -1,10 +1,10 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: BatchTransformJob
 metadata:
-  name: xgboost-mnist
+  name: xgboost-batch
 spec:
   region: us-west-2
-  modelName: sagemaker-mnist-model
+  modelName: xgboost-model
   transformInput:
     contentType: text/csv
     dataSource:

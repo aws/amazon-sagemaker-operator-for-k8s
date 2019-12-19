@@ -19,6 +19,7 @@ inject_variables testfiles/xgboost-mnist-custom-endpoint.yaml
 inject_variables testfiles/xgboost-mnist-hpo.yaml
 inject_variables testfiles/spot-xgboost-mnist-hpo.yaml
 inject_variables testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+inject_variables testfiles/xgboost-model.yaml
 inject_variables testfiles/xgboost-mnist-batchtransform.yaml
 inject_variables testfiles/xgboost-hosting-deployment.yaml
 
@@ -33,6 +34,12 @@ run_test testfiles/xgboost-mnist-custom-endpoint.yaml
 run_test testfiles/xgboost-mnist-hpo.yaml
 run_test testfiles/spot-xgboost-mnist-hpo.yaml
 run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+run_test testfiles/xgboost-model.yaml
+# We need to get sagemaker model before running batch transform
+verify_test Model xgboost-model 1m Created
+sagemaker_model=""
+get_sagemaker_model_from_k8s_model xgboost-model sagemaker_model
+sed -i "s/xgboost-model/${sagemaker_model}/g" testfiles/xgboost-mnist-batchtransform.yaml
 run_test testfiles/xgboost-mnist-batchtransform.yaml
 run_test testfiles/xgboost-hosting-deployment.yaml
 
