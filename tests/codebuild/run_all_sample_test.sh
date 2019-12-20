@@ -40,16 +40,16 @@ run_test testfiles/xgboost-hosting-deployment.yaml
 
 # Verify test
 # Format: `verify_test <type of job> <Job's metadata name> <timeout to complete the test> <desired status for job to achieve>` 
-verify_test trainingjob xgboost-mnist 10m Completed
-verify_test trainingjob spot-xgboost-mnist 10m Completed
-verify_test trainingjob xgboost-mnist-custom-endpoint 10m Completed
-# verify_test trainingjob efs-xgboost-mnist 10m Completed
-#verify_test trainingjob fsx-kmeans-mnist 10m Completed
-verify_test HyperparameterTuningJob xgboost-mnist-hpo 15m Completed
-verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 15m Completed
-verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 15m Completed
-verify_test BatchTransformJob xgboost-mnist 10m Completed
-verify_test HostingDeployment hosting 20m InService
+verify_test trainingjob xgboost-mnist 20m Completed
+verify_test trainingjob spot-xgboost-mnist 20m Completed
+verify_test trainingjob xgboost-mnist-custom-endpoint 20m Completed
+# verify_test trainingjob efs-xgboost-mnist 20m Completed
+#verify_test trainingjob fsx-kmeans-mnist 20m Completed
+verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
+verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
+verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
+verify_test BatchTransformJob xgboost-mnist 20m Completed
+verify_test HostingDeployment hosting 40m InService
 
 # Verify smlogs worked.
 if [ "$(kubectl smlogs trainingjob xgboost-mnist | wc -l)" -lt "1" ]; then

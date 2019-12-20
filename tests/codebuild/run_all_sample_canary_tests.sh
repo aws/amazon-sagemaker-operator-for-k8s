@@ -21,10 +21,10 @@ run_test tests/xgboost-hosting-deployment.yaml
 
 # Verify test
 # Format: `verify_test <type of job> <Job's metadata name> <timeout to complete the test> <desired status for job to achieve>` 
-verify_test TrainingJob xgboost-mnist 10m Completed
-verify_test HyperparameterTuningJob xgboost-mnist-hpo 15m Completed
-verify_test BatchTransformJob xgboost-mnist 10m Completed 
-verify_test HostingDeployment hosting 20m InService
+verify_test TrainingJob xgboost-mnist 20m Completed
+verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
+verify_test BatchTransformJob xgboost-mnist 20m Completed 
+verify_test HostingDeployment hosting 40m InService
 
 # Verify smlogs worked.
 # TODO this is common with run_all_sample_test. Should put in own file.
