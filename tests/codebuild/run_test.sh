@@ -6,6 +6,20 @@ function run_test()
    kubectl apply -f "$1"
 }
 
+# This function gets the sagemaker model name from k8s model
+# Parameter:
+#    $1: Name of k8s model
+# e.g. get_sagemaker_model_from_k8s_model k8s_model 
+function get_sagemaker_model_from_k8s_model()
+{
+   local k8s_model_name="$1"
+   # stdout goes to caller
+   # Get the second line and 3rd column, since valid output will be following
+   # NAME                    STATUS    SAGE-MAKER-MODEL-NAME
+   # xgboost-model           Created   model-5c06b18921e411ea91230292f5024981
+   kubectl get model $k8s_model_name | sed -n '2 p' |  awk '{print $3}' 
+}
+
 # This function verifies that job has started and not failed
 # Parameter:
 #    $1: Kind of CRD
@@ -97,4 +111,13 @@ function build_fsx_from_s3()
    fi
 
    export FSX_ID=$FSX_ID
+}
+
+# Special function for batch transform till we fix issue-59
+function run_batch_transform_test() {
+    run_test testfiles/xgboost-model.yaml
+    # We need to get sagemaker model before running batch transform
+    verify_test Model xgboost-model 1m Created
+    sed -i "s/xgboost-model/$(get_sagemaker_model_from_k8s_model xgboost-model)/g" testfiles/xgboost-mnist-batchtransform.yaml
+    run_test tests/xgboost-mnist-batchtransform.yaml 
 }

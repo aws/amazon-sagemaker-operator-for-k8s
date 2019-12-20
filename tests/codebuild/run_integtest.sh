@@ -13,6 +13,7 @@ function delete_tests {
     kubectl delete trainingjob --all
     kubectl delete batchtransformjob --all
     kubectl delete hostingdeployment --all
+    kubectl delete model --all
 }
 
 # A function to delete cluster, if cluster was not launched this will fail, so test will fail ultimately too
