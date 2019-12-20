@@ -6,17 +6,22 @@ source run_test.sh
 # Inject environment variables into tests
 inject_variables tests/xgboost-mnist-trainingjob.yaml
 inject_variables tests/xgboost-mnist-hpo.yaml
-inject_variables testfiles/xgboost-model.yaml
+inject_variables tests/xgboost-model.yaml
 inject_variables tests/xgboost-mnist-batchtransform.yaml 
 inject_variables tests/xgboost-hosting-deployment.yaml
 
 # Add all your new sample files below
 # Run test
-# Format: `run_test testfiles/<Your test file name>`
+# Format: `run_test tests/<Your test file name>`
 run_test tests/xgboost-mnist-trainingjob.yaml
 run_test tests/xgboost-mnist-hpo.yaml
-run_test testfiles/xgboost-model.yaml
-run_batch_transform_test
+run_test tests/xgboost-model.yaml
+# Special code for batch transform till we fix issue-59
+run_test tests/xgboost-model.yaml
+# We need to get sagemaker model before running batch transform
+verify_test Model xgboost-model 1m Created
+sed -i "s/xgboost-model/$(get_sagemaker_model_from_k8s_model xgboost-model)/g" tests/xgboost-mnist-batchtransform.yaml
+run_test tests/xgboost-mnist-batchtransform.yaml 
 run_test tests/xgboost-hosting-deployment.yaml
 
 # Verify test

@@ -35,7 +35,12 @@ run_test testfiles/xgboost-mnist-hpo.yaml
 run_test testfiles/spot-xgboost-mnist-hpo.yaml
 run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
 run_test testfiles/xgboost-model.yaml
-run_batch_transform_test
+# Special function for batch transform till we fix issue-59
+run_test testfiles/xgboost-model.yaml
+# We need to get sagemaker model before running batch transform
+verify_test Model xgboost-model 1m Created
+sed -i "s/xgboost-model/$(get_sagemaker_model_from_k8s_model xgboost-model)/g" testfiles/xgboost-mnist-batchtransform.yaml
+run_test testfiles/xgboost-mnist-batchtransform.yaml 
 run_test testfiles/xgboost-hosting-deployment.yaml
 
 # Verify test
@@ -48,7 +53,7 @@ verify_test trainingjob xgboost-mnist-custom-endpoint 20m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
 verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
-verify_test BatchTransformJob xgboost-mnist 20m Completed
+verify_test BatchTransformJob xgboost-batch 20m Completed
 verify_test HostingDeployment hosting 40m InService
 
 # Verify smlogs worked.
