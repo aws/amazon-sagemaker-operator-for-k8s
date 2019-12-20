@@ -1,7 +1,7 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: BatchTransformJob
 metadata:
-  name: xgboost-mnist
+  name: xgboost-batch
 spec:
   region: us-west-2
   modelName: sagemaker-tensorflow-model
