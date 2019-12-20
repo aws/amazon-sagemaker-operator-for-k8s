@@ -112,12 +112,3 @@ function build_fsx_from_s3()
 
    export FSX_ID=$FSX_ID
 }
-
-# Special function for batch transform till we fix issue-59
-function run_batch_transform_test() {
-    run_test testfiles/xgboost-model.yaml
-    # We need to get sagemaker model before running batch transform
-    verify_test Model xgboost-model 1m Created
-    sed -i "s/xgboost-model/$(get_sagemaker_model_from_k8s_model xgboost-model)/g" testfiles/xgboost-mnist-batchtransform.yaml
-    run_test tests/xgboost-mnist-batchtransform.yaml 
-}
