@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# one time:  travis enable -r gautamkmr/amazon-sagemaker-operator-for-k8s
+# one time:  travis enable -r aws/amazon-sagemaker-operator-for-k8s
 travis login --github-token "$GITHUB_TOKEN" 
 # to get travis token run `travis token`
 body='{
@@ -14,4 +14,4 @@ curl -s -X POST \
     -H "Travis-API-Version: 3" \
     -H "Authorization: token $(travis token)" \
     -d "$body" \
-    https://api.travis-ci.org/repo/gautamkmr%2Famazon-sagemaker-operator-for-k8s/requests
+    https://api.travis-ci.org/repo/aws%2Famazon-sagemaker-operator-for-k8s/requests
