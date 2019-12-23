@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# one time:  travis enable -r aws/amazon-sagemaker-operator-for-k8s
+travis login --github-token "$GITHUB_TOKEN" 
+# to get travis token run `travis token`
+body='{
+ "request": {
+ "message": "Override the commit message: this is an api request 3",
+ "branch":"travis"
+}}'
+
+curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Travis-API-Version: 3" \
+    -H "Authorization: token $(travis token)" \
+    -d "$body" \
+    https://api.travis-ci.org/repo/aws%2Famazon-sagemaker-operator-for-k8s/requests
