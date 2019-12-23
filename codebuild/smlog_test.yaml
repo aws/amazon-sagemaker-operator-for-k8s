@@ -1,0 +1,8 @@
+version: 0.2
+     
+phases:
+  build:
+    commands:
+       # travis-api assumes that GITHUB_TOKEN has been defined with appropriate privileged. 
+       - bash travis-api
+
