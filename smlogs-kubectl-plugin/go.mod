@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.11.0
 	github.com/spf13/cobra v0.0.4
 	github.com/spf13/pflag v1.0.3
-	go.amzn.com/sagemaker/sagemaker-k8s-operator v0.0.0
+	github.com/aws/amazon-sagemaker-operator-for-k8s v0.0.0
 	k8s.io/api v0.0.0-20190711103429-37c3b8b1ca65
 	k8s.io/apimachinery v0.0.0-20190711103026-7bf792636534
 	k8s.io/cli-runtime v0.0.0-20190711111425-61e036b70227
@@ -16,7 +16,7 @@ require (
 )
 
 replace (
-	go.amzn.com/sagemaker/sagemaker-k8s-operator => ../
+	github.com/aws/amazon-sagemaker-operator-for-k8s => ../
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20181025213731-e84da0312774
 	golang.org/x/net => golang.org/x/net v0.0.0-20190206173232-65e2d4e15006
 	golang.org/x/sync => golang.org/x/sync v0.0.0-20181108010431-42b317875d0f

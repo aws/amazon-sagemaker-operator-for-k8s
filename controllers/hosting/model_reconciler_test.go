@@ -19,16 +19,16 @@ package hosting
 import (
 	"context"
 
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	hostingv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	"github.com/google/uuid"
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
-	hostingv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/hostingdeployment"
-	modelv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/model"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 
 	ctrl "sigs.k8s.io/controller-runtime"
