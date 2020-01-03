@@ -20,9 +20,12 @@ import (
 	"context"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+
+	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
 )
 
 const (
@@ -146,6 +149,9 @@ func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *s
 
 	createRequest := c.innerClient.CreateEndpointRequest(endpoint)
 
+	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
+	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
@@ -228,6 +234,9 @@ func (c *sageMakerClientWrapper) CreateModel(ctx context.Context, model *sagemak
 
 	createRequest := c.innerClient.CreateModelRequest(model)
 
+	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
+	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
@@ -296,6 +305,9 @@ func (c *sageMakerClientWrapper) isDescribeEndpointConfig404Error(err error) boo
 func (c *sageMakerClientWrapper) CreateEndpointConfig(ctx context.Context, endpointconfig *sagemaker.CreateEndpointConfigInput) (*sagemaker.CreateEndpointConfigOutput, error) {
 
 	createRequest := c.innerClient.CreateEndpointConfigRequest(endpointconfig)
+
+	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
+	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
 
 	response, err := createRequest.Send(ctx)
 
