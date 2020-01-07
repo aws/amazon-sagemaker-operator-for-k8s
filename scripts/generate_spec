@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# components:
+#   schemas:
+#     model:
+#       SPEC
+
+TMP_PATH=/tmp/current_spec.yaml
+OUTPUT_PATH=/output/swagger_spec.yaml
+
+function parse_spec_yaml() {
+  local file_path="$1"
+
+  local spec_name=$(yq r "$file_path" spec.names.kind)
+  echo Processing "$spec_name" spec
+  yq r "$file_path" spec.validation.openAPIV3Schema > $TMP_PATH
+
+  # Add the correct OpenAPI V3 prefix
+  yq p -i $TMP_PATH components.schemas."${spec_name}"
+
+  # Merge into existing full spec
+  yq m -i $OUTPUT_PATH $TMP_PATH
+}
+
+# Recreate existing spec
+rm $OUTPUT_PATH
+yq n openapi 3.0.1 >> $OUTPUT_PATH
+yq w -i $OUTPUT_PATH info.title "Amazon SageMaker Operator for Kubernetes"
+yq w -i $OUTPUT_PATH info.description "Amazon SageMaker Operator for Kubernetes"
+yq w -i $OUTPUT_PATH info.version "1.0.0"
+yq w -i $OUTPUT_PATH tags []
+# YQ does not yet have support for adding empty dictionaries
+echo "paths: {}" >> $OUTPUT_PATH
+
+for file in ./*.yaml; do
+  parse_spec_yaml $file
+done

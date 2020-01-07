@@ -89,3 +89,11 @@ endif
 
 create-installers: set-image
 	kustomize build config/rolebasedcreds > release/rolebased/installer.yaml
+
+# Generate the OpenAPI spec using the CRD validation components
+generate-openapi-spec: generate
+	docker run -v `pwd`/docs:/output "$$(docker build . --file scripts/generate-spec-Dockerfile --quiet)"
+
+generate-docs: #generate-openapi-spec
+	#docker run --rm -v `pwd`/docs:/local swaggerapi/swagger-codegen-cli-v3 generate -i /local/swagger_spec.yaml -l html2 -o /local --verbose
+	# go run k8s.io/kube-openapi/cmd/openapi-gen/ -O ./openapi_generated -i ./api/v1/model -h ./hack/boilerplate.go.txt -p go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v2/model

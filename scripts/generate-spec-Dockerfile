@@ -1,0 +1,15 @@
+# Used to produce the OpenAPI documentation based on the validation specs in the CRD definition files
+
+FROM alpine:latest
+
+RUN wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/2.4.1/yq_linux_amd64" && chmod +x /usr/local/bin/yq
+
+RUN mkdir -p bases
+WORKDIR /bases
+
+COPY ./config/crd/bases/* ./
+
+COPY scripts/generate_spec /generate_spec
+RUN chmod +x /generate_spec
+
+ENTRYPOINT /bin/sh /generate_spec
