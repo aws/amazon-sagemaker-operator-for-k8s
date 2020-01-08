@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	// +kubebuilder:scaffold:imports

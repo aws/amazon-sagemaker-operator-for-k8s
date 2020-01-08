@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

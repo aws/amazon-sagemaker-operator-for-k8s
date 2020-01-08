@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -32,10 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	endpointconfigv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/endpointconfig"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
-	"go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil"
-	"go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil/clientwrapper"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 )
 
 // This file is almost identical to controllers/model/model_controller.go. We should create a reconciler

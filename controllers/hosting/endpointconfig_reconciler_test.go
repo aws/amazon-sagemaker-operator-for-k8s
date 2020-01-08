@@ -18,13 +18,13 @@ package hosting
 import (
 	"context"
 
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
-	endpointconfigv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/endpointconfig"
-	hostingv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/hostingdeployment"
-	modelv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/model"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
-	endpointconfigcontroller "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/endpointconfig"
-	modelcontroller "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/model"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
+	hostingv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
+	endpointconfigcontroller "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/endpointconfig"
+	modelcontroller "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/model"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
