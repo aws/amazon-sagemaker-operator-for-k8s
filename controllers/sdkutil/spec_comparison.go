@@ -16,15 +16,15 @@ limitations under the License.
 package sdkutil
 
 import (
+	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
+	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	batchtransformjobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/batchtransformjob"
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
-	endpointconfigv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/endpointconfig"
-	hpojobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/hyperparametertuningjob"
-	modelv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/model"
-	trainingjobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/trainingjob"
 )
 
 // Simple struct representing whether two objects match and their differences.

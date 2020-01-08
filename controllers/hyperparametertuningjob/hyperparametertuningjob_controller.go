@@ -26,10 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
-	hpojobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/hyperparametertuningjob"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"

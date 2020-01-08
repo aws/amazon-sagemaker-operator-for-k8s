@@ -21,9 +21,9 @@ import (
 	"time"
 
 	. "container/list"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
@@ -32,10 +32,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
-	endpointconfigv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/endpointconfig"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
-	"go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil/clientwrapper"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	// +kubebuilder:scaffold:imports

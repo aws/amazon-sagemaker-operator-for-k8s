@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
