@@ -113,7 +113,7 @@ popd
 
 echo "Waiting for controller pod to be Ready"
 # Wait to increase chance that pod is ready
-# Should upgrade kubectl to version that supports `kubectl wait pods --all`
+# TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
 sleep 60
 
 # TODO: Add Helm chart tests
