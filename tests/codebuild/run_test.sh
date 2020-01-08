@@ -112,3 +112,16 @@ function build_fsx_from_s3()
 
    export FSX_ID=$FSX_ID
 }
+
+# Delete a K8s resource and ensure all AWS resources were cleaned up successfully
+# Parameter:
+#    $1: Kind of CRD
+#    $2: Instance of CRD
+# e.g. delete_test trainingjob xgboost-mnist
+function delete_test()
+{
+   local crd_type="$1"
+   local crd_instance="$2"
+
+   # TODO: Write the test
+}
