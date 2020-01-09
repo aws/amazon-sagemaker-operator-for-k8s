@@ -113,15 +113,67 @@ function build_fsx_from_s3()
    export FSX_ID=$FSX_ID
 }
 
+function delete_all_tests()
+{
+    # Stop jobs so we can do PrivateLink test.
+    kubectl delete hyperparametertuningjob --all
+    kubectl delete trainingjob --all
+    kubectl delete batchtransformjob --all
+    kubectl delete hostingdeployment --all
+    kubectl delete model --all
+}
+
 # Delete a K8s resource and ensure all AWS resources were cleaned up successfully
 # Parameter:
-#    $1: Kind of CRD
-#    $2: Instance of CRD
-# e.g. delete_test trainingjob xgboost-mnist
-function delete_test()
+#    $1: CRD type
+#    $2: Metadata name
+#    $3: Status query path
+#    $4: Expected status
+#    $5: Timeout (in seconds)
+# e.g. poll_for_status trainingjob xgboost-mnist 20
+function poll_for_status()
 {
-   local crd_type="$1"
-   local crd_instance="$2"
+   local poll_interval=5 # Delay between polling (in seconds)
+   local total_time=0
 
-   # TODO: Write the test
+   local initial_status="$status"
+   local status=$(kubectl get $1/$2 -o json | jq -r $3)
+   while [ "$status" != "$4" ]; do
+      if [ "$status" != "$initial_status" ]; do
+         echo "$1/$2 changed to status $status"
+         exit 1
+      done
+
+      if [ $wait_count -ge $5]; do
+         echo "$1/$2 did not start in time"
+         exit 1
+      done
+
+      status=$(kubectl get $1/$2 -o json | jq -r $3)
+
+      sleep poll_interval
+      ((total_time+=poll_interval))
+   done
+}
+
+# Delete a K8s resource and ensure all AWS resources were cleaned up successfully
+# Parameter:
+#    $1: CRD type
+#    $2: Filename of test
+#    $3: SageMaker name key - The JQ path to the name of the SageMaker resource to query
+#    $4: SageMaker status key - The JQ path to the status of the SageMaker resource to poll
+# e.g. verify_delete trainingjob xgboost-mnist.yaml
+function verify_delete()
+{
+   # Apply file and get name
+   local job_name=$(kubectl apply -f $2 -o json | jq -r ".metadata.name")
+
+   # Wait until job has started
+   poll_for_status "$1" "$job_name" "$4" "Starting" 20
+
+   local sagemaker_name=$(kubectl get trainingjob/xgboost-mnist -o json | jq -r $3)
+
+   # Check that we can detect the status changing
+   kubectl delete -f "$2"
+   poll_for_status "$1" "$job_name" "$4" "Stopping" 20
 }

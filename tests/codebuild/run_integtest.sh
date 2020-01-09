@@ -1,20 +1,13 @@
 #!/bin/bash
 
+source run_test.sh
+
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails
 # Build environment `Docker image` has all prerequisite setup and credentials are being passed using AWS system manager
 
 # Verbose trace of commands, helpful since test iteration takes a long time.
 set -x 
-
-function delete_tests {
-    # Stop jobs so we can do PrivateLink test.
-    kubectl delete hyperparametertuningjob --all
-    kubectl delete trainingjob --all
-    kubectl delete batchtransformjob --all
-    kubectl delete hostingdeployment --all
-    kubectl delete model --all
-}
 
 # A function to delete cluster, if cluster was not launched this will fail, so test will fail ultimately too
 function cleanup {
@@ -28,7 +21,7 @@ function cleanup {
     echo "trainingjob description:"
     kubectl describe trainingjob
 
-    delete_tests
+    delete_all_tests
 
     # Tear down the cluster if we set it up.
     if [ "${need_setup_cluster}" == "true" ]; then
@@ -119,8 +112,6 @@ sleep 60
 
 # Run the integration test file
 cd tests/codebuild/ && ./run_all_sample_test.sh
-
-delete_tests
 
 echo "Skipping private link test"
 #cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"

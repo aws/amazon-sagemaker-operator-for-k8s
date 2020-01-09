@@ -42,3 +42,6 @@ if [ "$(kubectl smlogs batchtransformjob xgboost-batch | wc -l)" -lt "1" ]; then
     echo "smlogs batchtransformjob did not produce any output."
     exit 1
 fi
+
+# Clean up resources before re-using metadata names
+delete_all_tests
