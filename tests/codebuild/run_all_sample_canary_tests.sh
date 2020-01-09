@@ -47,5 +47,5 @@ fi
 delete_all_tests
 
 verify_delete TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
-verify_delete HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml xgboost-mnist-hpo
+verify_delete HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
