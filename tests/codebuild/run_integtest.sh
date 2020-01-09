@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source run_test.sh
+source tests/codebuild/run_test.sh
 
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails
@@ -16,10 +16,6 @@ function cleanup {
 
     echo "Controller manager logs:"
     kubectl -n sagemaker-k8s-operator-system logs "$(kubectl get pods -n sagemaker-k8s-operator-system | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
-
-    # Describe, if the test fails the Additional field might have more helpful info.
-    echo "trainingjob description:"
-    kubectl describe trainingjob
 
     delete_all_tests
 

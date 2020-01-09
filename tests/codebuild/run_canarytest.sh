@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source run_test.sh
+source tests/codebuild/run_test.sh
 
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails

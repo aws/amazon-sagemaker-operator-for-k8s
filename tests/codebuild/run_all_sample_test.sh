@@ -30,7 +30,7 @@ run_test testfiles/xgboost-mnist-trainingjob.yaml
 run_test testfiles/spot-xgboost-mnist-trainingjob.yaml
 run_test testfiles/xgboost-mnist-custom-endpoint.yaml
 # run_test testfiles/efs-xgboost-mnist-trainingjob.yaml
-#run_test testfiles/fsx-kmeans-mnist-trainingjob.yaml
+# run_test testfiles/fsx-kmeans-mnist-trainingjob.yaml
 run_test testfiles/xgboost-mnist-hpo.yaml
 run_test testfiles/spot-xgboost-mnist-hpo.yaml
 run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
@@ -69,4 +69,6 @@ fi
 # Clean up resources before re-using metadata names
 delete_all_tests
 
-verify_delete TrainingJob testfiles/xgboost-mnist-trainingjob.yaml ".status.sageMakerTrainingJobName" ".status.trainingJobStatus"
+verify_delete TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
+verify_delete HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml xgboost-mnist-hpo
+verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
