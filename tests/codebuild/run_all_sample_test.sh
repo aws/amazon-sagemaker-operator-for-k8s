@@ -53,7 +53,7 @@ verify_test trainingjob xgboost-mnist-custom-endpoint 20m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
 verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
-verify_test BatchTransformJob xgboost-batch 20m Completed
+verify_test BatchTransformJob xgboost-batch 30m Completed
 verify_test HostingDeployment hosting 40m InService
 
 # Verify smlogs worked.
