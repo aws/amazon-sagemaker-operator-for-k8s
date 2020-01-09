@@ -28,7 +28,7 @@ run_test tests/xgboost-hosting-deployment.yaml
 # Format: `verify_test <type of job> <Job's metadata name> <timeout to complete the test> <desired status for job to achieve>` 
 verify_test TrainingJob xgboost-mnist 20m Completed
 verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
-verify_test BatchTransformJob xgboost-batch 20m Completed 
+verify_test BatchTransformJob xgboost-batch 30m Completed
 verify_test HostingDeployment hosting 40m InService
 
 # Verify smlogs worked.
