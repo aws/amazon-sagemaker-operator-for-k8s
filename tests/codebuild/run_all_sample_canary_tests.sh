@@ -46,9 +46,9 @@ fi
 # Clean up resources before re-using metadata names
 delete_all_tests
 
-verify_delete TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
-verify_delete HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
+verify_delete TrainingJob tests/xgboost-mnist-trainingjob.yaml
+verify_delete HyperparameterTuningJob tests/xgboost-mnist-hpo.yaml
 
 run_test tests/xgboost-model.yaml
 sed -i "s/xgboost-model/$(get_sagemaker_model_from_k8s_model xgboost-model)/g" tests/xgboost-mnist-batchtransform.yaml
-verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
+verify_delete BatchTransformJob tests/xgboost-mnist-batchtransform.yaml
