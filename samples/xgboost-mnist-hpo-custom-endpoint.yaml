@@ -11,7 +11,7 @@ spec:
       type: Minimize
       metricName: validation:error
     resourceLimits:
-      maxNumberOfTrainingJobs: 11
+      maxNumberOfTrainingJobs: 10
       maxParallelTrainingJobs: 5
     parameterRanges:
       integerParameterRanges:

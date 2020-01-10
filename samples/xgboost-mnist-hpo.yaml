@@ -3,11 +3,6 @@ kind: HyperparameterTuningJob
 metadata:
   name: xgboost-mnist-hpo
 spec:
-  hyperParameterTuningJobConfig:
-    resourceLimits:
-      maxNumberOfTrainingJobs: 10
-      maxParallelTrainingJobs: 10
-    strategy: "Bayesian"
   region: us-west-2
   tags:
     - key: test-key
@@ -18,7 +13,7 @@ spec:
       type: Minimize
       metricName: validation:error
     resourceLimits:
-      maxNumberOfTrainingJobs: 11
+      maxNumberOfTrainingJobs: 10
       maxParallelTrainingJobs: 5
     parameterRanges:
       integerParameterRanges:
