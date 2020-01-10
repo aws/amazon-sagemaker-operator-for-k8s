@@ -20,7 +20,7 @@ run_test tests/xgboost-model.yaml
 run_test tests/xgboost-model.yaml
 # We need to get sagemaker model before running batch transform
 verify_test Model xgboost-model 1m Created
-sed -i "s/xgboost-model/$(get_sagemaker_model_from_k8s_model xgboost-model)/g" tests/xgboost-mnist-batchtransform.yaml
+yq w -i tests/xgboost-mnist-batchtransform.yaml ".spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
 run_test tests/xgboost-mnist-batchtransform.yaml 
 run_test tests/xgboost-hosting-deployment.yaml
 
@@ -50,5 +50,5 @@ verify_delete TrainingJob tests/xgboost-mnist-trainingjob.yaml
 verify_delete HyperparameterTuningJob tests/xgboost-mnist-hpo.yaml
 
 run_test tests/xgboost-model.yaml
-sed -i "s/xgboost-model/$(get_sagemaker_model_from_k8s_model xgboost-model)/g" tests/xgboost-mnist-batchtransform.yaml
+yq w -i tests/xgboost-mnist-batchtransform.yaml ".spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
 verify_delete BatchTransformJob tests/xgboost-mnist-batchtransform.yaml
