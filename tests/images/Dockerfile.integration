@@ -7,14 +7,17 @@ RUN apt-get update && apt-get install -y curl \
     python-pip \
     vim \
     sudo \
-    jq \
-    yq
+    jq
+
 
 # Enable the Docker repository
 RUN apt update && apt install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 
 # Install Docker CE
 RUN apt update && apt install -y docker-ce
+
+# Install YQ
+RUN sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
 
 # Install Ruby and travis 
 RUN apt update && apt install -y ruby-dev libffi-dev make gcc
