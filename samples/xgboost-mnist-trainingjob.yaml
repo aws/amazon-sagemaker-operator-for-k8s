@@ -3,53 +3,53 @@ kind: TrainingJob
 metadata:
   name: xgboost-mnist
 spec:
-    hyperParameters:
-        - name: max_depth
-          value: "5"
-        - name: eta
-          value: "0.2"
-        - name: gamma
-          value: "4"
-        - name: min_child_weight
-          value: "6"
-        - name: silent
-          value: "0"
-        - name: objective
-          value: multi:softmax
-        - name: num_class
-          value: "10"
-        - name: num_round
-          value: "10"
-    algorithmSpecification:
-        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
-        trainingInputMode: File
-    roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    region: us-west-2
-    outputDataConfig:
-        s3OutputPath: s3://my-bucket/xgboost/
-    resourceConfig:
-        instanceCount: 1
-        instanceType: ml.m4.xlarge
-        volumeSizeInGB: 5
-    stoppingCondition:
-        maxRuntimeInSeconds: 86400
-    inputDataConfig:
-        - channelName: train
-          dataSource:
-            s3DataSource:
-                s3DataType: S3Prefix
-                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/train/
-                s3DataDistributionType: FullyReplicated
-          contentType: text/csv
-          compressionType: None
-        - channelName: validation
-          dataSource:
-            s3DataSource:
-                s3DataType: S3Prefix
-                s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/validation/
-                s3DataDistributionType: FullyReplicated
-          contentType: text/csv
-          compressionType: None
-    tags:
-      - key: tagKey
-        value: tagValue
+  hyperParameters:
+    - name: max_depth
+      value: "5"
+    - name: eta
+      value: "0.2"
+    - name: gamma
+      value: "4"
+    - name: min_child_weight
+      value: "6"
+    - name: silent
+      value: "0"
+    - name: objective
+      value: multi:softmax
+    - name: num_class
+      value: "10"
+    - name: num_round
+      value: "10"
+  algorithmSpecification:
+    trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
+    trainingInputMode: File
+  roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+  region: us-west-2
+  outputDataConfig:
+    s3OutputPath: s3://my-bucket/xgboost/
+  resourceConfig:
+    instanceCount: 1
+    instanceType: ml.m4.xlarge
+    volumeSizeInGB: 5
+  stoppingCondition:
+    maxRuntimeInSeconds: 86400
+  inputDataConfig:
+    - channelName: train
+      dataSource:
+        s3DataSource:
+          s3DataType: S3Prefix
+          s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/train/
+          s3DataDistributionType: FullyReplicated
+      contentType: text/csv
+      compressionType: None
+    - channelName: validation
+      dataSource:
+        s3DataSource:
+          s3DataType: S3Prefix
+          s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/validation/
+          s3DataDistributionType: FullyReplicated
+      contentType: text/csv
+      compressionType: None
+  tags:
+    - key: tagKey
+      value: tagValue
