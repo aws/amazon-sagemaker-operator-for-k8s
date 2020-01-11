@@ -16,7 +16,7 @@ RUN apt update && apt install -y apt-transport-https ca-certificates curl gnupg-
 # Install Docker CE
 RUN apt update && apt install -y docker-ce
 
-# Install YQ
+# Install yq
 RUN sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
 
 # Install Ruby and travis 
