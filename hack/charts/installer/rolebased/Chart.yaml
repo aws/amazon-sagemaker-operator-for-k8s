@@ -1,7 +1,7 @@
 apiVersion: v1
 name: sagemaker-k8s-operator
 version: 0.1.0
-description: A Helm chart for deploying the SageMaker Operator for Kubernetes by assining permission using IAM role.
+description: A Helm chart for deploying the Amazon SageMaker Operator for Kubernetes using EKS IAM roles for service accounts.
 maintainers:
   - name: Gautam Kumar
     email: gauta@amazon.com
@@ -11,3 +11,8 @@ maintainers:
     email: nithomso@amazon.com
   - name: Meghna Baijal
     email: mbaijal@amazon.com
+keywords:
+  - amazon
+  - aws
+  - sagemaker
+  - eks

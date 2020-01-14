@@ -3,72 +3,72 @@ kind: HyperparameterTuningJob
 metadata:
   name: {{ .Values.name }}
 spec:
-    hyperParameterTuningJobConfig:
-        resourceLimits:
-            maxNumberOfTrainingJobs:  {{ .Values.spec.hyperparametertuningjobconfig.maxnumberoftrainingjobs}}
-            maxParallelTrainingJobs:  {{ .Values.spec.hyperparametertuningjobconfig.maxparalleltrainingjobs }}
-        strategy: {{ .Values.spec.hyperparametertuningjobconfig.strategy | quote }}
-    region: {{ .Values.spec.region }}
-    tags:
-      - key: test-key
-        value: test-value
-    hyperParameterTuningJobConfig:
-      strategy: {{ .Values.spec.hyperparametertuningjobconfig.strategy | quote }}
-      hyperParameterTuningJobObjective:
-        type: {{ .Values.spec.hyperparametertuningjobconfig.hyperparametertuningjobobjective.type }}
-        metricName:  {{ .Values.spec.hyperparametertuningjobconfig.hyperparametertuningjobobjective.metricname }}
-      resourceLimits:
-        maxNumberOfTrainingJobs: {{ .Values.spec.hyperparametertuningjobconfig.maxnumberoftrainingjobs}}
-        maxParallelTrainingJobs: {{ .Values.spec.hyperparametertuningjobconfig.maxparalleltrainingjobs }}
-      parameterRanges:
-        integerParameterRanges:
-           - name:  {{ .Values.spec.hyperparametertuningjobconfig.integerparameterranges.name }}
-             minValue: {{ .Values.spec.hyperparametertuningjobconfig.integerparameterranges.minvalue | quote }}
-             maxValue: {{ .Values.spec.hyperparametertuningjobconfig.integerparameterranges.maxvalue | quote }}
-             scalingType: {{ .Values.spec.hyperparametertuningjobconfig.integerparameterranges.scalingtype }}
-        # Add support for next two ranges in values.yaml
-        continuousParameterRanges: []
-        categoricalParameterRanges: []
-      trainingJobEarlyStoppingType: Auto
-    trainingJobDefinition:
-      staticHyperParameters:
-         {{- range $key, $value := .Values.spec.trainingjobconfig.hyperparameters }}
-         - name: {{ $key }}
-           value: {{ $value | quote }}
-         {{- end }}
-      algorithmSpecification:
-        trainingImage: {{ .Values.spec.image }}
-        trainingInputMode: {{ .Values.spec.traininginputmode }}
-      roleArn: {{ .Values.spec.rolearn }}
-      inputDataConfig:
-            {{- range .Values.spec.inputdataconfig }}
-              - channelName: {{ .channel }}  
-                dataSource: 
-                  {{- if .s3 }}
-                  s3DataSource:
-                     s3DataType: {{ .s3.s3datatype | default "S3Prefix" }}
-                     s3Uri: {{ .s3.s3uri }}
-                     s3DataDistributionType: {{ .s3.s3datadistributiontype | default "FullyReplicated" }}
-                  {{- end }}
-                  {{- if .filesystem }}
-                  fileSystemDataSource: 
-                      fileSystemId: {{ .filesystem.filesystemid }}
-                      fileSystemAccessMode: {{ .filesystemaccessmode | default "ro" }}
-                      fileSystemType: {{ .filesystem.filesystemtype }}
-                      directoryPath: {{ .filesystem.directorypath }}
-                  {{- end }}
-                contentType: {{ .contenttype | default "text/csv" }}
-                compressionType: {{ .compressiontype | default "None" }}
-                recordWrapperType: {{ .recordwrappertype | default "None" }}
-                inputMode: {{ .inputmode | default "File" }}
+  hyperParameterTuningJobConfig:
+    resourceLimits:
+      maxNumberOfTrainingJobs:  {{ .Values.spec.hyperparameterTuningJobConfig.maxNumberOfTrainingJobs}}
+      maxParallelTrainingJobs:  {{ .Values.spec.hyperparameterTuningJobConfig.maxParallelTrainingJobs }}
+    strategy: {{ .Values.spec.hyperparameterTuningJobConfig.strategy | quote }}
+  region: {{ .Values.spec.region }}
+  tags:
+    - key: test-key
+      value: test-value
+  hyperParameterTuningJobConfig:
+    strategy: {{ .Values.spec.hyperparameterTuningJobConfig.strategy | quote }}
+    hyperParameterTuningJobObjective:
+      type: {{ .Values.spec.hyperparameterTuningJobConfig.hyperparameterTuningJobObjective.type }}
+      metricName:  {{ .Values.spec.hyperparameterTuningJobConfig.hyperparameterTuningJobObjective.metricName }}
+    resourceLimits:
+      maxNumberOfTrainingJobs: {{ .Values.spec.hyperparameterTuningJobConfig.maxNumberOfTrainingJobs}}
+      maxParallelTrainingJobs: {{ .Values.spec.hyperparameterTuningJobConfig.maxParallelTrainingJobs }}
+    parameterRanges:
+      integerParameterRanges:
+        - name:  {{ .Values.spec.hyperparameterTuningJobConfig.integerParameterRanges.name }}
+          minValue: {{ .Values.spec.hyperparameterTuningJobConfig.integerParameterRanges.minValue | quote }}
+          maxValue: {{ .Values.spec.hyperparameterTuningJobConfig.integerParameterRanges.maxValue | quote }}
+          scalingType: {{ .Values.spec.hyperparameterTuningJobConfig.integerParameterRanges.scalingType }}
+      # Add support for next two ranges in values.yaml
+      continuousParameterRanges: []
+      categoricalParameterRanges: []
+    trainingJobEarlyStoppingType: Auto
+  trainingJobDefinition:
+    staticHyperParameters:
+      {{- range $key, $value := .Values.spec.trainingJobConfig.hyperparameters }}
+      - name: {{ $key }}
+        value: {{ $value | quote }}
+      {{- end }}
+    algorithmSpecification:
+      trainingImage: {{ .Values.spec.image }}
+      trainingInputMode: {{ .Values.spec.trainingInputMode }}
+    roleArn: {{ .Values.spec.roleArn }}
+    inputDataConfig:
+      {{- range .Values.spec.inputDataConfig }}
+        - channelName: {{ .channel }}  
+          dataSource: 
+            {{- if .s3 }}
+            s3DataSource:
+              s3DataType: {{ .s3.s3DataType | default "S3Prefix" }}
+              s3Uri: {{ .s3.s3Uri }}
+              s3DataDistributionType: {{ .s3.s3datadistributiontype | default "FullyReplicated" }}
             {{- end }}
-      outputDataConfig:
-        s3OutputPath: {{ .Values.spec.outputpath }}
-      resourceConfig:
-        instanceType: {{ .Values.spec.instancetype }}
-        instanceCount: {{ .Values.spec.instancecount }}
-        volumeSizeInGB: {{ .Values.spec.volumesize }}
-      stoppingCondition:
-        maxRuntimeInSeconds: {{ .Values.spec.maxruntimeinseconds }}
-      enableNetworkIsolation: {{ .Values.spec.enablenetworkisolation }}
-      enableInterContainerTrafficEncryption: {{ .Values.spec.enableintercontainertrafficencryption }} 
+            {{- if .fileSystem }}
+            fileSystemDataSource: 
+              fileSystemId: {{ .fileSystem.fileSystemID }}
+              fileSystemAccessMode: {{ .fileSystemaccessmode | default "ro" }}
+              fileSystemType: {{ .fileSystem.fileSystemType }}
+              directoryPath: {{ .fileSystem.directoryPath }}
+            {{- end }}
+          contentType: {{ .contenttype | default "text/csv" }}
+          compressionType: {{ .compressiontype | default "None" }}
+          recordWrapperType: {{ .recordwrappertype | default "None" }}
+          inputMode: {{ .inputmode | default "File" }}
+      {{- end }}
+    outputDataConfig:
+      s3OutputPath: {{ .Values.spec.outputPath }}
+    resourceConfig:
+      instanceType: {{ .Values.spec.instanceType }}
+      instanceCount: {{ .Values.spec.instanceCount }}
+      volumeSizeInGB: {{ .Values.spec.volumeSizeInGB }}
+    stoppingCondition:
+      maxRuntimeInSeconds: {{ .Values.spec.maxRuntimeInSeconds }}
+    enableNetworkIsolation: {{ .Values.spec.enableNetworkIsolation }}
+    enableInterContainerTrafficEncryption: {{ .Values.spec.enableInterContainerTrafficEncryption }} 

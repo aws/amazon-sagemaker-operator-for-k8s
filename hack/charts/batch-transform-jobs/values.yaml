@@ -1,11 +1,11 @@
 name: xgboost-mnist-batch-transform
 spec:	
-    instancecount: 1
-    instancetype: ml.m4.xlarge
-    region: us-west-2
-    modelname: xgboost-mnist-model
-    inputdataconfig:
-       s3uri: s3://sagemaker-sample-data-us-west-2/batch-transform/mnist-1000-samples
-       s3datatype: S3Prefix
-    outputpath: s3://my-bucket/batch_transform/output
+  InstanceCount: 1
+  InstanceType: ml.m4.xlarge
+  region: us-west-2
+  modelname: xgboost-mnist-model
+  inputDataConfig:
+    s3Uri: s3://sagemaker-sample-data-us-west-2/batch-transform/mnist-1000-samples
+    s3DataType: S3Prefix
+  outputPath: s3://my-bucket/batch_transform/output
 

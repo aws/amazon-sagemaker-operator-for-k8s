@@ -1,4 +1,4 @@
-Thanks for installing the {{ .Chart.Name }}.
+Amazon SageMaker Operator for Kubernetes installed!
 
 Your release is named {{ .Release.Name }}.
 

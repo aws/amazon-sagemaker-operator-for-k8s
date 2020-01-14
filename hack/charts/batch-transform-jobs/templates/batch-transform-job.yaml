@@ -6,16 +6,16 @@ spec:
   region: {{ .Values.spec.region }}
   modelName: {{ .Values.spec.modelname | quote }}
   transformInput: 
-     dataSource: 
-       s3DataSource:
-          s3DataType: {{ .Values.spec.inputdataconfig.s3DataType | default "S3Prefix" }}
-          s3Uri: {{ .Values.spec.inputdataconfig.s3uri  }}
-     contentType: {{ .contenttype | default "text/csv" }}
+    dataSource: 
+      s3DataSource:
+        s3DataType: {{ .Values.spec.inputDataConfig.s3DataType | default "S3Prefix" }}
+        s3Uri: {{ .Values.spec.inputDataConfig.s3Uri  }}
+    contentType: {{ .contenttype | default "text/csv" }}
   transformOutput:
-    s3OutputPath: {{ .Values.spec.outputpath }}
+    s3OutputPath: {{ .Values.spec.outputPath }}
   transformResources:
-    instanceCount: {{ .Values.spec.instancecount }}
-    instanceType: {{ .Values.spec.instancetype }}
+    instanceCount: {{ .Values.spec.instanceCount }}
+    instanceType: {{ .Values.spec.instanceType }}
   tags:
     - key: test-key
       value: test-value
