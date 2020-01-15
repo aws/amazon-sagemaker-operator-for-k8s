@@ -161,5 +161,5 @@ function verify_delete()
    kubectl delete -f "$file_name" &
    wait_for_crd_status "$crd_type" "$job_name" "$timeout" "Stopping"
 
-   echo "[PASSED] Verified ${crd_type} ${job_name} deleted successfully"
+   echo "[PASSED] Verified ${crd_type} ${job_name} deleted from k8s successfully"
 }
