@@ -1,7 +1,7 @@
 apiVersion: v1
 name: sagemaker-k8s-trainingjob
 version: 0.1.0
-description: A Helm chart for deploying the SageMaker TrainingJob for Kubernetes.
+description: A Helm chart for deploying a SageMaker TrainingJob from Kubernetes.
 maintainers:
   - name: Cade Daniel
     email: cdnamz@amazon.com
