@@ -26,9 +26,9 @@ spec:
       s3: 
         s3Uri: s3://my-bucket/validation/
   outputPath: s3://my-bucket/xgboost/
-  enablemanagedspottraining: true
-  stoppingcondition:
-    maxruntime: 3599
-    maxwaittime: 3600
-  checkpointconfig:
+  enableManagedSpotTraining: true
+  stoppingCondition:
+    maxRuntime: 3599
+    maxWaitTime: 3600
+  checkpointConfig:
     s3Uri: s3://my-bucket/checkpoints/

@@ -10,7 +10,7 @@ spec:
       s3DataSource:
         s3DataType: {{ .Values.spec.inputDataConfig.s3DataType | default "S3Prefix" }}
         s3Uri: {{ .Values.spec.inputDataConfig.s3Uri  }}
-    contentType: {{ .contenttype | default "text/csv" }}
+    contentType: {{ .contentType | default "text/csv" }}
   transformOutput:
     s3OutputPath: {{ .Values.spec.outputPath }}
   transformResources:

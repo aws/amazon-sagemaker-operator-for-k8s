@@ -48,19 +48,19 @@ spec:
             s3DataSource:
               s3DataType: {{ .s3.s3DataType | default "S3Prefix" }}
               s3Uri: {{ .s3.s3Uri }}
-              s3DataDistributionType: {{ .s3.s3datadistributiontype | default "FullyReplicated" }}
+              s3DataDistributionType: {{ .s3.s3DataDistributionType | default "FullyReplicated" }}
             {{- end }}
             {{- if .fileSystem }}
             fileSystemDataSource: 
               fileSystemId: {{ .fileSystem.fileSystemID }}
-              fileSystemAccessMode: {{ .fileSystemaccessmode | default "ro" }}
+              fileSystemAccessMode: {{ .fileSystemAccessMode | default "ro" }}
               fileSystemType: {{ .fileSystem.fileSystemType }}
               directoryPath: {{ .fileSystem.directoryPath }}
             {{- end }}
-          contentType: {{ .contenttype | default "text/csv" }}
-          compressionType: {{ .compressiontype | default "None" }}
-          recordWrapperType: {{ .recordwrappertype | default "None" }}
-          inputMode: {{ .inputmode | default "File" }}
+          contentType: {{ .contentType | default "text/csv" }}
+          compressionType: {{ .compressionType | default "None" }}
+          recordWrapperType: {{ .recordWrapperType | default "None" }}
+          inputMode: {{ .inputMode | default "File" }}
       {{- end }}
     outputDataConfig:
       s3OutputPath: {{ .Values.spec.outputPath }}
