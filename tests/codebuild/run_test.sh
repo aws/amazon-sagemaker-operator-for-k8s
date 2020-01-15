@@ -20,11 +20,36 @@ function get_sagemaker_model_from_k8s_model()
    kubectl get model $k8s_model_name | sed -n '2 p' |  awk '{print $3}' 
 }
 
+# This function waits until a CRD has reached a particular state, or times out
+# Parameter:
+#    $1: Kind of CRD
+#    $2: Instance of CRD
+#    $3: Timeout to complete the test
+#    $4: The status that verifies the job has succeeded.
+function wait_for_crd_status()
+{
+  local crd_type="$1"
+  local crd_instance="$2"
+  local timeout="$3"
+  local desired_status="$4"
+
+  timeout "${timeout}" bash -c \
+    'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i "$2" | wc -l)" -eq "1" ]; do \
+        sleep 5; \
+      done' "$crd_type" "$crd_instance" "$desired_status"
+
+  if [ $? -ne 0 ]; then
+     echo "[FAILED] ${crd_type} ${crd_instance} did not change status to ${desired_status} within ${timeout}"
+     exit 1
+   fi
+}
+
 # This function verifies that job has started and not failed
 # Parameter:
 #    $1: Kind of CRD
 #    $2: Instance of CRD
 #    $3: Timeout to complete the test
+#    $4: The status that verifies the job has succeeded.
 # e.g. verify_test trainingjobs xgboost-mnist
 function verify_test()
 {
@@ -57,19 +82,10 @@ function verify_test()
   fi
 
   echo "Waiting for job to complete"
-  timeout "${timeout}" bash -c \
-      'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i "$2" | wc -l)" -eq "1" ]; do \
-          echo "Job $1 has not completed yet"; \
-          sleep 5; \
-       done' "${crd_type}" "${crd_instance}" "${desired_status}"
+  wait_for_crd_status "$crd_type" "$crd_instance" "$timeout" "$desired_status"
 
   # Check weather job has completed or not
-  if [ $? -ne 0 ]; then
-     echo "[FAILED] ${crd_type} ${crd_instance} job has not completed yet"
-     exit 1
-  else
-     echo "[PASSED] Verified ${crd_type} ${crd_instance} has completed"
-  fi
+  echo "[PASSED] Verified ${crd_type} ${crd_instance} has completed"
 }
 
 # Inject environment variables into the job YAMLs
@@ -133,33 +149,17 @@ function verify_delete()
 {
    local crd_type="$1"
    local file_name="$2"
-   local timeout=${3:-"30s"}
+   local timeout=${3:-"60s"}
 
    # Apply file and get name
    local job_name=$(kubectl apply -f $file_name -o json | jq -r ".metadata.name")
 
    # Wait until job has started
-   timeout "${timeout}" bash -c \
-      'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i "$2" | wc -l)" -eq "1" ]; do \
-          sleep 5; \
-       done' "$crd_type" "$job_name" "InProgress"
-   
-   if [ $? -ne 0 ]; then
-     echo "[FAILED] ${crd_type} ${job_name} job did not start within ${timeout}"
-     exit 1
-   fi
+   wait_for_crd_status "$crd_type" "$job_name" "$timeout" "InProgress"
 
    # Check that we can detect the status changing
    kubectl delete -f "$file_name" &
-   timeout "${timeout}" bash -c \
-      'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i "$2" | wc -l)" -eq "1" ]; do \
-          sleep 5; \
-       done' "$crd_type" "$job_name" "Stopping"
-   
-   if [ $? -ne 0 ]; then
-     echo "[FAILED] ${crd_type} ${job_name} job did not start within ${timeout}"
-     exit 1
-   fi
+   wait_for_crd_status "$crd_type" "$job_name" "$timeout" "Stopping"
 
    echo "[PASSED] Verified ${crd_type} ${job_name} deleted successfully"
 }

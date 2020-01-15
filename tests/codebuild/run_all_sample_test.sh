@@ -75,4 +75,4 @@ verify_delete HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 run_test testfiles/xgboost-model.yaml
 verify_test Model xgboost-model 1m Created
 yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
-verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml 60s
+verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
