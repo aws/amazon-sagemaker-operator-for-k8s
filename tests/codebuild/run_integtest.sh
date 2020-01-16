@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source tests/codebuild/run_test.sh
+source tests/codebuild/common.sh
 
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails
@@ -14,10 +14,12 @@ function cleanup {
     # We want to run every command in this function, even if some fail.
     set +e
 
-    echo "Controller manager logs:"
-    kubectl -n sagemaker-k8s-operator-system logs "$(kubectl get pods -n sagemaker-k8s-operator-system | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
+    if [ "${PRINT_DEBUG}" != "false" ]; then
+        echo "Controller manager logs:"
+        kubectl -n sagemaker-k8s-operator-system logs "$(kubectl get pods -n sagemaker-k8s-operator-system | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
+    fi
 
-    delete_all_tests
+    delete_all_resources
 
     # Tear down the cluster if we set it up.
     if [ "${need_setup_cluster}" == "true" ]; then
@@ -82,22 +84,22 @@ tar -xf sagemaker-k8s-operator.tar.gz
 # Jump to the root dir of the operator
 pushd sagemaker-k8s-operator
 
-# Setup the PATH for smlogs
-mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
+    # Setup the PATH for smlogs
+    mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
 
-# Goto directory that holds the CRD  
-pushd sagemaker-k8s-operator-install-scripts
-# Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
-./setup_awscreds
+        # Goto directory that holds the CRD  
+        pushd sagemaker-k8s-operator-install-scripts
+        # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
+        ./setup_awscreds
 
-echo "Deploying the operator"
-kustomize build config/default | kubectl apply -f -
+        echo "Deploying the operator"
+        kustomize build config/default | kubectl apply -f -
 
-# Come out from CRD dir sagemaker-k8s-operator-install-scripts
-popd 
+        # Come out from CRD dir sagemaker-k8s-operator-install-scripts
+        popd 
 
-# Come out from sagemaker-k8s-operator
-popd
+    # Come out from sagemaker-k8s-operator
+    popd
 
 echo "Waiting for controller pod to be Ready"
 # Wait to increase chance that pod is ready

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Ensure that the smlogs kubectl plugin is able to detect and properly process the output of each job type.
 function run_smlogs_canary_tests
 {
   # Verify smlogs worked.

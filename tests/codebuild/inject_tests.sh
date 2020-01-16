@@ -1,7 +1,21 @@
 #!/bin/bash
 
-source run_test.sh
+# Inject environment variables into the job YAMLs
+function inject_variables()
+{
+  variables=("ROLE_ARN" "DATA_BUCKET" "FSX_ID")
 
+  local file_name="$1"
+  for i in "${variables[@]}"
+  do
+    local curr_var=${!i}
+    sed -i "s|{$i}|${curr_var}|g" "${file_name}"
+  done
+}
+
+# Injects necessary environment variables into resource yaml specs. This allows
+# for generic integration tests to be created, substituting values that are 
+# specific to the account they are run within.
 function inject_all_variables
 {
   inject_variables testfiles/xgboost-mnist-trainingjob.yaml

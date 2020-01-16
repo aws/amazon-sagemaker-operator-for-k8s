@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source tests/codebuild/run_test.sh
+source tests/codebuild/common.sh
 
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails
@@ -28,7 +28,7 @@ function cleanup {
     echo "trainingjob description:"
     kubectl describe trainingjob
 
-    delete_all_tests
+    delete_all_resources
 
     if [ -z "${USE_EXISTING_CLUSTER}" ]
     then
