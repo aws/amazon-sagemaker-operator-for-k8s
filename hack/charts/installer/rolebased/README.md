@@ -44,6 +44,6 @@ The following table lists the configurable parameters for the chart and their de
 
 Parameter | Description | Default
 --- | --- | ---
-`rolesArn` | The EKS service account role ARN  | `<PLACEHOLDER>`
+`roleArn` | The EKS service account role ARN  | `<PLACEHOLDER>`
 `image.repository` | image repository | `957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s`
 `image.tag` | image tag | `<VERSION>`

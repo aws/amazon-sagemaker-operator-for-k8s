@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   annotations:
-    eks.amazonaws.com/role-arn: {{ .Values.rolesArn | quote }}
+    eks.amazonaws.com/role-arn: {{ .Values.roleArn | quote }}
   name: sagemaker-k8s-operator-default
   namespace: {{ .Release.Namespace | default "sagemaker-k8s-operator-system" | quote }}
 ---

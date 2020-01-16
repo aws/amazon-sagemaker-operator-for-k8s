@@ -1,4 +1,4 @@
-rolesArn: arn:aws:iam::123456789012:role/DELETE_ME
+roleArn: arn:aws:iam::123456789012:role/DELETE_ME
 
 image:
   repository: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s
