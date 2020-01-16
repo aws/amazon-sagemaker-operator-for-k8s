@@ -24,6 +24,8 @@ function cleanup {
     echo "Controller manager logs:"
     kubectl -n sagemaker-k8s-operator-system logs "$(kubectl get pods -n sagemaker-k8s-operator-system | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
 
+    return
+
     # Describe, if the test fails the Additional field might have more helpful info.
     echo "trainingjob description:"
     kubectl describe trainingjob
@@ -114,14 +116,14 @@ popd
 echo "Waiting for controller pod to be Ready"
 # Wait to increase chance that pod is ready
 # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
-sleep 60
+sleep 15
 
 # TODO: Add Helm chart tests
 
 # Run the integration test file
-cd tests/codebuild/ && ./run_all_sample_test.sh
+#cd tests/codebuild/ && ./run_all_sample_test.sh
 
 delete_tests
 
 echo "Skipping private link test"
-#cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"
+cd tests/codebuild/private-link-test && ./run_private_link_integration_test "${cluster_name}" "${cluster_region}"

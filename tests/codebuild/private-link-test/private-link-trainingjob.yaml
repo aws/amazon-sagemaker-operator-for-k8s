@@ -3,7 +3,7 @@ kind: TrainingJob
 metadata:
   name: private-link-training-job
 spec:
-    region: us-west-2
+    region: us-east-1
     # Replaced by integration test.
     sageMakerEndpoint: SAGEMAKER_ENDPOINT
     hyperParameters:

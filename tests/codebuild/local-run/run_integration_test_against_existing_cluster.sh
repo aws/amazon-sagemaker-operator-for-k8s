@@ -22,7 +22,7 @@ docker build . -f local-codebuild-Dockerfile -t local-codebuild
 
 echo "Running integration test"
 # AWS_REGION must be us-west-2 because our pipelines are defined there. 
-AWS_REGION=us-west-2 ./codebuild_build.sh \
+AWS_REGION=us-east-1 ./codebuild_build.sh \
     -e .env \
     -i local-codebuild \
     -a ./artifact \

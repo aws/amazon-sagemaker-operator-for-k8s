@@ -50,7 +50,7 @@ function inject_variables()
   for i in "${variables[@]}"
   do
     local curr_var=${!i}
-    sed -i "s/{$i}/${curr_var}/g" "${file_name}"
+    sed -i "s|{$i}|${curr_var}|g" "${file_name}"
   done
 }
 
@@ -62,7 +62,7 @@ function create_privatelink() {
     local cluster_description="$(aws eks describe-cluster --name "${cluster_name}" --output=text --region "${cluster_region}" )"
     local subnet_ids="$(echo "${cluster_description}" | grep "SUBNETIDS" | awk '{print $2}' )"
     local security_group_id="$(echo "${cluster_description}" | grep "SECURITYGROUPIDS" | head -n 1 | awk '{print $2}' )"
-    local vpc_id="$(echo "${cluster_description}" | grep "RESOURCESVPCCONFIG" | awk '{print $4}')"
+    local vpc_id="$(echo "${cluster_description}" | grep "RESOURCESVPCCONFIG" | awk '{print $5}')" # TODO The fourth column became a boolean, need some way better to get the VPC id (json + jq?)
     
     echo "Getting private cluster subnets"
     local private_subnet_ids="$(aws ec2 describe-subnets --filters 'Name=tag:Name,Values="*SubnetPrivate*"' --subnet-ids $(echo "${subnet_ids}" | tr '\n' ' ') --output=text --region "${cluster_region}" | grep 'SUBNETS' | awk '{print $12}' )"
@@ -127,11 +127,18 @@ function block_traffic() {
 # If it isn't created after a timeout, exit with nonzero exit code.
 function test_privatelink() {
     echo "Creating PrivateLink TrainingJob"
-    sed -i "s/SAGEMAKER_ENDPOINT/https:\/\/${privatelink_domain_name}/g" private-link-trainingjob.yaml
+    sed -i "s|SAGEMAKER_ENDPOINT|https://${privatelink_domain_name}|g" private-link-trainingjob.yaml
     inject_variables private-link-trainingjob.yaml
     kubectl apply -f private-link-trainingjob.yaml
+
     echo "Creating non-PrivateLink TrainingJob"
+    inject_variables non-private-link-trainingjob.yaml
     < non-private-link-trainingjob.yaml kubectl apply -f -
+
+    # Current problem is one of testing:
+    # My cluster is in eu-west-2 and thus the VPCE is also in eu-west-2. The jobs that are created however live in us-west-2 (along with the datasets, ECR images, etc).
+    # Thus I need to have a cluster in us-west-2 to properly test this, but tf-neo is full. Thus I need to setup a new cluster (maybe in cdnamz account) and
+    # re-connect the permissions.
 
     echo "Waiting for job to be picked up by controller"
     # If this times out, then the controller failed to pick up the job.
@@ -153,6 +160,7 @@ function test_privatelink() {
 
 # Exit program if any command fails.
 set -e
+set -x
 
 create_privatelink
 block_traffic
