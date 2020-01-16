@@ -26,7 +26,7 @@ function get_sagemaker_model_from_k8s_model()
 #    $2: Instance of CRD
 #    $3: Timeout to complete the test
 #    $4: The status that verifies the job has succeeded.
-function wait_for_crd_status()
+function wait_for_crd_status_else_fail()
 {
   local crd_type="$1"
   local crd_instance="$2"
@@ -82,7 +82,7 @@ function verify_test()
   fi
 
   echo "Waiting for job to complete"
-  wait_for_crd_status "$crd_type" "$crd_instance" "$timeout" "$desired_status"
+  wait_for_crd_status_else_fail "$crd_type" "$crd_instance" "$timeout" "$desired_status"
 
   # Check weather job has completed or not
   echo "[PASSED] Verified ${crd_type} ${crd_instance} has completed"
@@ -139,7 +139,8 @@ function delete_all_tests()
     kubectl delete model --all
 }
 
-# Delete a K8s resource and ensure all AWS resources were cleaned up successfully
+# Applies a k8s resource, waits for it to start and then immediately deletes
+# and ensure the state of the resource in k8s is stopping.
 # Parameter:
 #    $1: CRD type
 #    $2: Filename of test
@@ -155,11 +156,11 @@ function verify_delete()
    local job_name=$(kubectl apply -f $file_name -o json | jq -r ".metadata.name")
 
    # Wait until job has started
-   wait_for_crd_status "$crd_type" "$job_name" "$timeout" "InProgress"
+   wait_for_crd_status_else_fail "$crd_type" "$job_name" "$timeout" "InProgress"
 
    # Check that we can detect the status changing
    kubectl delete -f "$file_name" &
-   wait_for_crd_status "$crd_type" "$job_name" "$timeout" "Stopping"
+   wait_for_crd_status_else_fail "$crd_type" "$job_name" "$timeout" "Stopping"
 
    echo "[PASSED] Verified ${crd_type} ${job_name} deleted from k8s successfully"
 }
