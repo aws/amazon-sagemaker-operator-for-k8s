@@ -9,9 +9,6 @@ spec:
       maxParallelTrainingJobs:  {{ .Values.spec.hyperparameterTuningJobConfig.maxParallelTrainingJobs }}
     strategy: {{ .Values.spec.hyperparameterTuningJobConfig.strategy | quote }}
   region: {{ .Values.spec.region }}
-  tags:
-    - key: test-key
-      value: test-value
   hyperParameterTuningJobConfig:
     strategy: {{ .Values.spec.hyperparameterTuningJobConfig.strategy | quote }}
     hyperParameterTuningJobObjective:
@@ -72,3 +69,10 @@ spec:
       maxRuntimeInSeconds: {{ .Values.spec.maxRuntimeInSeconds }}
     enableNetworkIsolation: {{ .Values.spec.enableNetworkIsolation }}
     enableInterContainerTrafficEncryption: {{ .Values.spec.enableInterContainerTrafficEncryption }} 
+  {{- if .Values.spec.tags }}
+  tags:
+    {{- range $key, $value := .Values.spec.tags }}
+    - name: {{ $key }}
+      value: {{ $value | quote }}
+    {{- end }}
+  {{- end }}

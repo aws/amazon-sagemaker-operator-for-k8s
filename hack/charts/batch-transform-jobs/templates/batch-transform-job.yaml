@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.name }}
 spec:
   region: {{ .Values.spec.region }}
-  modelName: {{ .Values.spec.modelname | quote }}
+  modelName: {{ .Values.spec.modelName | quote }}
   transformInput: 
     dataSource: 
       s3DataSource:
@@ -16,6 +16,10 @@ spec:
   transformResources:
     instanceCount: {{ .Values.spec.instanceCount }}
     instanceType: {{ .Values.spec.instanceType }}
+  {{- if .Values.spec.tags }}
   tags:
-    - key: test-key
-      value: test-value
+    {{- range $key, $value := .Values.spec.tags }}
+    - name: {{ $key }}
+      value: {{ $value | quote }}
+    {{- end }}
+  {{- end }}

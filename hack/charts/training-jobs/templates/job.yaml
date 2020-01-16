@@ -64,4 +64,11 @@ spec:
   checkpointConfig: 
     s3Uri: {{ .Values.spec.checkpointConfig.s3Uri}} 
   {{- end }}
+  {{- if .Values.spec.tags }}
+  tags:
+    {{- range $key, $value := .Values.spec.tags }}
+    - name: {{ $key }}
+      value: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
   
