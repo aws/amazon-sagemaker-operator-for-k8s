@@ -104,8 +104,6 @@ echo "Waiting for controller pod to be Ready"
 # Should upgrade kubectl to version that supports `kubectl wait pods --all`
 sleep 60
 
-# TODO: Add Helm chart tests
-
 # Run the integration test file
 cd tests/codebuild/ && ./run_all_sample_test.sh
 

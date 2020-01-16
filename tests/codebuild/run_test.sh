@@ -129,14 +129,13 @@ function build_fsx_from_s3()
    export FSX_ID=$FSX_ID
 }
 
-function delete_all_tests()
+function delete_all_resources()
 {
-    # Stop jobs so we can do PrivateLink test.
-    kubectl delete hyperparametertuningjob --all
-    kubectl delete trainingjob --all
-    kubectl delete batchtransformjob --all
-    kubectl delete hostingdeployment --all
-    kubectl delete model --all
+   kubectl delete hyperparametertuningjob --all
+   kubectl delete trainingjob --all
+   kubectl delete batchtransformjob --all
+   kubectl delete hostingdeployment --all
+   kubectl delete model --all
 }
 
 # Applies a k8s resource, waits for it to start and then immediately deletes
