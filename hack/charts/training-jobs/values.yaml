@@ -26,4 +26,6 @@ spec:
       s3: 
         s3Uri: s3://my-bucket/validation/
   outputPath: s3://my-bucket/xgboost/
+  tags:
+    example-tag: example-value
 
