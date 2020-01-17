@@ -11,7 +11,3 @@ maintainers:
     email: nithomso@amazon.com
   - name: Meghna Baijal
     email: mbaijal@amazon.com
-dependencies:
-  - name: amazon-sagemaker-operator-for-k8s
-    version: 1.0.0
-    repository: https://github.com/aws/amazon-sagemaker-operator-for-k8s/tree/master/hack/charts/installer/rolebased
