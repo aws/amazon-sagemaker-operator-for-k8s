@@ -1,4 +1,4 @@
-Successfully configured a new training job.
+Successfully deployed a new training job chart.
 
 Your release is named {{ .Release.Name }}. 
 

@@ -1,4 +1,4 @@
-Successfully configured a new batch transform job.
+Successfully deployed a new batch transform job chart.
 
 Your release is named {{ .Release.Name }}. 
 

@@ -1,4 +1,4 @@
-Successfully configured a new hyperparameter tuning job.
+Successfully deployed a new hyperparameter tuning job chart.
 
 Your release is named {{ .Release.Name }}. 
 
