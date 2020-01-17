@@ -26,10 +26,10 @@ function run_delete_integration_tests
 # Applies a k8s resource, waits for it to start and then immediately deletes
 # and ensure the state of the resource in k8s is stopping.
 # Parameter:
-#    $1: CRD type
+#    $1: CRD type (in TitleCase)
 #    $2: Filename of test
 #    $3: (Optional) Timeout
-# e.g. verify_delete trainingjob xgboost-mnist.yaml ".status.sageMakerTrainingJobName"
+# e.g. verify_delete TrainingJob xgboost-mnist.yaml 60s
 function verify_delete()
 {
   local crd_type="$1"
@@ -77,7 +77,7 @@ function verify_delete()
 # Queries AWS SageMaker to ensure that the job created by a k8s resource has
 # been marked as stopped or stopping.
 # Parameter:
-#    $1: CRD type
+#    $1: CRD type (in TitleCase)
 #    $2: SageMaker job name
 function verify_sm_resource_stopping_else_fail()
 {

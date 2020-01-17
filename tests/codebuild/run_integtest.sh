@@ -87,19 +87,16 @@ pushd sagemaker-k8s-operator
     # Setup the PATH for smlogs
     mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
 
-        # Goto directory that holds the CRD  
-        pushd sagemaker-k8s-operator-install-scripts
+    # Goto directory that holds the CRD  
+    pushd sagemaker-k8s-operator-install-scripts
         # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
         ./setup_awscreds
 
         echo "Deploying the operator"
         kustomize build config/default | kubectl apply -f -
+    popd 
 
-        # Come out from CRD dir sagemaker-k8s-operator-install-scripts
-        popd 
-
-    # Come out from sagemaker-k8s-operator
-    popd
+popd
 
 echo "Waiting for controller pod to be Ready"
 # Wait to increase chance that pod is ready
