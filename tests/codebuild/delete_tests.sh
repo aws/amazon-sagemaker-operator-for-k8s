@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source common.sh
-source create_tests.sh
+source create_tests.sh # TODO: Remove temporary import for "verify_test" method
 
 # Verify that k8s and SageMaker resources are deleted when the user uses the delete verb.
 function run_delete_canary_tests
