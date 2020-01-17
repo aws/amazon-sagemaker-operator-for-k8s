@@ -5,6 +5,7 @@ Amazon SageMaker Operator for Kubernetes Helm charts for role-based installation
 ## Prerequisites
 
 * Kubernetes >= 1.13
+* Helm == 3
 
 ## Installing the Chart
 
