@@ -26,13 +26,13 @@ function run_delete_integration_tests
 # Applies a k8s resource, waits for it to start and then immediately deletes
 # and ensure the state of the resource in k8s is stopping.
 # Parameter:
-#    $1: CRD type (in TitleCase)
+#    $1: CRD type
 #    $2: Filename of test
 #    $3: (Optional) Timeout
 # e.g. verify_delete TrainingJob xgboost-mnist.yaml 60s
 function verify_delete()
 {
-  local crd_type="$1"
+  local crd_type="$(echo "$1" | awk '{print tolower($0)}')"
   local file_name="$2"
   local timeout=${3:-"60s"}
 
@@ -44,16 +44,16 @@ function verify_delete()
 
   local jobNamePath 
   case $crd_type in
-    TrainingJob)
+    trainingjob)
       jobNamePath=".status.sageMakerTrainingJobName"
       ;;
-    HyperparameterTuningJob)
+    hyperparametertuningjob)
       jobNamePath=".status.sageMakerHyperParameterTuningJobName"
       ;;
-    BatchTransformJob)
+    batchtransformjob)
       jobNamePath=".status.sageMakerTransformJobName"
       ;;
-    HostingDeployment)
+    hostingdeployment)
       jobNamePath=".status.endpointName"
       ;;
     *)
@@ -77,31 +77,31 @@ function verify_delete()
 # Queries AWS SageMaker to ensure that the job created by a k8s resource has
 # been marked as stopped or stopping.
 # Parameter:
-#    $1: CRD type (in TitleCase)
+#    $1: CRD type
 #    $2: SageMaker job name
 function verify_sm_resource_stopping_else_fail()
 {
-  local crd_type="$1"
+  local crd_type="$(echo "$1" | awk '{print tolower($0)}')"
   local job_name="$2"
 
   local jobStatusPath sageMakerResourceType 
   case $crd_type in
-    TrainingJob)
+    trainingjob)
       jobStatusPath=".TrainingJobStatus"
       sageMakerResourceType="training-job"
       ;;
 
-    HyperparameterTuningJob)
+    hyperparametertuningjob)
       jobStatusPath=".HyperParameterTuningJobStatus"
       sageMakerResourceType="hyper-parameter-tuning-job"
       ;;
 
-    BatchTransformJob)
+    batchtransformjob)
       jobStatusPath=".TransformJobStatus"
       sageMakerResourceType="transform-job"
       ;;
 
-    HostingDeployment)
+    hostingdeployment)
       jobStatusPath=".EndpointStatus"
       sageMakerResourceType="endpoint"
       ;;
