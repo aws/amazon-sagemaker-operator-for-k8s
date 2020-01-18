@@ -8,9 +8,9 @@ body='{
  "branch":"travis",
  "CRAP": "Test",
  "config": {
+   "merge_mode": "deep_merge",
    "env": {
-     "merge_mode": "deep_merge",
-     "CRAP":"gcp"
+     {"global": {"CRAP":"gcp"}}
    }
   }
 }}'

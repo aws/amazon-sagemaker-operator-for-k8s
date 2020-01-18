@@ -1,6 +1,8 @@
 os: osx
 language: minimal
-env: CRAP=nil
+env: 
+  global: 
+    CRAP: nil
 jobs:
   - stage: "Test smlogs"
     script:
