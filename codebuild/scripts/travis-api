@@ -5,7 +5,8 @@ travis login --github-token "$GITHUB_TOKEN"
 body='{
  "request": {
  "message": "Override the commit message: this is an api request 3",
- "branch":"travis"
+ "branch":"travis",
+ "variables":"$env"
 }}'
 
 curl -s -X POST \
