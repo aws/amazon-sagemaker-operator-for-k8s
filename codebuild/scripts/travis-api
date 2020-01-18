@@ -2,17 +2,13 @@
 # one time:  travis enable -r aws/amazon-sagemaker-operator-for-k8s
 travis login --github-token "$GITHUB_TOKEN" 
 # to get travis token run `travis token`
+body='{"request": {"config": { "merge_mode": "deep_merge", "env": { "global" : {"BAZ":"baz_from_api_request"}}}}}'
+
 body='{
  "request": {
  "message": "Override the commit message: this is an api request 3",
  "branch":"travis",
- "CRAP": "Test",
- "config": {
-   "merge_mode": "replace",
-   "env": {
-     {"global": {"CRAP":"gcp"}}
-   }
-  }
+ "config": { "merge_mode": "deep_merge", "env": { "global" : {"CRAP":"gcp"}}}
 }}'
 
 curl -s -X POST \
