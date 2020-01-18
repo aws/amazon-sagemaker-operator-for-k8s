@@ -6,7 +6,7 @@ body='{
  "request": {
  "message": "Override the commit message: this is an api request 3",
  "branch":"travis",
- "variables":"$env"
+ "variables":'"$env"'
 }}'
 
 curl -s -X POST \
