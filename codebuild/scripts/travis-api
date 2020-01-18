@@ -6,6 +6,7 @@ body='{
  "request": {
  "message": "Override the commit message: this is an api request 3",
  "branch":"travis",
+ "CRAP": "Test",
  "config": {
    "env": {
      "merge_mode": "deep_merge",
