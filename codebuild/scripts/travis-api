@@ -8,9 +8,8 @@ body='{
  "branch":"travis",
  "config": {
    "env": {
-     "keys": ["CRAP=gcp"]
-   },
-   "script": "echo FOO"
+     "Test smlogs":["CRAP=gcp"]
+   }
   }
 }}'
 
