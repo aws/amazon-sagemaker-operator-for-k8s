@@ -8,7 +8,7 @@ body='{
  "branch":"travis",
  "config": {
    "env": {
-     "Test smlogs":["CRAP=gcp"]
+     "Testsmlogs":["CRAP=gcp"]
    }
   }
 }}'
