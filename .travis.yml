@@ -2,6 +2,7 @@ os: osx
 language: minimal
 jobs:
   - stage: "Test smlogs"
+    env: CRAP=nil
     script:
       - wget https://amazon-sagemaker-operator-for-k8s-us-east-1.s3.amazonaws.com/kubectl-smlogs-plugin/latest/darwin.amd64.tar.gz
       - tar xvzf darwin.amd64.tar.gz
