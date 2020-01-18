@@ -10,4 +10,4 @@ jobs:
         - cp ./kubectl-smlogs.darwin.amd64/kubectl-smlogs $HOME/sagemaker-k8s-bin/kubectl-smlogs
         - PATH=$PATH:$HOME/sagemaker-k8s-bin kubectl-smlogs -h
         - env
-        - echo $keys
+        - echo $CRAP
