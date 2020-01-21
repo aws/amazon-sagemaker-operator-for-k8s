@@ -25,9 +25,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 
-	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 )
 
+// Provides the prefixes and error codes relating to each endpoint
 const (
 	DeleteEndpoint404MessagePrefix                        = "Could not find endpoint"
 	DeleteEndpoint404Code                                 = "ValidationException"
@@ -51,11 +52,15 @@ const (
 	DeleteModel404Code            = "ValidationException"
 )
 
-// Helper type that wraps the SageMaker client. "Not Found" errors are handled differently than in the Go SDK;
+// SageMakerClientWrapper wraps the SageMaker client. "Not Found" errors are handled differently than in the Go SDK;
 // here a method will return a nil pointer and a nil error if there is a 404. This simplifies code that interacts with
 // SageMaker.
 // Other errors are returned normally.
 type SageMakerClientWrapper interface {
+	DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error)
+	CreateTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.CreateTrainingJobOutput, error)
+	StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error)
+
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
 	CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error)
 	DeleteEndpoint(ctx context.Context, endpointName *string) (*sagemaker.DeleteEndpointOutput, error)
@@ -70,7 +75,7 @@ type SageMakerClientWrapper interface {
 	DeleteEndpointConfig(ctx context.Context, endpointConfig *sagemaker.DeleteEndpointConfigInput) (*sagemaker.DeleteEndpointConfigOutput, error)
 }
 
-// Create a SageMaker wrapper around an existing client.
+// NewSageMakerClientWrapper creates a SageMaker wrapper around an existing client.
 func NewSageMakerClientWrapper(innerClient sagemakeriface.ClientAPI) SageMakerClientWrapper {
 	return &sageMakerClientWrapper{
 		innerClient: innerClient,
@@ -150,15 +155,15 @@ func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *s
 	createRequest := c.innerClient.CreateEndpointRequest(endpoint)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
 
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
 		return response.CreateEndpointOutput, nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 // Delete an Endpoint. Returns the response output or nil if error.
@@ -235,15 +240,15 @@ func (c *sageMakerClientWrapper) CreateModel(ctx context.Context, model *sagemak
 	createRequest := c.innerClient.CreateModelRequest(model)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
 
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
 		return response.CreateModelOutput, nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 // Return a model delete or nil if error.
@@ -307,15 +312,15 @@ func (c *sageMakerClientWrapper) CreateEndpointConfig(ctx context.Context, endpo
 	createRequest := c.innerClient.CreateEndpointConfigRequest(endpointconfig)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
 
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
 		return response.CreateEndpointConfigOutput, nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 //  Return a EndpointConfig delete response output or nil if error
