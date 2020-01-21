@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y curl \
 
 RUN pip install awscli
 
-# Install yq
-RUN sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
+# Add yq repository and install yq
+RUN apt-get update && apt install -y software-properties-common && sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
 
 # Install kubectl
 RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06-21/bin/linux/amd64/kubectl \
