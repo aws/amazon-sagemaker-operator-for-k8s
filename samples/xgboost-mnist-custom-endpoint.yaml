@@ -27,7 +27,7 @@ spec:
   region: us-west-2
   sageMakerEndpoint: https://sagemaker.us-west-2.amazonaws.com
   outputDataConfig:
-    s3OutputPath: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost
+    s3OutputPath: s3://my-bucket/xgboost
   resourceConfig:
     instanceCount: 1
     instanceType: ml.m4.xlarge
@@ -39,7 +39,7 @@ spec:
       dataSource:
         s3DataSource:
           s3DataType: S3Prefix
-          s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/train/
+          s3Uri: s3://my-bucket/xgboost/train/
           s3DataDistributionType: FullyReplicated
       contentType: text/csv
       compressionType: None
@@ -47,7 +47,7 @@ spec:
       dataSource:
         s3DataSource:
           s3DataType: S3Prefix
-          s3Uri: https://s3-us-west-2.amazonaws.com/my-bucket/xgboost/validation/
+          s3Uri: s3://my-bucket/xgboost/validation/
           s3DataDistributionType: FullyReplicated
       contentType: text/csv
       compressionType: None
