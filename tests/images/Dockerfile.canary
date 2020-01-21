@@ -7,11 +7,11 @@ RUN apt-get update && apt-get install -y curl \
     python-pip \
     vim \
     sudo
-
+    
 RUN pip install awscli
 
 # Install yq
-RUN sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
+RUN apt-get update && apt install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common && sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
 
 # Install kubectl
 RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06-21/bin/linux/amd64/kubectl \
