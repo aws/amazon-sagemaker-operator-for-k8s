@@ -22,10 +22,10 @@ import (
 	"github.com/pkg/errors"
 	"sync"
 
-	hpojobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/hyperparametertuningjob"
-	trainingjobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/trainingjob"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/sdkutil"
+	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"

@@ -91,12 +91,9 @@ pushd sagemaker-k8s-operator
 popd 
 
 echo "Waiting for controller pod to be Ready"
-kubectl \
-    wait \
-    --for=condition=Ready \
-    --timeout=5m \
-    "pods/$(kubectl get pods -n sagemaker-k8s-operator-system | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" \
-    -n sagemaker-k8s-operator-system 
+# Wait to increase chance that pod is ready
+# TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
+sleep 60
 
 # Run the integration test file
 ./run_all_sample_canary_tests.sh

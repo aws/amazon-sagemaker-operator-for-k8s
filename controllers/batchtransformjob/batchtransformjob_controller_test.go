@@ -26,10 +26,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	batchtransformjobv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/batchtransformjob"
-	commonv1 "go.amzn.com/sagemaker/sagemaker-k8s-operator/api/v1/common"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers"
-	. "go.amzn.com/sagemaker/sagemaker-k8s-operator/controllers/controllertest"
+	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 
 	"github.com/adammck/venv"
 	"github.com/aws/aws-sdk-go-v2/aws"
