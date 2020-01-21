@@ -847,7 +847,7 @@ var _ = Describe("Reconciling an existing job", func() {
 })
 
 // Helper function to create a reconciler.
-func createTrainingJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalSeconds int64) TrainingJobReconciler {
+func createTrainingJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalSeconds int64) Reconciler {
 	provider := func(_ aws.Config) sagemakeriface.ClientAPI {
 		return sageMakerClient
 	}
@@ -856,8 +856,8 @@ func createTrainingJobReconcilerForSageMakerClient(k8sClient client.Client, sage
 }
 
 // Helper function to create a reconciler.
-func createTrainingJobReconciler(k8sClient client.Client, sageMakerClientProvider SageMakerClientProvider, awsConfigLoader AwsConfigLoader, pollIntervalSeconds int64) TrainingJobReconciler {
-	return TrainingJobReconciler{
+func createTrainingJobReconciler(k8sClient client.Client, sageMakerClientProvider SageMakerClientProvider, awsConfigLoader AwsConfigLoader, pollIntervalSeconds int64) Reconciler {
+	return Reconciler{
 		Client:                k8sClient,
 		Log:                   ctrl.Log,
 		PollInterval:          time.Duration(pollIntervalSeconds * 1e9),
@@ -868,8 +868,8 @@ func createTrainingJobReconciler(k8sClient client.Client, sageMakerClientProvide
 
 // Use a randomly generated job name so that tests can be executed in parallel.
 func generateTrainingJobK8sName() string {
-	jobId := rand.Int()
-	return "training-job-" + strconv.Itoa(jobId)
+	jobID := rand.Int()
+	return "training-job-" + strconv.Itoa(jobID)
 }
 
 func createTrainingJobWithNoSageMakerName(hasFinalizer bool) *trainingjobv1.TrainingJob {

@@ -59,6 +59,7 @@ fmt:
 
 # Run go vet against code
 vet:
+	golint ./..
 	go vet ./...
 
 # Generate code
