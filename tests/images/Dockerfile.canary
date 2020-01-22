@@ -46,21 +46,12 @@ ENV RESULT_BUCKET=$RESULT_BUCKET
 RUN mkdir -p /app/testfiles
 WORKDIR /app/testfiles
 
-COPY codebuild/testfiles/xgboost-mnist-hpo.yaml .
-COPY codebuild/testfiles/xgboost-mnist-trainingjob.yaml .
-COPY codebuild/testfiles/xgboost-mnist-batchtransform.yaml .
-COPY codebuild/testfiles/xgboost-hosting-deployment.yaml .
-COPY codebuild/testfiles/xgboost-model.yaml .
+COPY codebuild/testfiles/*.yaml ./
 
 WORKDIR /app
 
-COPY codebuild/run_all_sample_canary_tests.sh .
-COPY codebuild/run_canarytest.sh .
-COPY codebuild/run_test.sh .
-
-RUN chmod +x ./run_all_sample_canary_tests.sh
-RUN chmod +x ./run_canarytest.sh
-RUN chmod +x ./run_test.sh
+COPY codebuild/*.sh ./
+RUN chmod +x ./*.sh
 
 COPY sagemaker-k8s-operator.tar.gz .
 
