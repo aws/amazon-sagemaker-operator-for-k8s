@@ -30,6 +30,11 @@ import (
 
 // Provides the prefixes and error codes relating to each endpoint
 const (
+	DescribeTrainingJob404Code          = "ValidationException"
+	DescribeTrainingJob404MessagePrefix = "Requested resource not found"
+	StopTrainingJob404Code              = "ValidationException"
+	StopTrainingJob404MessagePrefix     = "Requested resource not found"
+
 	DeleteEndpoint404MessagePrefix                        = "Could not find endpoint"
 	DeleteEndpoint404Code                                 = "ValidationException"
 	DeleteEndpointInProgressMessagePrefix                 = "Cannot update in-progress endpoint"
@@ -58,7 +63,7 @@ const (
 // Other errors are returned normally.
 type SageMakerClientWrapper interface {
 	DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error)
-	CreateTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.CreateTrainingJobOutput, error)
+	CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error)
 	StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error)
 
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
@@ -89,6 +94,80 @@ type sageMakerClientWrapper struct {
 	innerClient sagemakeriface.ClientAPI
 }
 
+// Return a training job description or nil if error or does not exist.
+func (c *sageMakerClientWrapper) DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error) {
+
+	describeRequest := c.innerClient.DescribeTrainingJobRequest(&sagemaker.DescribeTrainingJobInput{
+		TrainingJobName: &trainingJobName,
+	})
+
+	describeResponse, describeError := describeRequest.Send(ctx)
+
+	if describeError != nil {
+		if c.isDescribeTrainingJob404Error(describeError) {
+			return nil, nil
+		}
+		return nil, describeError
+	}
+
+	return describeResponse.DescribeTrainingJobOutput, describeError
+}
+
+// Create an Endpoint. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error) {
+
+	createRequest := c.innerClient.CreateTrainingJobRequest(trainingJob)
+
+	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+
+	response, err := createRequest.Send(ctx)
+
+	if response != nil {
+		return response.CreateTrainingJobOutput, nil
+	}
+
+	return nil, err
+}
+
+// Delete an Endpoint. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error) {
+	stopRequest := c.innerClient.StopTrainingJobRequest(&sagemaker.StopTrainingJobInput{
+		TrainingJobName: &trainingJobName,
+	})
+
+	stopResponse, stopError := stopRequest.Send(ctx)
+
+	if stopError != nil {
+		if c.isStopTrainingJob404Error(stopError) {
+			return nil, nil
+		}
+		return nil, stopError
+	}
+
+	return stopResponse.StopTrainingJobOutput, nil
+}
+
+// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
+// to an HTTP 404 not found.
+func (c *sageMakerClientWrapper) isDescribeTrainingJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DescribeTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), DescribeTrainingJob404MessagePrefix)
+	}
+
+	return false
+}
+
+// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
+// to an HTTP 404 not found.
+func (c *sageMakerClientWrapper) isStopTrainingJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == StopTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), StopTrainingJob404MessagePrefix)
+	}
+
+	return false
+}
+
 // Return a endpoint description or nil if error.
 // If the object is not found, return a nil description and nil error.
 func (c *sageMakerClientWrapper) DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error) {
@@ -113,7 +192,7 @@ func (c *sageMakerClientWrapper) DescribeEndpoint(ctx context.Context, endpointN
 // to an HTTP 404 not found.
 func (c *sageMakerClientWrapper) isDescribeEndpoint404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == "ValidationException" && strings.HasPrefix(requestFailure.Message(), "Could not find endpoint")
+		return requestFailure.Code() == DescribeEndpoint404Code && strings.HasPrefix(requestFailure.Message(), DescribeEndpoint404MessagePrefix)
 	}
 
 	return false
