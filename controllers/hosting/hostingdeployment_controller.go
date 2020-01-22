@@ -316,7 +316,7 @@ func (r *HostingDeploymentReconciler) createEndpoint(ctx reconcileRequestContext
 	r.Log.Info("Create endpoint", "input", createEndpointInput)
 
 	if _, err := ctx.SageMakerClient.CreateEndpoint(ctx, createEndpointInput); err != nil {
-		return errors.Wrap(err, "Unable to delete Endpoint")
+		return errors.Wrap(err, "Unable to create Endpoint")
 	}
 
 	return nil
