@@ -1,12 +1,8 @@
-Thanks for installing the {{ .Chart.Name }}. 
+Successfully deployed a new training job chart.
 
 Your release is named {{ .Release.Name }}. 
 
 To learn more about the release, try:
 
   $ helm status {{ .Release.Name }}
-  $ helm get {{ .Release.Name }}
-
-To use the latest features, try adding attributes to yaml by generating it:
-  
-  $ helm install <directory of charts> --debug --dry-run
+  $ helm get all {{ .Release.Name }}

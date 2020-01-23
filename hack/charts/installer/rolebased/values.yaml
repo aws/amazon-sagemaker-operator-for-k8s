@@ -1,7 +1,6 @@
-rolesArn: arn:aws:iam::123456789012:role/DELETE_ME
+roleArn: arn:aws:iam::123456789012:role/DELETE_ME
 
-namespace: 
-  name: sagemaker-k8s-operator-system
-
-image: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s:latest
+image:
+  repository: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s
+  tag: latest
 
