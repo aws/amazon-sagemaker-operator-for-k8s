@@ -30,6 +30,7 @@ import (
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/adammck/venv"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -847,21 +848,21 @@ var _ = Describe("Reconciling an existing job", func() {
 })
 
 // Helper function to create a reconciler.
-func createTrainingJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalSeconds int64) Reconciler {
-	provider := func(_ aws.Config) sagemakeriface.ClientAPI {
-		return sageMakerClient
+func createTrainingJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClientWrapper clientwrapper.SageMakerClientWrapper, pollIntervalSeconds int64) Reconciler {
+	provider := func(_ aws.Config) clientwrapper.SageMakerClientWrapper {
+		return sageMakerClientWrapper
 	}
 
 	return createTrainingJobReconciler(k8sClient, provider, CreateMockAwsConfigLoader(), pollIntervalSeconds)
 }
 
 // Helper function to create a reconciler.
-func createTrainingJobReconciler(k8sClient client.Client, sageMakerClientProvider SageMakerClientProvider, awsConfigLoader AwsConfigLoader, pollIntervalSeconds int64) Reconciler {
+func createTrainingJobReconciler(k8sClient client.Client, sageMakerClientWrapperProvider clientwrapper.SageMakerClientWrapperProvider, awsConfigLoader AwsConfigLoader, pollIntervalSeconds int64) Reconciler {
 	return Reconciler{
 		Client:                k8sClient,
 		Log:                   ctrl.Log,
 		PollInterval:          time.Duration(pollIntervalSeconds * 1e9),
-		createSageMakerClient: sageMakerClientProvider,
+		createSageMakerClient: sageMakerClientWrapperProvider,
 		awsConfigLoader:       awsConfigLoader,
 	}
 }

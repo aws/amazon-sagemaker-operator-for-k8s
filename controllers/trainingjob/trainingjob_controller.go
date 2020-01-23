@@ -18,6 +18,7 @@ package trainingjob
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -33,7 +34,6 @@ import (
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 	"github.com/go-logr/logr"
 )
 
@@ -47,7 +47,7 @@ type Reconciler struct {
 	client.Client
 	Log                   logr.Logger
 	PollInterval          time.Duration
-	createSageMakerClient controllers.SageMakerClientProvider
+	createSageMakerClient clientwrapper.SageMakerClientWrapperProvider
 	awsConfigLoader       controllers.AwsConfigLoader
 }
 
@@ -57,8 +57,8 @@ func NewTrainingJobReconciler(client client.Client, log logr.Logger, pollInterva
 		Client:       client,
 		Log:          log,
 		PollInterval: pollInterval,
-		createSageMakerClient: func(cfg aws.Config) sagemakeriface.ClientAPI {
-			return sagemaker.New(cfg)
+		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
+			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
 		},
 		awsConfigLoader: controllers.NewAwsConfigLoader(),
 	}
@@ -67,7 +67,7 @@ func NewTrainingJobReconciler(client client.Client, log logr.Logger, pollInterva
 // +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=trainingjobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=trainingjobs/status,verbs=get;update;patch
 
-// Reconcile attempts to bring the status of the k8s resource up to date with the SageMaker resource.
+// Reconcile attempts to reconcile the SageMaker resource state with the k8s desired state.
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := reconcileRequestContext{
 		Context:     context.Background(),
@@ -76,10 +76,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	ctx.Log.Info("Getting resource")
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// GET STATE FROM ETCD
-	////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	if err := r.Get(ctx, req.NamespacedName, ctx.TrainingJob); err != nil {
 		ctx.Log.Info("Unable to fetch TrainingJob job", "reason", err)
@@ -106,6 +102,25 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	default:
 		return controllers.RequeueAfterInterval(r.PollInterval, nil)
 	}
+}
+
+type reconcileRequestContext struct {
+	context.Context
+
+	Log             logr.Logger
+	SageMakerClient clientwrapper.SageMakerClientWrapper
+
+	// The desired state of the TrainingJob
+	TrainingJob *trainingjobv1.TrainingJob
+
+	// The SageMaker TrainingJob description.
+	TrainingJobDescription *sagemaker.DescribeTrainingJobOutput
+
+	// The name of the SageMaker TrainingJob.
+	TrainingJobName string
+
+	// The path to the CloudWatch logs for the current training job
+	CloudWatchLogURL string
 }
 
 func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
@@ -140,7 +155,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 	if ctx.TrainingJobDescription == nil {
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
-			return r.cleanupAndRemoveFinalizer(ctx)
+			return r.removeFinalizer(ctx)
 		}
 
 		if err = r.createTrainingJob(ctx); err != nil {
@@ -152,42 +167,33 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	}
 
-	//TODO: Convert it to tinyurl or even better can we expose CW url via API server proxy UI?
-	ctx.CloudWatchLogURL = "https://" + *ctx.TrainingJob.Spec.Region + ".console.aws.amazon.com/cloudwatch/home?region=" +
-		*ctx.TrainingJob.Spec.Region + "#ctx.LogStream:group=/aws/sagemaker/TrainingJobs;prefix=" +
-		*ctx.TrainingJobDescription.TrainingJobName + ";streamFilter=typeLogStreamPrefix"
-
 	switch ctx.TrainingJobDescription.TrainingJobStatus {
-	case sagemaker.TrainingJobStatusInProgress, sagemaker.TrainingJobStatusStopping:
-		if !controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
-			if err = r.handleUpdates(ctx); err != nil {
-				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to update SageMaker trainingjob"))
-			}
-		} else {
+	case sagemaker.TrainingJobStatusInProgress:
+		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			if _, err := ctx.SageMakerClient.StopTrainingJob(ctx, ctx.TrainingJobName); err != nil {
 				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to delete training job"))
 			}
 		}
-
 		break
 
 	case sagemaker.TrainingJobStatusCompleted:
-		if err = r.updateCompleted(ctx); err != nil {
+		if err = r.addModelPathToStatus(ctx); err != nil {
 			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to update training job"))
 		}
-
 		fallthrough
 
 	case sagemaker.TrainingJobStatusStopped, sagemaker.TrainingJobStatusFailed:
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
-			return r.cleanupAndRemoveFinalizer(ctx)
+			return r.removeFinalizer(ctx)
 		}
+		break
 
+	case sagemaker.TrainingJobStatusStopping:
 		break
 
 	default:
-		unknownStateError := errors.New(string("Unknown Training Job Status " + ctx.TrainingJobDescription.TrainingJobStatus))
-		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(unknownStateError, "Job is in an unknown status"))
+		unknownStateError := errors.New(fmt.Sprintf("Unknown Training Job Status: %s", ctx.TrainingJobDescription.TrainingJobStatus))
+		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, unknownStateError)
 	}
 
 	if err = r.updateBothStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus)); err != nil {
@@ -197,28 +203,9 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 	return nil
 }
 
-type reconcileRequestContext struct {
-	context.Context
-
-	Log             logr.Logger
-	SageMakerClient clientwrapper.SageMakerClientWrapper
-
-	// The desired state of the TrainingJob
-	TrainingJob *trainingjobv1.TrainingJob
-
-	// The SageMaker TrainingJob description.
-	TrainingJobDescription *sagemaker.DescribeTrainingJobOutput
-
-	// The name of the SageMaker TrainingJob.
-	TrainingJobName string
-
-	// The path to the CloudWatch logs for the current training job
-	CloudWatchLogURL string
-}
-
 // Initialize fields on the context object which will be used later.
 func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
-	ctx.TrainingJobName = getTrainingJobName(ctx.TrainingJob)
+	ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), 63)
 	ctx.Log.Info("TrainingJob", "name", ctx.TrainingJobName)
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.TrainingJob.Spec.Region, ctx.TrainingJob.Spec.SageMakerEndpoint)
@@ -227,15 +214,10 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		return err
 	}
 
-	ctx.SageMakerClient = clientwrapper.NewSageMakerClientWrapper(r.createSageMakerClient(awsConfig))
+	ctx.SageMakerClient = r.createSageMakerClient(awsConfig)
 	ctx.Log.Info("Loaded AWS config")
 
 	return nil
-}
-
-// Function to construct the sagemaker training job name
-func getTrainingJobName(state *trainingjobv1.TrainingJob) string {
-	return controllers.GetGeneratedJobName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), 63)
 }
 
 func (r *Reconciler) etcdMatchesSmAPI(state trainingjobv1.TrainingJob, describeResponse *sagemaker.DescribeTrainingJobResponse) bool {
@@ -264,12 +246,6 @@ func (r *Reconciler) createTrainingJob(ctx reconcileRequestContext) error {
 	return nil
 }
 
-func (r *Reconciler) handleUpdates(ctx reconcileRequestContext) error {
-	// Don't handle any update functionality
-
-	return nil
-}
-
 // Remove the finalizer and update etcd
 func (r *Reconciler) removeFinalizerAndUpdate(ctx reconcileRequestContext) (ctrl.Result, error) {
 	ctx.Log.Info("removeFinalizerAndUpdate")
@@ -279,7 +255,7 @@ func (r *Reconciler) removeFinalizerAndUpdate(ctx reconcileRequestContext) (ctrl
 	return controllers.RequeueIfError(err)
 }
 
-func (r *Reconciler) updateCompleted(ctx reconcileRequestContext) error {
+func (r *Reconciler) addModelPathToStatus(ctx reconcileRequestContext) error {
 	var err error
 
 	// If job has completed populate the model full path
@@ -296,8 +272,8 @@ func (r *Reconciler) updateCompleted(ctx reconcileRequestContext) error {
 	return nil
 }
 
-// Clean up any deployments artifacts, then removes the finalizer.
-func (r *Reconciler) cleanupAndRemoveFinalizer(ctx reconcileRequestContext) error {
+// Removes the finalizer held by our controller.
+func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 	var err error
 
 	if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
@@ -344,6 +320,11 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tra
 	jobStatus.TrainingJobStatus = trainingJobPrimaryStatus
 	jobStatus.SecondaryStatus = trainingJobSecondaryStatus
 	jobStatus.Additional = additional
+
+	//TODO: Convert it to tinyurl or even better can we expose CW url via API server proxy UI?
+	jobStatus.CloudWatchLogUrl = "https://" + *ctx.TrainingJob.Spec.Region + ".console.aws.amazon.com/cloudwatch/home?region=" +
+		*ctx.TrainingJob.Spec.Region + "#ctx.LogStream:group=/aws/sagemaker/TrainingJobs;prefix=" +
+		*ctx.TrainingJobDescription.TrainingJobName + ";streamFilter=typeLogStreamPrefix"
 
 	if err := r.Status().Update(ctx, ctx.TrainingJob); err != nil {
 		err = errors.Wrap(err, "Unable to update status")
