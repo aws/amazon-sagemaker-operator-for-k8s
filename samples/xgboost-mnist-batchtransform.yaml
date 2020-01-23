@@ -14,5 +14,5 @@ spec:
   transformOutput:
     s3OutputPath: s3://my-bucket/sagemaker-tensorflow-model
   transformResources:
-    instanceCount: 1
+    instanceCount: 2
     instanceType: ml.m4.xlarge

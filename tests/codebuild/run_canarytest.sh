@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source tests/codebuild/common.sh
+
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails
 # Build environment `Docker image` has all prerequisite setup and credentials are being passed using AWS system manager
@@ -14,15 +16,6 @@ CLUSTER_PRIVATE_SUBNETS=${CLUSTER_PRIVATE_SUBNETS:-}
 # Verbose trace of commands, helpful since test iteration takes a long time.
 set -x 
 
-function delete_tests {
-    # Stop jobs so we can do PrivateLink test.
-    kubectl delete hyperparametertuningjob --all
-    kubectl delete trainingjob --all
-    kubectl delete batchtransformjob --all
-    kubectl delete hostingdeployment --all
-    kubectl delete model --all
-}
-
 # A function to delete cluster, if cluster was not launched this will fail, so test will fail ultimately too
 function cleanup {
     # We want to run every command in this function, even if some fail.
@@ -35,7 +28,7 @@ function cleanup {
     echo "trainingjob description:"
     kubectl describe trainingjob
 
-    delete_tests
+    delete_all_resources
 
     if [ -z "${USE_EXISTING_CLUSTER}" ]
     then
@@ -104,8 +97,6 @@ sleep 60
 
 # Run the integration test file
 ./run_all_sample_canary_tests.sh
-
-delete_tests
 
 # Send results back to results bucket
 FILE_NAME=`TZ=UTC date +%Y-%m-%d-%H-%M-%S`

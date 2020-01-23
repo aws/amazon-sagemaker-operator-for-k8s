@@ -3,59 +3,59 @@ kind: TrainingJob
 metadata:
   name: efs-xgboost-mnist
 spec:
-    hyperParameters:
-        - name: max_depth
-          value: "5"
-        - name: eta
-          value: "0.2"
-        - name: gamma
-          value: "4"
-        - name: min_child_weight
-          value: "6"
-        - name: silent
-          value: "0"
-        - name: objective
-          value: multi:softmax
-        - name: num_class
-          value: "10"
-        - name: num_round
-          value: "10"
-    algorithmSpecification:
-        trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
-        trainingInputMode: File
-    roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    region: us-west-2
-    outputDataConfig:
-        s3OutputPath: s3://my-bucket/xgboost
-    resourceConfig:
-        instanceCount: 1
-        instanceType: ml.m4.xlarge
-        volumeSizeInGB: 5
-    stoppingCondition:
-        maxRuntimeInSeconds: 86400
-    inputDataConfig:
-        - channelName: train
-          dataSource:
-            fileSystemDataSource:
-                fileSystemType: EFS
-                fileSystemAccessMode: ro
-                fileSystemId: fs-e2466d9b 
-                directoryPath: /xgboost-mnist/train
-          contentType: text/csv
-          compressionType: None
-        - channelName: validation
-          dataSource:
-            fileSystemDataSource:
-                fileSystemType: EFS 
-                fileSystemAccessMode: ro
-                fileSystemId: fs-e2466d9b 
-                directoryPath: /xgboost-mnist/validation
-          contentType: text/csv
-          compressionType: None
-    vpcConfig:
-        securityGroupIds: 
-          - sg-4b23c421
-        subnets: 
-          - subnet-ae0a65c6
-          - subnet-2af0fa67
-          - subnet-dddb7fa7
+  hyperParameters:
+    - name: max_depth
+      value: "5"
+    - name: eta
+      value: "0.2"
+    - name: gamma
+      value: "4"
+    - name: min_child_weight
+      value: "6"
+    - name: silent
+      value: "0"
+    - name: objective
+      value: multi:softmax
+    - name: num_class
+      value: "10"
+    - name: num_round
+      value: "10"
+  algorithmSpecification:
+    trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
+    trainingInputMode: File
+  roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+  region: us-west-2
+  outputDataConfig:
+    s3OutputPath: s3://my-bucket/xgboost
+  resourceConfig:
+    instanceCount: 1
+    instanceType: ml.m4.xlarge
+    volumeSizeInGB: 5
+  stoppingCondition:
+    maxRuntimeInSeconds: 86400
+  inputDataConfig:
+    - channelName: train
+      dataSource:
+        fileSystemDataSource:
+          fileSystemType: EFS
+          fileSystemAccessMode: ro
+          fileSystemId: fs-e2466d9b 
+          directoryPath: /xgboost-mnist/train
+      contentType: text/csv
+      compressionType: None
+    - channelName: validation
+      dataSource:
+        fileSystemDataSource:
+          fileSystemType: EFS 
+          fileSystemAccessMode: ro
+          fileSystemId: fs-e2466d9b 
+          directoryPath: /xgboost-mnist/validation
+      contentType: text/csv
+      compressionType: None
+  vpcConfig:
+    securityGroupIds: 
+      - sg-4b23c421
+    subnets: 
+      - subnet-ae0a65c6
+      - subnet-2af0fa67
+      - subnet-dddb7fa7
