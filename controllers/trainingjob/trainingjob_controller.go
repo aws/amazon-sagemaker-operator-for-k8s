@@ -153,6 +153,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to describe SageMaker training job"))
 	}
 
+	// The resource does not exist within SageMaker yet.
 	if ctx.TrainingJobDescription == nil {
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			return r.removeFinalizer(ctx)
