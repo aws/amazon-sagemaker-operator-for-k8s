@@ -171,8 +171,13 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 	switch ctx.TrainingJobDescription.TrainingJobStatus {
 	case sagemaker.TrainingJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
+			// Request to stop the job
 			if _, err := ctx.SageMakerClient.StopTrainingJob(ctx, ctx.TrainingJobName); err != nil {
 				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to delete training job"))
+			}
+			// Describe the new state of the job
+			if ctx.TrainingJobDescription, err = ctx.SageMakerClient.DescribeTrainingJob(ctx, ctx.TrainingJobName); err != nil {
+				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to describe SageMaker training job"))
 			}
 		}
 		break
@@ -197,8 +202,15 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, unknownStateError)
 	}
 
-	if err = r.updateBothStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus)); err != nil {
-		return err
+	if ctx.TrainingJobDescription.TrainingJobStatus == sagemaker.TrainingJobStatusStopping {
+		// Clear the secondary status if we detected stopping, since SageMaker has unclear secondary statuses during this phase
+		if err = r.updateBothStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), ""); err != nil {
+			return err
+		}
+	} else {
+		if err = r.updateBothStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus)); err != nil {
+			return err
+		}
 	}
 
 	return nil
