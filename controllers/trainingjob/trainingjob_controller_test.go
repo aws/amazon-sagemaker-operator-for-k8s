@@ -81,7 +81,7 @@ var _ = Describe("Reconciling a TrainingJob while failing to get the Kubernetes 
 	})
 })
 
-var _ = Describe("Reconciling a HostingDeployment that exists", func() {
+var _ = Describe("Reconciling a TrainingJob that exists", func() {
 
 	var (
 		// The requests received by the mock SageMaker client.
@@ -103,9 +103,6 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 		// The poll duration that the controller is configured with.
 		pollDuration string
 
-		// A generated name to be used in the TrainingJob.Status SageMaker name.
-		// trainingJobSageMakerName string
-
 		// Whether or not the test deployment should have deletion timestamp set.
 		shouldHaveDeletionTimestamp bool
 
@@ -121,8 +118,6 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 	BeforeEach(func() {
 		pollDuration = "1s"
-
-		// trainingJobSageMakerName = "training-job-" + uuid.New().String()
 
 		shouldHaveDeletionTimestamp = false
 		shouldHaveFinalizer = false
@@ -1062,18 +1057,16 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 func createTrainingJobWithGeneratedNames() *trainingjobv1.TrainingJob {
 	k8sName := "training-job-" + uuid.New().String()
 	k8sNamespace := "namespace-" + uuid.New().String()
-	sageMakerName := "training-job-" + uuid.New().String()
-	return createTrainingJob(k8sName, k8sNamespace, sageMakerName)
+	return createTrainingJob(k8sName, k8sNamespace)
 }
 
-func createTrainingJob(k8sName, k8sNamespace, smName string) *trainingjobv1.TrainingJob {
+func createTrainingJob(k8sName, k8sNamespace string) *trainingjobv1.TrainingJob {
 	return &trainingjobv1.TrainingJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sName,
 			Namespace: k8sNamespace,
 		},
 		Spec: trainingjobv1.TrainingJobSpec{
-			TrainingJobName: &smName,
 			AlgorithmSpecification: &commonv1.AlgorithmSpecification{
 				TrainingInputMode: "File",
 			},
@@ -1111,14 +1104,13 @@ func AddFinalizer(trainingJob *trainingjobv1.TrainingJob) {
 
 // Set the deletion timestamp to be nonzero.
 func SetDeletionTimestamp(trainingJob *trainingjobv1.TrainingJob) {
-	var actual trainingjobv1.TrainingJob
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: trainingJob.ObjectMeta.Namespace,
 		Name:      trainingJob.ObjectMeta.Name,
-	}, &actual)
+	}, trainingJob)
 	Expect(err).ToNot(HaveOccurred())
 
-	Expect(k8sClient.Delete(context.Background(), &actual)).To(Succeed())
+	Expect(k8sClient.Delete(context.Background(), trainingJob)).To(Succeed())
 }
 
 // Expect the controller return value to be RequeueAfterInterval, with the poll duration specified.

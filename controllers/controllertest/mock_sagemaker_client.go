@@ -163,7 +163,7 @@ type createEndpointResponse struct {
 
 // Add a DescribeTrainingJob error response to the client.
 func (m *MockSageMakerClientBuilder) AddDescribeTrainingJobErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
-	m.responses.PushBack(describeEndpointResponse{
+	m.responses.PushBack(describeTrainingJobResponse{
 		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
 		data: nil,
 	})
@@ -176,7 +176,6 @@ func (m *MockSageMakerClientBuilder) AddDescribeTrainingJobResponse(data sagemak
 		err:  nil,
 		data: &data,
 	})
-
 	return m
 }
 
@@ -186,7 +185,6 @@ func (m *MockSageMakerClientBuilder) AddCreateTrainingJobResponse(data sagemaker
 		err:  nil,
 		data: &data,
 	})
-
 	return m
 }
 
@@ -545,6 +543,51 @@ func (m *mockSageMakerClient) mockRequestBuilder() *aws.Request {
 		Operation: &aws.Operation{
 			Paginator: nil,
 		},
+	}
+}
+
+// Mock DescribeTrainingJobRequest implementation. It overrides a request response with the mock data.
+// If the next response is not of type DescribeTrainingJob, or there are no more responses to give, fail the test.
+func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTrainingJobInput) sagemaker.CreateTrainingJobRequest {
+
+	m.requests.PushBack(input)
+
+	front := m.responses.Front()
+
+	var nextResponse interface{}
+	if front == nil {
+		message := "Not enough CreateTrainingJob responses provided for test"
+		nextResponse = createTrainingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+		m.testReporter.Error(message)
+	} else {
+		nextResponse = front.Value
+		m.responses.Remove(front)
+	}
+
+	nextCreateTrainingJobResponse, ok := nextResponse.(createTrainingJobResponse)
+	if !ok {
+		message := "CreateTrainingJob request created, next response is not of type CreateTrainingJobOutput"
+		nextCreateTrainingJobResponse = createTrainingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+	}
+
+	mockRequest := m.mockRequestBuilder()
+
+	if nextCreateTrainingJobResponse.err != nil {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Error = nextCreateTrainingJobResponse.err
+		})
+	} else {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Data = nextCreateTrainingJobResponse.data
+		})
+	}
+
+	return sagemaker.CreateTrainingJobRequest{
+		Request: mockRequest,
 	}
 }
 

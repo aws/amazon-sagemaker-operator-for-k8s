@@ -8,7 +8,10 @@ require (
 	github.com/adammck/venv v0.0.0-20160819025605-8a9c907a37d3
 	github.com/aws/aws-sdk-go v1.25.36
 	github.com/aws/aws-sdk-go-v2 v0.11.0
+	github.com/emicklei/go-restful v2.11.1+incompatible // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v0.1.0
+	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/go-cmp v0.3.1
 	github.com/google/uuid v1.1.1
@@ -29,4 +32,5 @@ require (
 	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f // indirect
 	sigs.k8s.io/controller-runtime v0.2.0
 	sigs.k8s.io/controller-tools v0.2.0-beta.2 // indirect
+	sigs.k8s.io/kustomize v2.0.3+incompatible // indirect
 )
