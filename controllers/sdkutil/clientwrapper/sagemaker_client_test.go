@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package clientwrapper
+package clientwrapper_test
 
 import (
 	"context"
@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	// +kubebuilder:scaffold:imports

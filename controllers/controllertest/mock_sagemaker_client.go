@@ -53,8 +53,14 @@ type describeTrainingJobResponse struct {
 	data *sagemaker.DescribeTrainingJobOutput
 }
 
+// Helper data structure that represents a single CreateTrainingJob response.
+type createTrainingJobResponse struct {
+	err  awserr.RequestFailure
+	data *sagemaker.CreateTrainingJobOutput
+}
+
 // Helper data structure that represents a single ListTrainingJobsForHyperParameterTuningJob response.
-type ListTrainingJobsForHyperParameterTuningJobResponse struct {
+type listTrainingJobsForHyperParameterTuningJobResponse struct {
 	err  awserr.RequestFailure
 	data *sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput
 }
@@ -156,9 +162,9 @@ type createEndpointResponse struct {
 }
 
 // Add a DescribeTrainingJob error response to the client.
-func (m *MockSageMakerClientBuilder) AddDescribeTrainingJobErrorResponse(code string, statusCode int, reqId string) *MockSageMakerClientBuilder {
-	m.responses.PushBack(describeTrainingJobResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, "mock error message", fmt.Errorf(code)), statusCode, reqId),
+func (m *MockSageMakerClientBuilder) AddDescribeTrainingJobErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
+	m.responses.PushBack(describeEndpointResponse{
+		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
 		data: nil,
 	})
 	return m
@@ -174,9 +180,19 @@ func (m *MockSageMakerClientBuilder) AddDescribeTrainingJobResponse(data sagemak
 	return m
 }
 
+// Add a CreateTrainingJob response to the client.
+func (m *MockSageMakerClientBuilder) AddCreateTrainingJobResponse(data sagemaker.CreateTrainingJobOutput) *MockSageMakerClientBuilder {
+	m.responses.PushBack(createTrainingJobResponse{
+		err:  nil,
+		data: &data,
+	})
+
+	return m
+}
+
 // Add a ListTrainingJobsForHyperParameterTuningJob error response to the client.
 func (m *MockSageMakerClientBuilder) AddListTrainingJobsForHyperParameterTuningJobErrorResponse(code string, statusCode int, reqId string) *MockSageMakerClientBuilder {
-	m.responses.PushBack(ListTrainingJobsForHyperParameterTuningJobResponse{
+	m.responses.PushBack(listTrainingJobsForHyperParameterTuningJobResponse{
 		err:  awserr.NewRequestFailure(awserr.New(code, "mock error message", fmt.Errorf(code)), statusCode, reqId),
 		data: nil,
 	})
@@ -185,7 +201,7 @@ func (m *MockSageMakerClientBuilder) AddListTrainingJobsForHyperParameterTuningJ
 
 // Add a ListTrainingJobsForHyperParameterTuningJob response to the client.
 func (m *MockSageMakerClientBuilder) AddListTrainingJobsForHyperParameterTuningJobResponse(data sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput) *MockSageMakerClientBuilder {
-	m.responses.PushBack(ListTrainingJobsForHyperParameterTuningJobResponse{
+	m.responses.PushBack(listTrainingJobsForHyperParameterTuningJobResponse{
 		err:  nil,
 		data: &data,
 	})
@@ -578,7 +594,7 @@ func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.Describ
 }
 
 // Mock ListTrainingJobsForHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
-// If the next response is not of type ListTrainingJobsForHyperParameterTuningJobResponse, or there are no more responses to give, fail the test.
+// If the next response is not of type listTrainingJobsForHyperParameterTuningJobResponse, or there are no more responses to give, fail the test.
 func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest {
 
 	m.requests.PushBack(input)
@@ -587,8 +603,8 @@ func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(i
 
 	var nextResponse interface{}
 	if front == nil {
-		message := "Not enough ListTrainingJobsForHyperParameterTuningJobResponse responses provided for test"
-		nextResponse = ListTrainingJobsForHyperParameterTuningJobResponse{
+		message := "Not enough listTrainingJobsForHyperParameterTuningJobResponse responses provided for test"
+		nextResponse = listTrainingJobsForHyperParameterTuningJobResponse{
 			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
 		}
 		m.testReporter.Error(message)
@@ -597,10 +613,10 @@ func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(i
 		m.responses.Remove(front)
 	}
 
-	nextListTrainingJobsForHyperParameterTuningJobResponseResponse, ok := nextResponse.(ListTrainingJobsForHyperParameterTuningJobResponse)
+	nextListTrainingJobsForHyperParameterTuningJobResponseResponse, ok := nextResponse.(listTrainingJobsForHyperParameterTuningJobResponse)
 	if !ok {
-		message := "ListTrainingJobsForHyperParameterTuningJobResponse request created, next response is not of type ListTrainingJobsForHyperParameterTuningJobResponseOutput"
-		nextListTrainingJobsForHyperParameterTuningJobResponseResponse = ListTrainingJobsForHyperParameterTuningJobResponse{
+		message := "listTrainingJobsForHyperParameterTuningJobResponse request created, next response is not of type ListTrainingJobsForHyperParameterTuningJobResponseOutput"
+		nextListTrainingJobsForHyperParameterTuningJobResponseResponse = listTrainingJobsForHyperParameterTuningJobResponse{
 			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
 		}
 	}

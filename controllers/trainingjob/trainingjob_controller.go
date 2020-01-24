@@ -323,9 +323,11 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tra
 	jobStatus.Additional = additional
 
 	//TODO: Convert it to tinyurl or even better can we expose CW url via API server proxy UI?
-	jobStatus.CloudWatchLogUrl = "https://" + *ctx.TrainingJob.Spec.Region + ".console.aws.amazon.com/cloudwatch/home?region=" +
-		*ctx.TrainingJob.Spec.Region + "#ctx.LogStream:group=/aws/sagemaker/TrainingJobs;prefix=" +
-		*ctx.TrainingJobDescription.TrainingJobName + ";streamFilter=typeLogStreamPrefix"
+	if ctx.TrainingJobDescription != nil && ctx.TrainingJobDescription.TrainingJobName != nil {
+		jobStatus.CloudWatchLogUrl = "https://" + *ctx.TrainingJob.Spec.Region + ".console.aws.amazon.com/cloudwatch/home?region=" +
+			*ctx.TrainingJob.Spec.Region + "#ctx.LogStream:group=/aws/sagemaker/TrainingJobs;prefix=" +
+			*ctx.TrainingJobDescription.TrainingJobName + ";streamFilter=typeLogStreamPrefix"
+	}
 
 	if err := r.Status().Update(ctx, ctx.TrainingJob); err != nil {
 		err = errors.Wrap(err, "Unable to update status")
