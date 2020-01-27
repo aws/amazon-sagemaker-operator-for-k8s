@@ -139,7 +139,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		if !controllers.ContainsString(ctx.TrainingJob.ObjectMeta.GetFinalizers(), controllers.SageMakerResourceFinalizerName) {
 			ctx.TrainingJob.ObjectMeta.Finalizers = append(ctx.TrainingJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
 			if err := r.Update(ctx, ctx.TrainingJob); err != nil {
-				return errors.Wrap(err, "Failed to add finaliver")
+				return errors.Wrap(err, "Failed to add finalizer")
 			}
 			ctx.Log.Info("Finalizer added")
 		}
@@ -181,7 +181,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 	case sagemaker.TrainingJobStatusCompleted:
 		if err = r.addModelPathToStatus(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to update training job"))
+			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add model path to status"))
 		}
 		fallthrough
 
@@ -201,6 +201,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 	if ctx.TrainingJobDescription.TrainingJobStatus == sagemaker.TrainingJobStatusStopping {
 		// Clear the secondary status if we detected stopping, since SageMaker has unclear secondary statuses during this phase
+		// Open ticket with the SageMaker team: https://t.corp.amazon.com/0411302791
 		if err = r.updateStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), ""); err != nil {
 			return err
 		}
@@ -230,13 +231,6 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	return nil
 }
 
-func (r *Reconciler) etcdMatchesSmAPI(state trainingjobv1.TrainingJob, describeResponse *sagemaker.DescribeTrainingJobResponse) bool {
-	primaryStatusMatches := state.Status.TrainingJobStatus == string(describeResponse.DescribeTrainingJobOutput.TrainingJobStatus)
-	secondaryStatusMatches := state.Status.SecondaryStatus == string(describeResponse.DescribeTrainingJobOutput.SecondaryStatus)
-	allMatch := primaryStatusMatches && secondaryStatusMatches
-	return allMatch
-}
-
 // Creates the training job in SageMaker
 func (r *Reconciler) createTrainingJob(ctx reconcileRequestContext) error {
 	var createTrainingJobInput sagemaker.CreateTrainingJobInput
@@ -256,15 +250,6 @@ func (r *Reconciler) createTrainingJob(ctx reconcileRequestContext) error {
 	return nil
 }
 
-// Remove the finalizer and update etcd
-func (r *Reconciler) removeFinalizerAndUpdate(ctx reconcileRequestContext) (ctrl.Result, error) {
-	ctx.Log.Info("removeFinalizerAndUpdate")
-	ctx.TrainingJob.ObjectMeta.Finalizers = controllers.RemoveString(ctx.TrainingJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
-
-	err := r.Update(ctx, ctx.TrainingJob)
-	return controllers.RequeueIfError(err)
-}
-
 func (r *Reconciler) addModelPathToStatus(ctx reconcileRequestContext) error {
 	var err error
 
@@ -276,7 +261,7 @@ func (r *Reconciler) addModelPathToStatus(ctx reconcileRequestContext) error {
 	const outputPath string = "/output/model.tar.gz"
 	ctx.TrainingJob.Status.ModelPath = *ctx.TrainingJob.Spec.OutputDataConfig.S3OutputPath + ctx.TrainingJob.Status.SageMakerTrainingJobName + outputPath
 	if err = r.Update(ctx, ctx.TrainingJob); err != nil {
-		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Error updating ETCD to sync with SM API ctx.TrainingJob"))
+		return err
 	}
 
 	return nil
@@ -286,13 +271,11 @@ func (r *Reconciler) addModelPathToStatus(ctx reconcileRequestContext) error {
 func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 	var err error
 
-	if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
-		ctx.TrainingJob.ObjectMeta.Finalizers = controllers.RemoveString(ctx.TrainingJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
-		if err = r.Update(ctx, ctx.TrainingJob); err != nil {
-			return errors.Wrap(err, "Failed to remove finalizer")
-		}
-		ctx.Log.Info("Finalizer has been removed")
+	ctx.TrainingJob.ObjectMeta.Finalizers = controllers.RemoveString(ctx.TrainingJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
+	if err = r.Update(ctx, ctx.TrainingJob); err != nil {
+		return errors.Wrap(err, "Failed to remove finalizer")
 	}
+	ctx.Log.Info("Finalizer has been removed")
 
 	return nil
 }
