@@ -116,7 +116,7 @@ func (c *sageMakerClientWrapper) DescribeTrainingJob(ctx context.Context, traini
 	return describeResponse.DescribeTrainingJobOutput, describeError
 }
 
-// Create an Endpoint. Returns the response output or nil if error.
+// Create a training job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error) {
 
 	createRequest := c.innerClient.CreateTrainingJobRequest(trainingJob)
@@ -133,7 +133,7 @@ func (c *sageMakerClientWrapper) CreateTrainingJob(ctx context.Context, training
 	return nil, err
 }
 
-// Delete an Endpoint. Returns the response output or nil if error.
+// Stops a training job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error) {
 	stopRequest := c.innerClient.StopTrainingJobRequest(&sagemaker.StopTrainingJobInput{
 		TrainingJobName: &trainingJobName,

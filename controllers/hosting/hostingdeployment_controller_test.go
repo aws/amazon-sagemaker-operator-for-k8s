@@ -929,20 +929,6 @@ func createDeployment(k8sName, k8sNamespace string) *hostingv1.HostingDeployment
 	}
 }
 
-// Expect the controller return value to be RequeueAfterInterval, with the poll duration specified.
-func ExpectRequeueAfterInterval(result ctrl.Result, err error, pollDuration string) {
-	Expect(err).ToNot(HaveOccurred())
-	Expect(result.Requeue).To(Equal(false))
-	Expect(result.RequeueAfter).To(Equal(ParseDurationOrFail(pollDuration)))
-}
-
-// Expect the controller return value to be RequeueImmediately.
-func ExpectRequeueImmediately(result ctrl.Result, err error) {
-	Expect(err).ToNot(HaveOccurred())
-	Expect(result.Requeue).To(Equal(true))
-	Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
-}
-
 // Expect deployment.Status.Additional to contain the specified string.
 func ExpectAdditionalToContain(deployment *hostingv1.HostingDeployment, substring string) {
 	var actual hostingv1.HostingDeployment

@@ -546,8 +546,8 @@ func (m *mockSageMakerClient) mockRequestBuilder() *aws.Request {
 	}
 }
 
-// Mock DescribeTrainingJobRequest implementation. It overrides a request response with the mock data.
-// If the next response is not of type DescribeTrainingJob, or there are no more responses to give, fail the test.
+// Mock CreateTrainingJobRequest implementation. It overrides a request response with the mock data.
+// If the next response is not of type CreateTrainingJob, or there are no more responses to give, fail the test.
 func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTrainingJobInput) sagemaker.CreateTrainingJobRequest {
 
 	m.requests.PushBack(input)

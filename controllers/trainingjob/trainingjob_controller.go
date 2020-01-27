@@ -118,9 +118,6 @@ type reconcileRequestContext struct {
 
 	// The name of the SageMaker TrainingJob.
 	TrainingJobName string
-
-	// The path to the CloudWatch logs for the current training job
-	CloudWatchLogURL string
 }
 
 func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
@@ -128,13 +125,13 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 	// Set first-touch status
 	if ctx.TrainingJob.Status.TrainingJobStatus == "" {
-		if err = r.updateStatus(ctx, controllers.InitializingJobStatus); err != nil {
+		if err = r.updateStatus(ctx, controllers.InitializingJobStatus, ""); err != nil {
 			return err
 		}
 	}
 
 	if err = r.initializeContext(&ctx); err != nil {
-		return r.updateStatusAndReturnError(ctx, string(sagemaker.EndpointStatusFailed), errors.Wrap(err, "Unable to initialize operator"))
+		return r.updateStatusAndReturnError(ctx, string(sagemaker.TrainingJobStatusFailed), "", errors.Wrap(err, "Unable to initialize operator"))
 	}
 
 	// Add finalizer if it's not marked for deletion.
@@ -150,7 +147,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 	// Get the TrainingJob from SageMaker
 	if ctx.TrainingJobDescription, err = ctx.SageMakerClient.DescribeTrainingJob(ctx, ctx.TrainingJobName); err != nil {
-		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to describe SageMaker training job"))
+		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to describe SageMaker training job"))
 	}
 
 	// The resource does not exist within SageMaker yet.
@@ -160,11 +157,11 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 
 		if err = r.createTrainingJob(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to create training job"))
+			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to create training job"))
 		}
 
 		if ctx.TrainingJobDescription, err = ctx.SageMakerClient.DescribeTrainingJob(ctx, ctx.TrainingJobName); err != nil {
-			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to describe SageMaker training job"))
+			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to describe SageMaker training job"))
 		}
 	}
 
@@ -173,18 +170,18 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			// Request to stop the job
 			if _, err := ctx.SageMakerClient.StopTrainingJob(ctx, ctx.TrainingJobName); err != nil {
-				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to delete training job"))
+				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to delete training job"))
 			}
 			// Describe the new state of the job
 			if ctx.TrainingJobDescription, err = ctx.SageMakerClient.DescribeTrainingJob(ctx, ctx.TrainingJobName); err != nil {
-				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to describe SageMaker training job"))
+				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to describe SageMaker training job"))
 			}
 		}
 		break
 
 	case sagemaker.TrainingJobStatusCompleted:
 		if err = r.addModelPathToStatus(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Unable to update training job"))
+			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to update training job"))
 		}
 		fallthrough
 
@@ -199,16 +196,16 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 	default:
 		unknownStateError := errors.New(fmt.Sprintf("Unknown Training Job Status: %s", ctx.TrainingJobDescription.TrainingJobStatus))
-		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, unknownStateError)
+		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", unknownStateError)
 	}
 
 	if ctx.TrainingJobDescription.TrainingJobStatus == sagemaker.TrainingJobStatusStopping {
 		// Clear the secondary status if we detected stopping, since SageMaker has unclear secondary statuses during this phase
-		if err = r.updateBothStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), ""); err != nil {
+		if err = r.updateStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), ""); err != nil {
 			return err
 		}
 	} else {
-		if err = r.updateBothStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus)); err != nil {
+		if err = r.updateStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus)); err != nil {
 			return err
 		}
 	}
@@ -279,7 +276,7 @@ func (r *Reconciler) addModelPathToStatus(ctx reconcileRequestContext) error {
 	const outputPath string = "/output/model.tar.gz"
 	ctx.TrainingJob.Status.ModelPath = *ctx.TrainingJob.Spec.OutputDataConfig.S3OutputPath + ctx.TrainingJob.Status.SageMakerTrainingJobName + outputPath
 	if err = r.Update(ctx, ctx.TrainingJob); err != nil {
-		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, errors.Wrap(err, "Error updating ETCD to sync with SM API ctx.TrainingJob"))
+		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Error updating ETCD to sync with SM API ctx.TrainingJob"))
 	}
 
 	return nil
@@ -303,22 +300,11 @@ func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 // If this function returns an error, the status update has failed, and the reconciler should always requeue.
 // This prevents the case where a terminal status fails to persist to the Kubernetes datastore yet we stop
 // reconciling and thus leave the job in an unfinished state.
-func (r *Reconciler) updateStatus(ctx reconcileRequestContext, trainingJobPrimaryStatus string) error {
-	return r.updateStatusWithAdditional(ctx, trainingJobPrimaryStatus, "", "")
-}
-
-func (r *Reconciler) updateBothStatus(ctx reconcileRequestContext, trainingJobPrimaryStatus, trainingJobSecondaryStatus string) error {
+func (r *Reconciler) updateStatus(ctx reconcileRequestContext, trainingJobPrimaryStatus, trainingJobSecondaryStatus string) error {
 	return r.updateStatusWithAdditional(ctx, trainingJobPrimaryStatus, trainingJobSecondaryStatus, "")
 }
 
-func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, trainingJobPrimaryStatus string, reconcileErr error) error {
-	if err := r.updateBothStatusAndReturnError(ctx, trainingJobPrimaryStatus, "", reconcileErr); err != nil {
-		return errors.Wrapf(reconcileErr, "Unable to update status with error. Status failure was caused by: '%s'", err.Error())
-	}
-	return reconcileErr
-}
-
-func (r *Reconciler) updateBothStatusAndReturnError(ctx reconcileRequestContext, trainingJobPrimaryStatus, trainingJobSecondaryStatus string, reconcileErr error) error {
+func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, trainingJobPrimaryStatus, trainingJobSecondaryStatus string, reconcileErr error) error {
 	if err := r.updateStatusWithAdditional(ctx, trainingJobPrimaryStatus, trainingJobSecondaryStatus, reconcileErr.Error()); err != nil {
 		return errors.Wrapf(reconcileErr, "Unable to update status with error. Status failure was caused by: '%s'", err.Error())
 	}

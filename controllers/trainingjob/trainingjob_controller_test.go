@@ -18,7 +18,6 @@ package trainingjob
 
 import (
 	"context"
-	"time"
 
 	. "container/list"
 	"github.com/google/uuid"
@@ -600,9 +599,6 @@ func createTrainingJob(k8sName, k8sNamespace string) *trainingjobv1.TrainingJob 
 			Region:            ToStringPtr("region-xyz"),
 			StoppingCondition: &commonv1.StoppingCondition{},
 		},
-		Status: trainingjobv1.TrainingJobStatus{
-			TrainingJobStatus: controllers.InitializingJobStatus,
-		},
 	}
 }
 
@@ -629,27 +625,6 @@ func SetDeletionTimestamp(trainingJob *trainingjobv1.TrainingJob) {
 	Expect(err).ToNot(HaveOccurred())
 
 	Expect(k8sClient.Delete(context.Background(), trainingJob)).To(Succeed())
-}
-
-// Expect the controller return value to be RequeueAfterInterval, with the poll duration specified.
-func ExpectRequeueAfterInterval(result ctrl.Result, err error, pollDuration string) {
-	Expect(err).ToNot(HaveOccurred())
-	Expect(result.Requeue).To(Equal(false))
-	Expect(result.RequeueAfter).To(Equal(ParseDurationOrFail(pollDuration)))
-}
-
-// Expect the controller return value to be RequeueImmediately.
-func ExpectRequeueImmediately(result ctrl.Result, err error) {
-	Expect(err).ToNot(HaveOccurred())
-	Expect(result.Requeue).To(Equal(true))
-	Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
-}
-
-// Expect the controller return value to be NoRequeue
-func ExpectNoRequeue(result ctrl.Result, err error) {
-	Expect(err).ToNot(HaveOccurred())
-	Expect(result.Requeue).To(Equal(false))
-	Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 }
 
 // Expect trainingjob.Status and trainingJob.SecondaryStatus to have the given values.
