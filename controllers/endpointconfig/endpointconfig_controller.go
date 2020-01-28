@@ -251,7 +251,7 @@ func (r *EndpointConfigReconciler) reconcileDeletion(ctx context.Context, sageMa
 		return errors.Wrap(err, "Unable to create SageMaker DeleteEndpointConfig request")
 	}
 
-	if _, err := sageMakerClient.DeleteEndpointConfig(ctx, input); err != nil {
+	if _, err := sageMakerClient.DeleteEndpointConfig(ctx, input); err != nil && !clientwrapper.IsDeleteEndpointConfig404Error(err) {
 		return errors.Wrap(err, "Unable to delete SageMaker EndpointConfig")
 	}
 

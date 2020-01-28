@@ -247,7 +247,7 @@ func (r *ModelReconciler) reconcileDeletion(ctx context.Context, sageMakerClient
 		return errors.Wrap(err, "Unable to create SageMaker DeleteModel request")
 	}
 
-	if _, err := sageMakerClient.DeleteModel(ctx, input); err != nil {
+	if _, err := sageMakerClient.DeleteModel(ctx, input); err != nil && !clientwrapper.IsDeleteModel404Error(err) {
 		return errors.Wrap(err, "Unable to delete SageMaker Model")
 	}
 

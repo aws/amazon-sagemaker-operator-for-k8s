@@ -142,9 +142,6 @@ func (c *sageMakerClientWrapper) StopTrainingJob(ctx context.Context, trainingJo
 	stopResponse, stopError := stopRequest.Send(ctx)
 
 	if stopError != nil {
-		if c.isStopTrainingJob404Error(stopError) {
-			return nil, nil
-		}
 		return nil, stopError
 	}
 
@@ -156,16 +153,6 @@ func (c *sageMakerClientWrapper) StopTrainingJob(ctx context.Context, trainingJo
 func (c *sageMakerClientWrapper) isDescribeTrainingJob404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DescribeTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), DescribeTrainingJob404MessagePrefix)
-	}
-
-	return false
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isStopTrainingJob404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == StopTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), StopTrainingJob404MessagePrefix)
 	}
 
 	return false
@@ -201,36 +188,6 @@ func (c *sageMakerClientWrapper) isDescribeEndpoint404Error(err error) bool {
 	return false
 }
 
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isDeleteEndpoint404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DeleteEndpoint404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpoint404MessagePrefix)
-	}
-
-	return false
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isUpdateEndpoint404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == UpdateEndpoint404Code && strings.HasPrefix(requestFailure.Message(), UpdateEndpoint404MessagePrefix)
-	}
-
-	return false
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isUpdateEndpointUnableToFindEndpointConfigurationError(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == UpdateEndpointUnableToFindEndpointConfigCode && strings.HasPrefix(requestFailure.Message(), UpdateEndpointUnableToFindEndpointConfigMessagePrefix)
-	}
-
-	return false
-}
-
 // Create an Endpoint. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error) {
 
@@ -257,9 +214,6 @@ func (c *sageMakerClientWrapper) DeleteEndpoint(ctx context.Context, endpointNam
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 
 	if deleteError != nil {
-		if c.isDeleteEndpoint404Error(deleteError) {
-			return nil, nil
-		}
 		return nil, deleteError
 	}
 
@@ -276,12 +230,6 @@ func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointNam
 	updateResponse, updateError := updateRequest.Send(ctx)
 
 	if updateError != nil {
-
-		// Unfortunately both of these errors have the same prefix. We must check that it is 404 for Endpoint and not 404 for EndpointConfig.
-		// SageMaker will return 404 if the original (non-updating) EndpointConfig does not exist.
-		if c.isUpdateEndpoint404Error(updateError) && !c.isUpdateEndpointUnableToFindEndpointConfigurationError(updateError) {
-			return nil, nil
-		}
 		return nil, updateError
 	}
 
@@ -342,22 +290,9 @@ func (c *sageMakerClientWrapper) DeleteModel(ctx context.Context, model *sagemak
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 
 	if deleteError != nil {
-		if c.isDeleteModel404Error(deleteError) {
-			return nil, nil
-		}
 		return nil, deleteError
 	}
 	return deleteResponse.DeleteModelOutput, deleteError
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isDeleteModel404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DeleteModel404Code && strings.HasPrefix(requestFailure.Message(), DeleteModel404MessagePrefix)
-	}
-
-	return false
 }
 
 // Return a endpointconfig description or nil if error.
@@ -412,22 +347,64 @@ func (c *sageMakerClientWrapper) DeleteEndpointConfig(ctx context.Context, endpo
 
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 	if deleteError != nil {
-		if c.isDeleteEndpointConfig404Error(deleteError) {
-			//TODO: success and 404 both returns nil, nil
-			//      Add a mechanism to separate them.
-			return nil, nil
-		}
 		return nil, deleteError
 	}
 
 	return deleteResponse.DeleteEndpointConfigOutput, deleteError
 }
 
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isDeleteEndpointConfig404Error(err error) bool {
+// The SageMaker API does not conform to the HTTP standard. The following methods detect
+// if a SageMaker error response is equivalent to an HTTP 404 not found.
+
+func IsDeleteEndpointConfig404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DeleteEndpointConfig404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpointConfig404MessagePrefix)
+	}
+
+	return false
+}
+
+func IsDeleteModel404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DeleteModel404Code && strings.HasPrefix(requestFailure.Message(), DeleteModel404MessagePrefix)
+	}
+
+	return false
+}
+
+func IsDeleteEndpoint404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DeleteEndpoint404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpoint404MessagePrefix)
+	}
+
+	return false
+}
+
+func isUpdateEndpointUnableToFindEndpointConfigurationError(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == UpdateEndpointUnableToFindEndpointConfigCode && strings.HasPrefix(requestFailure.Message(), UpdateEndpointUnableToFindEndpointConfigMessagePrefix)
+	}
+
+	return false
+}
+
+func IsUpdateEndpoint404Error(err error) bool {
+	// Unfortunately both of these errors have the same prefix. We must check that it is 404 for Endpoint and not 404 for EndpointConfig.
+	// SageMaker will return 404 if the original (non-updating) EndpointConfig does not exist.
+	if isUpdateEndpointUnableToFindEndpointConfigurationError(err) {
+		return false
+	}
+
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == UpdateEndpoint404Code && strings.HasPrefix(requestFailure.Message(), UpdateEndpoint404MessagePrefix)
+	}
+
+	return false
+}
+
+func IsStopTrainingJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == StopTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), StopTrainingJob404MessagePrefix)
 	}
 
 	return false
