@@ -204,7 +204,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateTrainingJobInput)(nil)))
 
 				createdRequest := req.(*sagemaker.CreateTrainingJobInput)
-				Expect(*createdRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), 63)))
+				Expect(*createdRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
 			})
 
 			It("Requeues after interval", func() {
@@ -702,5 +702,5 @@ func ExpectRequestToStopTrainingJob(req interface{}, trainingJob *trainingjobv1.
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.StopTrainingJobInput)(nil)))
 
 	stopRequest := req.(*sagemaker.StopTrainingJobInput)
-	Expect(*stopRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), 63)))
+	Expect(*stopRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
 }

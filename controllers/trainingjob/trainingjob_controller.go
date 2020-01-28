@@ -42,6 +42,11 @@ const (
 	ReconcilingTrainingJobStatus = "ReconcilingTrainingJob"
 )
 
+// Defines the maximum number of characters in a SageMaker Training Job name
+const (
+	MaxTrainingJobNameLength = 63
+)
+
 // Reconciler reconciles a TrainingJob object
 type Reconciler struct {
 	client.Client
@@ -220,7 +225,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	if ctx.TrainingJob.Spec.TrainingJobName != nil {
 		ctx.TrainingJobName = *ctx.TrainingJob.Spec.TrainingJobName
 	} else {
-		ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), 63)
+		ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)
 	}
 	ctx.Log.Info("TrainingJob", "name", ctx.TrainingJobName)
 
