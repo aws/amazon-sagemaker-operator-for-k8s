@@ -87,15 +87,15 @@ func NewSageMakerClientWrapper(innerClient sagemakeriface.ClientAPI) SageMakerCl
 	}
 }
 
+// Type for function that returns a SageMaker client. Used for mocking.
+type SageMakerClientWrapperProvider func(aws.Config) SageMakerClientWrapper
+
 // Implementation of SageMaker client wrapper.
 type sageMakerClientWrapper struct {
 	SageMakerClientWrapper
 
 	innerClient sagemakeriface.ClientAPI
 }
-
-// Type for function that returns a SageMaker client. Used for mocking.
-type SageMakerClientWrapperProvider func(aws.Config) SageMakerClientWrapper
 
 // Return a training job description or nil if error or does not exist.
 func (c *sageMakerClientWrapper) DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error) {
