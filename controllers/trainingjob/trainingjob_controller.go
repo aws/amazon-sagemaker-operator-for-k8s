@@ -216,7 +216,12 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 // Initialize fields on the context object which will be used later.
 func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
-	ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), 63)
+	// Ensure we are using the job name specified in the spec
+	if ctx.TrainingJob.Spec.TrainingJobName != nil {
+		ctx.TrainingJobName = *ctx.TrainingJob.Spec.TrainingJobName
+	} else {
+		ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), 63)
+	}
 	ctx.Log.Info("TrainingJob", "name", ctx.TrainingJobName)
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.TrainingJob.Spec.Region, ctx.TrainingJob.Spec.SageMakerEndpoint)
