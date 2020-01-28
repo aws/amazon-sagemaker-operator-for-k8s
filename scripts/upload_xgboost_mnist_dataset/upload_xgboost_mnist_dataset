@@ -2,6 +2,7 @@
 
 import argparse
 import boto3
+from botocore.exceptions import ClientError
 import csv
 import gzip
 import io
@@ -18,8 +19,14 @@ def main():
 
     for data_partition_name, csv_data in convert_data_to_csv(get_data_partitions(DATA_URL)):
         key = f'{s3_prefix}/{data_partition_name}/examples'
-        print(f'Uploading {csv_data.getbuffer().nbytes} bytes to s3://{s3_bucket}/{key}')
-        boto3.Session().resource('s3').Bucket(s3_bucket).Object(key).upload_fileobj(csv_data)
+        url = f's3://{s3_bucket}/{key}'
+        print(f'Uploading {csv_data.getbuffer().nbytes} bytes to {url}')
+
+        try:
+            boto3.Session().resource('s3').Bucket(s3_bucket).Object(key).upload_fileobj(csv_data)
+        except ClientError as e:
+            print(f'Unable to upload {url}: {e}')
+            return 1
 
 
 def parse_args():
