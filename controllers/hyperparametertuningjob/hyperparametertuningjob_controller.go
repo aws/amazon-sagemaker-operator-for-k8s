@@ -101,6 +101,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		ctx.Log.Info("Got error while reconciling, will retry", "err", err)
 		return controllers.RequeueImmediately()
 	}
+	ctx.Log.Info("TuningJob", "name", ctx.TuningJobName)
 
 	switch ctx.TuningJob.Status.HyperParameterTuningJobStatus {
 	case string(sagemaker.HyperParameterTuningJobStatusCompleted):
