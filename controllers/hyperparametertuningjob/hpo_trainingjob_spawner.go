@@ -24,8 +24,9 @@ import (
 
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
-	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
-	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
@@ -50,7 +51,7 @@ type HpoTrainingJobSpawner interface {
 }
 
 // Create a new HpoTrainingJobSpawner.
-func NewHpoTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) HpoTrainingJobSpawner {
+func NewHpoTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient clientwrapper.SageMakerClientWrapper) HpoTrainingJobSpawner {
 	return hpoTrainingJobSpawner{
 		K8sClient:       k8sClient,
 		Log:             log.WithName("HpoTrainingJobSpawner"),
@@ -59,14 +60,14 @@ func NewHpoTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMake
 }
 
 // Provider that creates an HpoTrainingJobSpawner
-type HpoTrainingJobSpawnerProvider func(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) HpoTrainingJobSpawner
+type HpoTrainingJobSpawnerProvider func(k8sClient client.Client, log logr.Logger, sageMakerClient clientwrapper.SageMakerClientWrapper) HpoTrainingJobSpawner
 
 type hpoTrainingJobSpawner struct {
 	HpoTrainingJobSpawner
 
 	K8sClient       client.Client
 	Log             logr.Logger
-	SageMakerClient sagemakeriface.ClientAPI
+	SageMakerClient clientwrapper.SageMakerClientWrapper
 }
 
 // For a given region and HPO job name, get the list of TrainingJobs that the HPO job created. Then, for every
