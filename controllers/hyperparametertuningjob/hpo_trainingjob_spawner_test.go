@@ -208,9 +208,10 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 				},
 			},
 		}
+		failureMessage := "error message " + uuid.New().String()
 		sageMakerClient := sageMakerClientBuilder.
 			AddListTrainingJobsForHyperParameterTuningJobResponse(listResponse).
-			AddDescribeTrainingJobErrorResponse("error code", 500, "req id").
+			AddDescribeTrainingJobErrorResponse("Exception", failureMessage, 500, "request id").
 			Build()
 
 		// FailTestOnCreateK8sClient is designed to fail the test when Create is called.

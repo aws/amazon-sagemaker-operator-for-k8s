@@ -25,10 +25,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 
-	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 )
 
+// Provides the prefixes and error codes relating to each endpoint
 const (
+	DescribeTrainingJob404Code          = "ValidationException"
+	DescribeTrainingJob404MessagePrefix = "Requested resource not found"
+	StopTrainingJob404Code              = "ValidationException"
+	StopTrainingJob404MessagePrefix     = "Requested resource not found"
+
 	DeleteEndpoint404MessagePrefix                        = "Could not find endpoint"
 	DeleteEndpoint404Code                                 = "ValidationException"
 	DeleteEndpointInProgressMessagePrefix                 = "Cannot update in-progress endpoint"
@@ -51,11 +57,15 @@ const (
 	DeleteModel404Code            = "ValidationException"
 )
 
-// Helper type that wraps the SageMaker client. "Not Found" errors are handled differently than in the Go SDK;
+// SageMakerClientWrapper wraps the SageMaker client. "Not Found" errors are handled differently than in the Go SDK;
 // here a method will return a nil pointer and a nil error if there is a 404. This simplifies code that interacts with
 // SageMaker.
 // Other errors are returned normally.
 type SageMakerClientWrapper interface {
+	DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error)
+	CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error)
+	StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error)
+
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
 	CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error)
 	DeleteEndpoint(ctx context.Context, endpointName *string) (*sagemaker.DeleteEndpointOutput, error)
@@ -70,18 +80,82 @@ type SageMakerClientWrapper interface {
 	DeleteEndpointConfig(ctx context.Context, endpointConfig *sagemaker.DeleteEndpointConfigInput) (*sagemaker.DeleteEndpointConfigOutput, error)
 }
 
-// Create a SageMaker wrapper around an existing client.
+// NewSageMakerClientWrapper creates a SageMaker wrapper around an existing client.
 func NewSageMakerClientWrapper(innerClient sagemakeriface.ClientAPI) SageMakerClientWrapper {
 	return &sageMakerClientWrapper{
 		innerClient: innerClient,
 	}
 }
 
+// Type for function that returns a SageMaker client. Used for mocking.
+type SageMakerClientWrapperProvider func(aws.Config) SageMakerClientWrapper
+
 // Implementation of SageMaker client wrapper.
 type sageMakerClientWrapper struct {
 	SageMakerClientWrapper
 
 	innerClient sagemakeriface.ClientAPI
+}
+
+// Return a training job description or nil if error or does not exist.
+func (c *sageMakerClientWrapper) DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error) {
+
+	describeRequest := c.innerClient.DescribeTrainingJobRequest(&sagemaker.DescribeTrainingJobInput{
+		TrainingJobName: &trainingJobName,
+	})
+
+	describeResponse, describeError := describeRequest.Send(ctx)
+
+	if describeError != nil {
+		if c.isDescribeTrainingJob404Error(describeError) {
+			return nil, nil
+		}
+		return nil, describeError
+	}
+
+	return describeResponse.DescribeTrainingJobOutput, describeError
+}
+
+// Create a training job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error) {
+
+	createRequest := c.innerClient.CreateTrainingJobRequest(trainingJob)
+
+	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+
+	response, err := createRequest.Send(ctx)
+
+	if response != nil {
+		return response.CreateTrainingJobOutput, nil
+	}
+
+	return nil, err
+}
+
+// Stops a training job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error) {
+	stopRequest := c.innerClient.StopTrainingJobRequest(&sagemaker.StopTrainingJobInput{
+		TrainingJobName: &trainingJobName,
+	})
+
+	stopResponse, stopError := stopRequest.Send(ctx)
+
+	if stopError != nil {
+		return nil, stopError
+	}
+
+	return stopResponse.StopTrainingJobOutput, nil
+}
+
+// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
+// to an HTTP 404 not found.
+func (c *sageMakerClientWrapper) isDescribeTrainingJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DescribeTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), DescribeTrainingJob404MessagePrefix)
+	}
+
+	return false
 }
 
 // Return a endpoint description or nil if error.
@@ -108,37 +182,7 @@ func (c *sageMakerClientWrapper) DescribeEndpoint(ctx context.Context, endpointN
 // to an HTTP 404 not found.
 func (c *sageMakerClientWrapper) isDescribeEndpoint404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == "ValidationException" && strings.HasPrefix(requestFailure.Message(), "Could not find endpoint")
-	}
-
-	return false
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isDeleteEndpoint404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DeleteEndpoint404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpoint404MessagePrefix)
-	}
-
-	return false
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isUpdateEndpoint404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == UpdateEndpoint404Code && strings.HasPrefix(requestFailure.Message(), UpdateEndpoint404MessagePrefix)
-	}
-
-	return false
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isUpdateEndpointUnableToFindEndpointConfigurationError(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == UpdateEndpointUnableToFindEndpointConfigCode && strings.HasPrefix(requestFailure.Message(), UpdateEndpointUnableToFindEndpointConfigMessagePrefix)
+		return requestFailure.Code() == DescribeEndpoint404Code && strings.HasPrefix(requestFailure.Message(), DescribeEndpoint404MessagePrefix)
 	}
 
 	return false
@@ -150,15 +194,15 @@ func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *s
 	createRequest := c.innerClient.CreateEndpointRequest(endpoint)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
 
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
 		return response.CreateEndpointOutput, nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 // Delete an Endpoint. Returns the response output or nil if error.
@@ -170,9 +214,6 @@ func (c *sageMakerClientWrapper) DeleteEndpoint(ctx context.Context, endpointNam
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 
 	if deleteError != nil {
-		if c.isDeleteEndpoint404Error(deleteError) {
-			return nil, nil
-		}
 		return nil, deleteError
 	}
 
@@ -189,12 +230,6 @@ func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointNam
 	updateResponse, updateError := updateRequest.Send(ctx)
 
 	if updateError != nil {
-
-		// Unfortunately both of these errors have the same prefix. We must check that it is 404 for Endpoint and not 404 for EndpointConfig.
-		// SageMaker will return 404 if the original (non-updating) EndpointConfig does not exist.
-		if c.isUpdateEndpoint404Error(updateError) && !c.isUpdateEndpointUnableToFindEndpointConfigurationError(updateError) {
-			return nil, nil
-		}
 		return nil, updateError
 	}
 
@@ -235,15 +270,15 @@ func (c *sageMakerClientWrapper) CreateModel(ctx context.Context, model *sagemak
 	createRequest := c.innerClient.CreateModelRequest(model)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
 
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
 		return response.CreateModelOutput, nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 // Return a model delete or nil if error.
@@ -255,22 +290,9 @@ func (c *sageMakerClientWrapper) DeleteModel(ctx context.Context, model *sagemak
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 
 	if deleteError != nil {
-		if c.isDeleteModel404Error(deleteError) {
-			return nil, nil
-		}
 		return nil, deleteError
 	}
 	return deleteResponse.DeleteModelOutput, deleteError
-}
-
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isDeleteModel404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DeleteModel404Code && strings.HasPrefix(requestFailure.Message(), DeleteModel404MessagePrefix)
-	}
-
-	return false
 }
 
 // Return a endpointconfig description or nil if error.
@@ -307,15 +329,15 @@ func (c *sageMakerClientWrapper) CreateEndpointConfig(ctx context.Context, endpo
 	createRequest := c.innerClient.CreateEndpointConfigRequest(endpointconfig)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, SagemakerOnKubernetesUserAgentAddition)
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
 
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
 		return response.CreateEndpointConfigOutput, nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 //  Return a EndpointConfig delete response output or nil if error
@@ -325,22 +347,69 @@ func (c *sageMakerClientWrapper) DeleteEndpointConfig(ctx context.Context, endpo
 
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 	if deleteError != nil {
-		if c.isDeleteEndpointConfig404Error(deleteError) {
-			//TODO: success and 404 both returns nil, nil
-			//      Add a mechanism to separate them.
-			return nil, nil
-		}
 		return nil, deleteError
 	}
 
 	return deleteResponse.DeleteEndpointConfigOutput, deleteError
 }
 
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *sageMakerClientWrapper) isDeleteEndpointConfig404Error(err error) bool {
+// The SageMaker API does not conform to the HTTP standard. The following methods detect
+// if a SageMaker error response is equivalent to an HTTP 404 not found.
+
+// IsDeleteEndpointConfig404Error determines whether the given error is equivalent to an HTTP 404 status code.
+func IsDeleteEndpointConfig404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DeleteEndpointConfig404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpointConfig404MessagePrefix)
+	}
+
+	return false
+}
+
+// IsDeleteModel404Error determines whether the given error is equivalent to an HTTP 404 status code.
+func IsDeleteModel404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DeleteModel404Code && strings.HasPrefix(requestFailure.Message(), DeleteModel404MessagePrefix)
+	}
+
+	return false
+}
+
+// IsDeleteEndpoint404Error determines whether the given error is equivalent to an HTTP 404 status code.
+func IsDeleteEndpoint404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DeleteEndpoint404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpoint404MessagePrefix)
+	}
+
+	return false
+}
+
+func isUpdateEndpointUnableToFindEndpointConfigurationError(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == UpdateEndpointUnableToFindEndpointConfigCode && strings.HasPrefix(requestFailure.Message(), UpdateEndpointUnableToFindEndpointConfigMessagePrefix)
+	}
+
+	return false
+}
+
+// IsUpdateEndpoint404Error determines whether the given error is equivalent to an HTTP 404 status code.
+func IsUpdateEndpoint404Error(err error) bool {
+	// Unfortunately both of these errors have the same prefix. We must check that it is 404 for Endpoint and not 404 for EndpointConfig.
+	// SageMaker will return 404 if the original (non-updating) EndpointConfig does not exist.
+	if isUpdateEndpointUnableToFindEndpointConfigurationError(err) {
+		return false
+	}
+
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == UpdateEndpoint404Code && strings.HasPrefix(requestFailure.Message(), UpdateEndpoint404MessagePrefix)
+	}
+
+	return false
+}
+
+// IsStopTrainingJob404Error determines whether the given error is equivalent to an HTTP 404 status code.
+func IsStopTrainingJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == StopTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), StopTrainingJob404MessagePrefix)
 	}
 
 	return false

@@ -24,6 +24,7 @@ import (
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	. "github.com/onsi/ginkgo"
 
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 
@@ -42,6 +43,13 @@ func CreateMockAwsConfigLoader() AwsConfigLoader {
 func CreateMockSageMakerClientProvider(sageMakerClient sagemakeriface.ClientAPI) SageMakerClientProvider {
 	return func(_ aws.Config) sagemakeriface.ClientAPI {
 		return sageMakerClient
+	}
+}
+
+// Create a provider that creates a mock SageMaker client wrapper.
+func CreateMockSageMakerClientWrapperProvider(sageMakerClient sagemakeriface.ClientAPI) clientwrapper.SageMakerClientWrapperProvider {
+	return func(_ aws.Config) clientwrapper.SageMakerClientWrapper {
+		return clientwrapper.NewSageMakerClientWrapper(sageMakerClient)
 	}
 }
 
