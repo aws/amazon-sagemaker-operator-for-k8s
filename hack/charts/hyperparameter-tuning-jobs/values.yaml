@@ -1,57 +1,57 @@
 name: xgboost-mnist-hpo
 spec:   
-    instancecount: 1
-    instancetype: ml.m4.xlarge
-    volumesize: 35
-    maxruntimeinseconds: 86400
-    rolearn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    region: us-west-2
-    image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
-    enablenetworkisolation: true
-    enableintercontainertrafficencryption: false
-    traininginputmode: File
-    hyperparametertuningjobconfig:
-      maxnumberoftrainingjobs: 10
-      maxparalleltrainingjobs: 10
-      strategy: Bayesian
-      hyperparametertuningjobobjective: 
-         type: Minimize
-         metricname: validation:error
-      integerparameterranges:
-         name: num_round
-         minvalue: 10
-         maxvalue: 20
-         scalingtype: Linear
-    trainingjobconfig: 
-      hyperparameters:
-        base_score: '0.5' 
-        booster: gbtree
-        csv_weights: '0'
-        dsplit: row
-        grow_policy: depthwise
-        lambda_bias: '0.0'
-        max_bin: '256'
-        max_leaves: '0' 
-        normalize_type: tree
-        objective: reg:linear
-        one_drop: '0' 
-        prob_buffer_row: '1.0'
-        process_type: default
-        rate_drop: '0.0'
-        refresh_leaf: '1'
-        sample_type: uniform
-        scale_pos_weight: '1.0'
-        silent: '0'
-        sketch_eps: '0.03'
-        skip_drop: '0.0'
-        tree_method: auto
-        tweedie_variance_power: '1.5'
-        updater: grow_colmaker,prune
-    inputdataconfig:
-      - channel: train 
-        s3: 
-           s3uri: s3://my-bucket/xgboost-mnist/train/
-      - channel: validation
-        s3: 
-           s3uri: s3://my-bucket/xgboost-mnist/validation/
-    outputpath: s3://my-bucket/xgboost-mnist/xgboost/
+  instanceCount: 1
+  instanceType: ml.m4.xlarge
+  volumeSizeInGB: 35
+  maxRuntimeInSeconds: 86400
+  roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+  region: us-west-2
+  image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
+  enableNetworkIsolation: true
+  enableInterContainerTrafficEncryption: false
+  trainingInputMode: File
+  hyperparameterTuningJobConfig:
+    maxNumberOfTrainingJobs: 10
+    maxParallelTrainingJobs: 10
+    strategy: Bayesian
+    hyperparameterTuningJobObjective: 
+      type: Minimize
+      metricName: validation:error
+    integerParameterRanges:
+      name: num_round
+      minValue: 10
+      maxValue: 20
+      scalingType: Linear
+  trainingJobConfig: 
+    hyperparameters:
+      base_score: '0.5' 
+      booster: gbtree
+      csv_weights: '0'
+      dsplit: row
+      grow_policy: depthwise
+      lambda_bias: '0.0'
+      max_bin: '256'
+      max_leaves: '0' 
+      normalize_type: tree
+      objective: reg:linear
+      one_drop: '0' 
+      prob_buffer_row: '1.0'
+      process_type: default
+      rate_drop: '0.0'
+      refresh_leaf: '1'
+      sample_type: uniform
+      scale_pos_weight: '1.0'
+      silent: '0'
+      sketch_eps: '0.03'
+      skip_drop: '0.0'
+      tree_method: auto
+      tweedie_variance_power: '1.5'
+      updater: grow_colmaker,prune
+  inputDataConfig:
+    - channel: train 
+      s3: 
+        s3Uri: s3://my-bucket/xgboost-mnist/train/
+    - channel: validation
+      s3: 
+        s3Uri: s3://my-bucket/xgboost-mnist/validation/
+  outputPath: s3://my-bucket/xgboost-mnist/xgboost/

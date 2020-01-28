@@ -1,29 +1,29 @@
 name: xgboost-mnist-from-for-s3
 spec:	
-    instancecount: 1
-    instancetype: ml.m4.xlarge
-    volumesize: 5
-    maxruntimeinseconds: 86400
-    rolearn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
-    region: us-west-2
-    image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
-    traininginputmode: File
-    hyperparameters:
-       max_depth: 5
-       eta: 0.2
-       num_round: 10
-       gamma: 4
-       min_child_weight: 6
-       silent: 0
-       objective: multi:softmax
-       num_class: 10
-       num_round: 10
-    inputdataconfig:
-      - channel: train 
-        s3: 
-           s3uri: s3://my-bucket/train/
-      - channel: validation
-        s3: 
-           s3uri: s3://my-bucket/validation/
-    outputpath: s3://my-buckes/xgboost/
+  instanceCount: 1
+  instanceType: ml.m4.xlarge
+  volumeSizeInGB: 5
+  maxRuntimeInSeconds: 86400
+  roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+  region: us-west-2
+  image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
+  trainingInputMode: File
+  hyperparameters:
+    max_depth: 5
+    eta: 0.2
+    num_round: 10
+    gamma: 4
+    min_child_weight: 6
+    silent: 0
+    objective: multi:softmax
+    num_class: 10
+    num_round: 10
+  inputDataConfig:
+  - channel: train 
+    s3: 
+      s3Uri: s3://my-bucket/train/
+  - channel: validation
+    s3: 
+      s3Uri: s3://my-bucket/validation/
+  outputPath: s3://my-buckes/xgboost/
 

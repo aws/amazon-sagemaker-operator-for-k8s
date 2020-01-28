@@ -3,65 +3,72 @@ kind: TrainingJob
 metadata:
   name: {{ .Values.name }}
 spec:
-    hyperParameters:
-      {{- range $key, $value := .Values.spec.hyperparameters }}
-      - name: {{ $key }}
-        value: {{ $value | quote }}
-      {{- end }}
-    algorithmSpecification:
-        trainingImage: {{ .Values.spec.image }}
-        trainingInputMode: {{ .Values.spec.traininginputmode }}
-    roleArn: {{ .Values.spec.rolearn }}
-    region: {{ .Values.spec.region }}
-    outputDataConfig:
-        s3OutputPath: {{ .Values.spec.outputpath }}
-    resourceConfig:
-        instanceCount: {{ .Values.spec.instancecount }}
-        instanceType: {{ .Values.spec.instancetype }}
-        volumeSizeInGB: {{ .Values.spec.volumesize }}
-    stoppingCondition:
-        maxRuntimeInSeconds: {{ .Values.spec.maxruntimeinseconds }}
-    {{- if .Values.spec.vpcconfig }}
-    vpcConfig:
-        securityGroupIds: 
-          {{- range .Values.spec.vpcconfig.securitygroupids }}
-            - {{ . }}
-          {{- end }}   
-        subnets: 
-          {{- range .Values.spec.vpcconfig.subnets }}
-            - {{ . }} 
-          {{- end }} 
+  hyperParameters:
+    {{- range $key, $value := .Values.spec.hyperparameters }}
+    - name: {{ $key }}
+      value: {{ $value | quote }}
     {{- end }}
-    inputDataConfig:
-          {{- range .Values.spec.inputdataconfig }}
-            - channelName: {{ .channel }}  
-              dataSource: 
-                {{- if .s3 }}
-                s3DataSource:
-                   s3DataType: {{ .s3.s3datatype | default "S3Prefix" }}
-                   s3Uri: {{ .s3.s3uri }}
-                   s3DataDistributionType: {{ .s3.s3datadistributiontype | default "FullyReplicated" }}
-                {{- end }}
-                {{- if .filesystem }}
-                fileSystemDataSource: 
-                    fileSystemId: {{ .filesystem.filesystemid }}
-                    fileSystemAccessMode: {{ .filesystemaccessmode | default "ro" }}
-                    fileSystemType: {{ .filesystem.filesystemtype }}
-                    directoryPath: {{ .filesystem.directorypath }}
-                {{- end }}
-              contentType: {{ .contenttype | default "text/csv" }}
-              compressionType: {{ .compressiontype | default "None" }}
-          {{- end }}
-    {{- if .Values.spec.enablemanagedspottraining }}
-    enableManagedSpotTraining: {{ .Values.spec.enablemanagedspottraining  }}
+  algorithmSpecification:
+    trainingImage: {{ .Values.spec.image }}
+    trainingInputMode: {{ .Values.spec.trainingInputMode }}
+  roleArn: {{ .Values.spec.roleArn }}
+  region: {{ .Values.spec.region }}
+  outputDataConfig:
+    s3OutputPath: {{ .Values.spec.outputPath }}
+  resourceConfig:
+    instanceCount: {{ .Values.spec.instanceCount }}
+    instanceType: {{ .Values.spec.instanceType }}
+    volumeSizeInGB: {{ .Values.spec.volumeSizeInGB }}
+  stoppingCondition:
+    maxRuntimeInSeconds: {{ .Values.spec.maxRuntimeInSeconds }}
+  {{- if .Values.spec.vpcConfig }}
+  vpcConfig:
+    securityGroupIds: 
+      {{- range .Values.spec.vpcConfig.securityGroupIDs }}
+        - {{ . }}
+      {{- end }}   
+    subnets: 
+      {{- range .Values.spec.vpcConfig.subnets }}
+        - {{ . }} 
+      {{- end }} 
+  {{- end }}
+  inputDataConfig:
+    {{- range .Values.spec.inputDataConfig }}
+    - channelName: {{ .channel }}  
+      dataSource: 
+        {{- if .s3 }}
+        s3DataSource:
+          s3DataType: {{ .s3.s3DataType | default "S3Prefix" }}
+          s3Uri: {{ .s3.s3Uri }}
+          s3DataDistributionType: {{ .s3.s3DataDistributionType | default "FullyReplicated" }}
+        {{- end }}
+        {{- if .fileSystem }}
+        fileSystemDataSource: 
+          fileSystemId: {{ .fileSystem.fileSystemID }}
+          fileSystemAccessMode: {{ .fileSystemAccessMode | default "ro" }}
+          fileSystemType: {{ .fileSystem.fileSystemType }}
+          directoryPath: {{ .fileSystem.directoryPath }}
+        {{- end }}
+      contentType: {{ .contentType | default "text/csv" }}
+      compressionType: {{ .compressionType | default "None" }}
     {{- end }}
-    {{- if .Values.spec.stoppingcondition }}
-    stoppingCondition:
-        maxRuntimeInSeconds: {{ .Values.spec.stoppingcondition.maxruntime }}
-        maxWaitTimeInSeconds: {{ .Values.spec.stoppingcondition.maxwaittime }}
+  {{- if .Values.spec.enableManagedSpotTraining }}
+  enableManagedSpotTraining: {{ .Values.spec.enableManagedSpotTraining  }}
+  {{- end }}
+  {{- if .Values.spec.stoppingCondition }}
+  stoppingCondition:
+    maxRuntimeInSeconds: {{ .Values.spec.stoppingCondition.maxRuntime }}
+    maxWaitTimeInSeconds: {{ .Values.spec.stoppingCondition.maxWaitTime }}
+  {{- end }}
+  {{- if .Values.spec.checkpointConfig }}
+  checkpointConfig: 
+    s3Uri: {{ .Values.spec.checkpointConfig.s3Uri}} 
+  {{- end }}
+  {{- if .Values.spec.tags }}
+  tags:
+    {{- range $key, $value := .Values.spec.tags }}
+    - name: {{ $key }}
+      value: {{ $value | quote }}
     {{- end }}
-    {{- if .Values.spec.checkpointconfig }}
-    checkpointConfig: 
-        s3Uri: {{ .Values.spec.checkpointconfig.s3uri}} 
-    {{- end }}
+  {{- end }}
   
