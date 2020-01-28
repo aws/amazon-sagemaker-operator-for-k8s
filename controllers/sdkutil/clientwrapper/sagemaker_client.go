@@ -356,6 +356,7 @@ func (c *sageMakerClientWrapper) DeleteEndpointConfig(ctx context.Context, endpo
 // The SageMaker API does not conform to the HTTP standard. The following methods detect
 // if a SageMaker error response is equivalent to an HTTP 404 not found.
 
+// IsDeleteEndpointConfig404Error determines whether the given error is equivalent to an HTTP 404 status code.
 func IsDeleteEndpointConfig404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DeleteEndpointConfig404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpointConfig404MessagePrefix)
@@ -364,6 +365,7 @@ func IsDeleteEndpointConfig404Error(err error) bool {
 	return false
 }
 
+// IsDeleteModel404Error determines whether the given error is equivalent to an HTTP 404 status code.
 func IsDeleteModel404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DeleteModel404Code && strings.HasPrefix(requestFailure.Message(), DeleteModel404MessagePrefix)
@@ -372,6 +374,7 @@ func IsDeleteModel404Error(err error) bool {
 	return false
 }
 
+// IsDeleteEndpoint404Error determines whether the given error is equivalent to an HTTP 404 status code.
 func IsDeleteEndpoint404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DeleteEndpoint404Code && strings.HasPrefix(requestFailure.Message(), DeleteEndpoint404MessagePrefix)
@@ -388,6 +391,7 @@ func isUpdateEndpointUnableToFindEndpointConfigurationError(err error) bool {
 	return false
 }
 
+// IsUpdateEndpoint404Error determines whether the given error is equivalent to an HTTP 404 status code.
 func IsUpdateEndpoint404Error(err error) bool {
 	// Unfortunately both of these errors have the same prefix. We must check that it is 404 for Endpoint and not 404 for EndpointConfig.
 	// SageMaker will return 404 if the original (non-updating) EndpointConfig does not exist.
@@ -402,6 +406,7 @@ func IsUpdateEndpoint404Error(err error) bool {
 	return false
 }
 
+// IsStopTrainingJob404Error determines whether the given error is equivalent to an HTTP 404 status code.
 func IsStopTrainingJob404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == StopTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), StopTrainingJob404MessagePrefix)
