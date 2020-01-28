@@ -33,7 +33,7 @@ function wait_for_crd_status_else_fail()
 
   if [ $? -ne 0 ]; then
     echo "[FAILED] ${crd_type} ${crd_instance} did not change status to ${desired_status} within ${timeout}"
-    exit 1
+    return 1 # TODO need to change all code that used this
   fi
 }
 

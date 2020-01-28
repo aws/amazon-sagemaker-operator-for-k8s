@@ -6,6 +6,7 @@ source inject_tests.sh
 # Applies each of the resources needed for the canary tests.
 function run_canary_tests
 {
+  echo "Running canary tests"
   inject_all_variables
 
   run_test testfiles/xgboost-mnist-trainingjob.yaml
@@ -22,6 +23,7 @@ function run_canary_tests
 # Applies each of the resources needed for the integration tests.
 function run_integration_tests
 {
+  echo "Running integration tests"
   run_canary_tests
 
   # TODO: Automate creation/testing of EFS file systems for relevant jobs
@@ -42,6 +44,7 @@ function run_integration_tests
 # Verifies that all resources were created and are running/completed for the canary tests.
 function verify_canary_tests
 {
+  echo "Verifying canary tests"
   verify_test TrainingJob xgboost-mnist 20m Completed
   verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test BatchTransformJob xgboost-batch 20m Completed 
@@ -51,6 +54,7 @@ function verify_canary_tests
 # Verifies that all resources were created and are running/completed for the integration tests.
 function verify_integration_tests
 {
+  echo "Verifying integration tests"
   verify_canary_tests
 
   verify_test TrainingJob spot-xgboost-mnist 20m Completed
