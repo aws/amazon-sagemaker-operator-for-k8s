@@ -214,6 +214,20 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			It("Updates status", func() {
 				ExpectStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusInProgress), string(sagemaker.SecondaryStatusStarting))
 			})
+
+			Context("Spec defines TrainingJobName", func() {
+				BeforeEach(func() {
+					trainingJob.Spec.TrainingJobName = ToStringPtr("training-job-name")
+				})
+
+				It("Creates a TrainingJob", func() {
+					req := receivedRequests.Front().Next().Value
+					Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateTrainingJobInput)(nil)))
+
+					createdRequest := req.(*sagemaker.CreateTrainingJobInput)
+					Expect(*createdRequest.TrainingJobName).To(Equal("training-job-name"))
+				})
+			})
 		})
 	})
 
