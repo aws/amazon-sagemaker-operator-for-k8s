@@ -6,6 +6,7 @@ source inject_tests.sh
 # Applies each of the resources needed for the canary tests.
 function run_canary_tests
 {
+  echo "Running canary tests"
   inject_all_variables
 
   run_test testfiles/xgboost-mnist-trainingjob.yaml
@@ -22,6 +23,7 @@ function run_canary_tests
 # Applies each of the resources needed for the integration tests.
 function run_integration_tests
 {
+  echo "Running integration tests"
   run_canary_tests
 
   # TODO: Automate creation/testing of EFS file systems for relevant jobs
@@ -42,6 +44,7 @@ function run_integration_tests
 # Verifies that all resources were created and are running/completed for the canary tests.
 function verify_canary_tests
 {
+  echo "Verifying canary tests"
   verify_test TrainingJob xgboost-mnist 20m Completed
   verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test BatchTransformJob xgboost-batch 20m Completed 
@@ -51,6 +54,7 @@ function verify_canary_tests
 # Verifies that all resources were created and are running/completed for the integration tests.
 function verify_integration_tests
 {
+  echo "Verifying integration tests"
   verify_canary_tests
 
   verify_test TrainingJob spot-xgboost-mnist 20m Completed
@@ -107,7 +111,10 @@ function verify_test()
   fi
 
   echo "Waiting for job to complete"
-  wait_for_crd_status_else_fail "$crd_type" "$crd_instance" "$timeout" "$desired_status"
+  if ! wait_for_crd_status_else_fail "$crd_type" "$crd_instance" "$timeout" "$desired_status"; then
+      echo "[FAILED] Waiting for status Completed failed"
+      exit 1
+  fi
 
   # Check weather job has completed or not
   echo "[PASSED] Verified ${crd_type} ${crd_instance} has completed"
