@@ -57,10 +57,17 @@ manifests: controller-gen
 fmt:
 	go fmt ./...
 
+download-golint:
+ifeq (, $(shell which golint))
+	go get golang.org/x/lint/golint
+GOLINT=$(shell go env GOPATH)/bin/golint
+else
+GOLINT=$(shell which golint)
+endif
+
 # Ensure the code meets linting standards
-lint:
-	go install golang.org/x/lint/golint
-	golint ./...
+lint: download-golint
+	$(GOLINT) ./...
 
 # Run go vet against code
 vet:	
