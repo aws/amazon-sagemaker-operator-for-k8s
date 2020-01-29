@@ -24,8 +24,6 @@ import (
 
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
-	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
-	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
