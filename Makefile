@@ -6,15 +6,15 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 all: manager
 
 # Run tests
-test: generate fmt vet manifests
+test: lint generate fmt vet manifests
 	go test -v ./api/... ./controllers/... -coverprofile cover.out
 
 # Build manager binary
-manager: generate fmt vet
+manager: lint generate fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config.
-run:  generate fmt vet
+run: lint generate fmt vet
 	go run ./main.go
 
 # Install the Custom Resource Definition(s) onto your cluster, without installing the controller.
@@ -24,7 +24,7 @@ install: manifests
 # Build a tarball containing everything needed to install the operator onto a cluster.
 # This also removes the awscreds.env file before creating the tarball to make sure that credentials are
 # not included in the release.
-build-release-tarball: generate fmt vet manifests
+build-release-tarball: lint generate fmt vet manifests
 	rm -f ./config/default/awscreds.env
 	@# Build tarball using Dockerfile then transfer it to host filesystem by running the image and printing the file to stdout.
 	docker run "$$(docker build . --file scripts/build-release-tarball-Dockerfile --quiet)" "/bin/cat" "/sagemaker-k8s-operator-install-scripts.tar.gz" > ./bin/sagemaker-k8s-operator-install-scripts.tar.gz
@@ -57,9 +57,13 @@ manifests: controller-gen
 fmt:
 	go fmt ./...
 
+# Ensure the code meets linting standards
+lint:
+	go get golang.org/x/lint/golint
+	golint ./...
+
 # Run go vet against code
-vet:
-	golint ./..
+vet:	
 	go vet ./...
 
 # Generate code
@@ -71,7 +75,7 @@ set-image:
 	cd config/base && kustomize edit set image controller=${IMG}
 
 # Build the docker image
-docker-build: generate fmt vet manifests
+docker-build: lint generate fmt vet manifests
 	docker build . --file scripts/manager-builder-Dockerfile -t ${IMG}
 
 # Push the docker image
