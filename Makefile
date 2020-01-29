@@ -59,7 +59,7 @@ fmt:
 
 # Ensure the code meets linting standards
 lint:
-	go get golang.org/x/lint/golint
+	go install golang.org/x/lint/golint
 	golint ./...
 
 # Run go vet against code
