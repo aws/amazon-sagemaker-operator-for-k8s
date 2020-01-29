@@ -36,7 +36,6 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 )
 
@@ -45,9 +44,10 @@ const (
 	ReconcilingTuningJobStatus = "ReconcilingTuningJob"
 )
 
-// SageMaker API returns this API error code with HTTP status code 400 when
-// a DescribeHyperparameterTuningJob does not find the specified job.
-const hpoResourceNotFoundApiCode string = "ResourceNotFound"
+// Defines the maximum number of characters in a SageMaker HyperParameter Job name
+const (
+	MaxHyperParameterTuningJobNameLength = 32
+)
 
 // Reconciler reconciles a HyperparameterTuningJob object
 type Reconciler struct {
@@ -181,7 +181,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 	case sagemaker.HyperParameterTuningJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			// Request to stop the job
-			if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil && !clientwrapper.IsStopJob404Error(err) {
+			if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil && !clientwrapper.IsStopHyperParameterTuningJob404Error(err) {
 				return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to delete hyperparameter tuning job"))
 			}
 			// Describe the new state of the job
@@ -192,14 +192,14 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		break
 
 	case sagemaker.HyperParameterTuningJobStatusCompleted:
-		if err = r.addModelPathToStatus(ctx); err != nil {
+		if err = r.addBestTrainingJobToStatus(ctx); err != nil {
 			return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to add model path to status"))
 		}
 		fallthrough
 
 	case sagemaker.HyperParameterTuningJobStatusStopped, sagemaker.HyperParameterTuningJobStatusFailed:
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
-			return r.removeFinalizer(ctx)
+			return r.cleanupAndRemoveFinalizer(ctx)
 		}
 		break
 
@@ -224,7 +224,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	if ctx.TuningJob.Spec.HyperParameterTuningJobName != nil {
 		ctx.TuningJobName = *ctx.TuningJob.Spec.HyperParameterTuningJobName
 	} else {
-		ctx.TuningJobName = controllers.GetGeneratedJobName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), 32)
+		ctx.TuningJobName = controllers.GetGeneratedJobName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)
 	}
 	ctx.Log.Info("TuningJob", "name", ctx.TuningJobName)
 
@@ -264,141 +264,45 @@ func (r *Reconciler) createHyperParameterTuningJob(ctx reconcileRequestContext) 
 // Clean up all models and endpoints, then remove the HostingDeployment finalizer.
 func (r *Reconciler) cleanupAndRemoveFinalizer(ctx reconcileRequestContext) error {
 	var err error
-	if err = r.reconcileEndpointResources(ctx, true); err != nil {
-		return r.updateStatusAndReturnError(ctx, ReconcilingEndpointStatus, errors.Wrap(err, "Unable to clean up HostingDeployment"))
+
+	if err = ctx.HpoTrainingJobSpawner.DeleteSpawnedTrainingJobs(ctx, *ctx.TuningJob); err != nil {
+		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Not all associated TrainingJobs jobs were deleted"))
 	}
 
-	if !ctx.Deployment.ObjectMeta.GetDeletionTimestamp().IsZero() {
-		ctx.Deployment.ObjectMeta.Finalizers = RemoveString(ctx.Deployment.ObjectMeta.Finalizers, SageMakerResourceFinalizerName)
-		if err = r.Update(ctx, ctx.Deployment); err != nil {
-			return errors.Wrap(err, "Failed to remove finalizer")
-		}
-		ctx.Log.Info("Finalizer has been removed")
+	ctx.TuningJob.ObjectMeta.Finalizers = controllers.RemoveString(ctx.TuningJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
+	if err = r.Update(ctx, ctx.TuningJob); err != nil {
+		return errors.Wrap(err, "Failed to remove finalizer")
 	}
+	ctx.Log.Info("Finalizer has been removed")
 
 	return nil
-}
-
-// Remove the finalizer and update etcd
-func (r *Reconciler) removeFinalizerAndUpdate(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("removeFinalizerAndUpdate")
-	ctx.Job.ObjectMeta.Finalizers = RemoveString(ctx.Job.ObjectMeta.Finalizers, SageMakerResourceFinalizerName)
-	err := r.Update(ctx, &ctx.Job)
-	if err != nil {
-		log.Info("Failed to remove finalizer", "error", err)
-	} else {
-		log.Info("Finalizer has been removed from the job")
-	}
-	return RequeueIfError(err)
 }
 
 // If job is running, stop it and requeue
 // If job is stopping, update status and requeue
 // If job has finished, failed or stopped remove finalizer and don't requeue
-func (r *Reconciler) deleteHyperparameterTuningJobIfFinalizerExists(ctx reconcileRequestContext) (ctrl.Result, error) {
-	log := ctx.Log.WithName("deleteHyperparameterTuningJobIfFinalizerExists")
-
-	if !ContainsString(ctx.Job.ObjectMeta.Finalizers, SageMakerResourceFinalizerName) {
-		log.Info("Object does not have finalizer nothing to do!!!")
-		return NoRequeue()
+func (r *Reconciler) deleteHyperparameterTuningJob(ctx reconcileRequestContext) error {
+	if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil {
+		return err
 	}
-
-	log.Info("Object has been scheduled for deletion")
-	switch ctx.SageMakerDescription.HyperParameterTuningJobStatus {
-	case sagemaker.HyperParameterTuningJobStatusInProgress:
-		log.Info("Job is in_progress and has finalizer, so we need to delete it")
-		req := ctx.SageMakerClient.StopHyperParameterTuningJobRequest(&sagemaker.StopHyperParameterTuningJobInput{
-			HyperParameterTuningJobName: ctx.Job.Spec.HyperParameterTuningJobName,
-		})
-		_, err := req.Send(ctx)
-		if err != nil {
-			log.Error(err, "Unable to stop the job in sagemaker", "context", ctx)
-			return r.handleSageMakerApiFailure(ctx, err, false)
-		}
-
-		return RequeueImmediately()
-
-	case sagemaker.HyperParameterTuningJobStatusStopping:
-
-		log.Info("Job is stopping, nothing to do")
-		if err := r.updateJobStatus(ctx, hpojobv1.HyperparameterTuningJobStatus{
-			HyperParameterTuningJobStatus:        string(ctx.SageMakerDescription.HyperParameterTuningJobStatus),
-			LastCheckTime:                        Now(),
-			SageMakerHyperParameterTuningJobName: *ctx.Job.Spec.HyperParameterTuningJobName,
-			TrainingJobStatusCounters:            newTrainingJobStatusCountersFromDescription(ctx.SageMakerDescription),
-		}); err != nil {
-			return RequeueIfError(err)
-		}
-		return RequeueAfterInterval(r.PollInterval, nil)
-	case sagemaker.HyperParameterTuningJobStatusCompleted, sagemaker.HyperParameterTuningJobStatusFailed, sagemaker.HyperParameterTuningJobStatusStopped:
-		log.Info("Job is in terminal state. Deleting spawned TrainingJobs and removing finalizer.")
-
-		// Delete all spawned TrainingJobs, retry if failure.
-		err := ctx.HpoTrainingJobSpawner.DeleteSpawnedTrainingJobs(ctx, ctx.Job)
-		if err != nil {
-			log.Info("Not all associated TrainingJobs jobs were deleted, will retry", "error", err)
-			return RequeueAfterInterval(r.PollInterval, nil)
-		}
-
-		return r.removeFinalizerAndUpdate(ctx)
-	default:
-		log.Info("Job is in unknown status")
-		return NoRequeue()
-	}
+	return nil
 }
 
-func (r *Reconciler) addFinalizerAndRequeue(ctx reconcileRequestContext) (ctrl.Result, error) {
-	ctx.Job.ObjectMeta.Finalizers = append(ctx.Job.ObjectMeta.Finalizers, SageMakerResourceFinalizerName)
-	ctx.Log.Info("Add finalizer and Requeue")
-	prevGeneration := ctx.Job.ObjectMeta.GetGeneration()
-	if err := r.Update(ctx, &ctx.Job); err != nil {
-		ctx.Log.Error(err, "Failed to add finalizer", "StatusUpdateError", ctx)
-		return RequeueIfError(err)
-	}
-
-	return RequeueImmediatelyUnlessGenerationChanged(prevGeneration, ctx.Job.ObjectMeta.GetGeneration())
-}
-
-func (r *Reconciler) getSageMakerDescription(ctx reconcileRequestContext) (*sagemaker.DescribeHyperParameterTuningJobOutput, awserr.RequestFailure) {
-	describeRequest := ctx.SageMakerClient.DescribeHyperParameterTuningJobRequest(&sagemaker.DescribeHyperParameterTuningJobInput{
-		HyperParameterTuningJobName: ctx.Job.Spec.HyperParameterTuningJobName,
-	})
-
-	describeResponse, describeError := describeRequest.Send(ctx)
-	log := ctx.Log.WithName("getSageMakerDescription")
-
-	if awsErr, requestFailed := describeError.(awserr.RequestFailure); requestFailed {
-		if r.isSageMaker404Response(awsErr) {
-			log.Info("Job does not exist in sagemaker")
-			return nil, nil
-		} else {
-			log.Info("Non-404 error response from DescribeHyperparameterTuningJob")
-			return nil, awsErr
-		}
-	} else if describeError != nil {
-		// TODO: Add unit test for this
-		log.Info("Failed to parse the describe error output from sagemaker")
-		return nil, awsErr
-	}
-	return describeResponse.DescribeHyperParameterTuningJobOutput, nil
-}
-
-// Extract the BestTrainingJob from the SageMaker description if it exists and convert it to our Kubernetes type.
-func (r *Reconciler) createBestTrainingJob(ctx reconcileRequestContext) *commonv1.HyperParameterTrainingJobSummary {
-
+// Clean up all models and endpoints, then remove the HostingDeployment finalizer.
+func (r *Reconciler) addBestTrainingJobToStatus(ctx reconcileRequestContext) error {
 	if ctx.TuningJobDescription.BestTrainingJob == nil {
-		ctx.Log.Info("Cannot get BestTrainingJob: No BestTrainingJob in HPO description")
-		return nil
+		return errors.New("No BestTrainingJob in HPO description")
 	}
 
 	bestTrainingJob, err := convertHyperParameterTrainingJobSummaryFromSageMaker(ctx.TuningJobDescription.BestTrainingJob)
 
 	if err != nil {
-		ctx.Log.Info("Unable to create TrainingJobSummary for BestTrainingJob.", "err", err)
-		return nil
+		return err
 	}
 
-	return bestTrainingJob
+	ctx.TuningJob.Status.BestTrainingJob = bestTrainingJob
+
+	return nil
 }
 
 // Convert an aws-go-sdk-v2 HyperParameterTrainingJobSummary to a Kubernetes SageMaker type, returning errors if there are any.
@@ -483,7 +387,7 @@ func newTrainingJobStatusCountersFromDescription(sageMakerDescription *sagemaker
 			TotalError:        totalError,
 			Stopped:           sageMakerDescription.TrainingJobStatusCounters.Stopped,
 		}
-	} else {
-		return &commonv1.TrainingJobStatusCounters{}
 	}
+
+	return &commonv1.TrainingJobStatusCounters{}
 }

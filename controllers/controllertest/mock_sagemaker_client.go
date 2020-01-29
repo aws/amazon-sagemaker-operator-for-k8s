@@ -227,17 +227,12 @@ func (m *MockSageMakerClientBuilder) AddStopTrainingJobResponse(data sagemaker.S
 }
 
 // Add a DescribeHyperParameterTuningJob error response to the client which has messsage too.
-func (m *MockSageMakerClientBuilder) AddDescribeHyperParameterTuningJobErrorResponseWithMessage(code string, statusCode int, reqId string, message string) *MockSageMakerClientBuilder {
+func (m *MockSageMakerClientBuilder) AddDescribeHyperParameterTuningJobErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
 	m.responses.PushBack(describeHyperParameterTuningJobResponse{
 		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
 		data: nil,
 	})
 	return m
-}
-
-// Add a DescribeHyperParameterTuningJob error response to the client.
-func (m *MockSageMakerClientBuilder) AddDescribeHyperParameterTuningJobErrorResponse(code string, statusCode int, reqId string) *MockSageMakerClientBuilder {
-	return m.AddDescribeHyperParameterTuningJobErrorResponseWithMessage(code, statusCode, reqId, "mock error message")
 }
 
 // Add a DescribeHyperParameterTuningJob response to the client.
@@ -251,9 +246,9 @@ func (m *MockSageMakerClientBuilder) AddDescribeHyperParameterTuningJobResponse(
 }
 
 // Add a CreateHyperParameterTuningJob error response to the client.
-func (m *MockSageMakerClientBuilder) AddCreateHyperParameterTuningJobErrorResponse(code string, statusCode int, reqId string) *MockSageMakerClientBuilder {
+func (m *MockSageMakerClientBuilder) AddCreateHyperParameterTuningJobErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
 	m.responses.PushBack(createHyperParameterTuningJobResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, "mock error message", fmt.Errorf(code)), statusCode, reqId),
+		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
 		data: nil,
 	})
 	return m
