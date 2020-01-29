@@ -75,6 +75,8 @@ type SageMakerClientWrapper interface {
 	CreateHyperParameterTuningJob(ctx context.Context, tuningJob *sagemaker.CreateHyperParameterTuningJobInput) (*sagemaker.CreateHyperParameterTuningJobOutput, error)
 	StopHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.StopHyperParameterTuningJobOutput, error)
 
+	ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) (sagemaker.ListTrainingJobsForHyperParameterTuningJobPaginator, error)
+
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
 	CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error)
 	DeleteEndpoint(ctx context.Context, endpointName *string) (*sagemaker.DeleteEndpointOutput, error)
@@ -96,7 +98,7 @@ func NewSageMakerClientWrapper(innerClient sagemakeriface.ClientAPI) SageMakerCl
 	}
 }
 
-// Type for function that returns a SageMaker client. Used for mocking.
+// SageMakerClientWrapperProvider defines a function that returns a SageMaker client. Used for mocking.
 type SageMakerClientWrapperProvider func(aws.Config) SageMakerClientWrapper
 
 // Implementation of SageMaker client wrapper.
@@ -216,6 +218,15 @@ func (c *sageMakerClientWrapper) StopHyperParameterTuningJob(ctx context.Context
 	}
 
 	return stopResponse.StopHyperParameterTuningJobOutput, nil
+}
+
+// Returns a paginator for iterating through the training jobs associated with a given hyperparameter tuning job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) (sagemaker.ListTrainingJobsForHyperParameterTuningJobPaginator, error) {
+	listRequest := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
+		HyperParameterTuningJobName: &tuningJobName,
+	})
+
+	return sagemaker.NewListTrainingJobsForHyperParameterTuningJobPaginator(listRequest), nil
 }
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent

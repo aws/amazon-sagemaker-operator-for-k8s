@@ -57,7 +57,7 @@ type Reconciler struct {
 
 	createSageMakerClient       clientwrapper.SageMakerClientWrapperProvider
 	awsConfigLoader             controllers.AwsConfigLoader
-	createHpoTrainingJobSpawner HpoTrainingJobSpawnerProvider
+	createHpoTrainingJobSpawner HPOTrainingJobSpawnerProvider
 }
 
 // NewHyperparameterTuningJobReconciler creates a new reconciler with the default SageMaker client.
@@ -69,7 +69,7 @@ func NewHyperparameterTuningJobReconciler(client client.Client, log logr.Logger,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
 			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
 		},
-		createHpoTrainingJobSpawner: NewHpoTrainingJobSpawner,
+		createHpoTrainingJobSpawner: NewHPOTrainingJobSpawner,
 		awsConfigLoader:             controllers.NewAwsConfigLoader(),
 	}
 }
@@ -130,7 +130,7 @@ type reconcileRequestContext struct {
 	TuningJobName string
 
 	// Responsible for creating child k8s TrainingJob resources.
-	HpoTrainingJobSpawner HpoTrainingJobSpawner
+	HpoTrainingJobSpawner HPOTrainingJobSpawner
 }
 
 func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {

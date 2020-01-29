@@ -77,19 +77,9 @@ func createHyperParameterTuningJobSpecFromDescription(description sagemaker.Desc
 	return unmarshalled, nil
 }
 
-// Create a TrainingJobSpec from a DescribeTrainingJobOutput.
-// This panics if json libraries are unable to serialize the description and deserialize the serialization.
-func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) trainingjobv1.TrainingJobSpec {
-	if spec, err := createTrainingJobSpecFromDescription(description); err == nil {
-		return spec
-	} else {
-		panic("Unable to create TrainingJobSpec from description: " + err.Error())
-	}
-}
-
 // Create a TrainingJobSpec from a SageMaker description. This uses JSON to do the assignment. It also transforms the hyperparameter
 // list from map to list of key,value pairs.
-func createTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) (trainingjobv1.TrainingJobSpec, error) {
+func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) (trainingjobv1.TrainingJobSpec, error) {
 
 	transformedHyperParameters := ConvertMapToKeyValuePairSlice(description.HyperParameters)
 
