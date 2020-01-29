@@ -21,10 +21,16 @@ require (
 	github.com/onsi/gomega v1.7.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.1
-	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect
-	golang.org/x/net v0.0.0-20191004110552-13f9640d40b9
+	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d // indirect
+	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
+	golang.org/x/mod v0.2.0 // indirect
+	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
+	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
+	golang.org/x/tools v0.0.0-20200128220307-520188d60f50 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
 	k8s.io/apimachinery v0.0.0-20190816221834-a9f1d8a9c101
 	k8s.io/cli-runtime v0.0.0-20190918224932-e56234cc6b3d // indirect
