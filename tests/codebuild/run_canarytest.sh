@@ -1,18 +1,5 @@
 #!/bin/bash
 
-source ./common.sh
-
-# TODOs
-# 1. Add validation for each steps and abort the test if steps fails
-# Build environment `Docker image` has all prerequisite setup and credentials are being passed using AWS system manager
-
-CLUSTER_REGION=${CLUSTER_REGION:-us-east-1}
-CLUSTER_VERSION=${CLUSTER_VERSION:-1.13}
-
-# Define the list of optional subnets for the EKS test cluster
-CLUSTER_PUBLIC_SUBNETS=${CLUSTER_PUBLIC_SUBNETS:-}
-CLUSTER_PRIVATE_SUBNETS=${CLUSTER_PRIVATE_SUBNETS:-}
-
 # Verbose trace of commands, helpful since test iteration takes a long time.
 set -x 
 
@@ -44,6 +31,19 @@ trap cleanup EXIT
 
 # If any command fails, exit the script with an error code.
 set -e
+
+source ./common.sh
+
+# TODOs
+# 1. Add validation for each steps and abort the test if steps fails
+# Build environment `Docker image` has all prerequisite setup and credentials are being passed using AWS system manager
+
+CLUSTER_REGION=${CLUSTER_REGION:-us-east-1}
+CLUSTER_VERSION=${CLUSTER_VERSION:-1.13}
+
+# Define the list of optional subnets for the EKS test cluster
+CLUSTER_PUBLIC_SUBNETS=${CLUSTER_PUBLIC_SUBNETS:-}
+CLUSTER_PRIVATE_SUBNETS=${CLUSTER_PRIVATE_SUBNETS:-}
 
 # Output the commit SHA for logging sake
 echo "Launching canary test for ${COMMIT_SHA}"
