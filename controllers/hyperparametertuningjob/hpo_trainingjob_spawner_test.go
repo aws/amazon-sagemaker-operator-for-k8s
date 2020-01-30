@@ -28,6 +28,7 @@ import (
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
@@ -42,11 +43,11 @@ import (
 )
 
 // Helper function to create a HpoTrainingJobSpawner
-func createHpoTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) hpoTrainingJobSpawner {
+func createHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) hpoTrainingJobSpawner {
 	return hpoTrainingJobSpawner{
 		K8sClient:       k8sClient,
 		Log:             log,
-		SageMakerClient: sageMakerClient,
+		SageMakerClient: clientwrapper.NewSageMakerClientWrapper(sageMakerClient),
 	}
 }
 
@@ -155,9 +156,9 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 			AddDescribeTrainingJobResponse(missing1).
 			AddDescribeTrainingJobResponse(missing2).
 			Build()
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
-		spawner.SpawnMissingTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region"))
+		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify that missing jobs were created.
 
@@ -192,8 +193,8 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 			Build()
 
 		// FailTestOnGetK8sClient is designed to fail the test when Get is called.
-		spawner = createHpoTrainingJobSpawner(FailTestOnGetK8sClient{}, logf.Log, sageMakerClient)
-		spawner.SpawnMissingTrainingJobs(context.Background(), *createHpoJobWithGeneratedNames(false))
+		spawner = createHPOTrainingJobSpawner(FailTestOnGetK8sClient{}, logf.Log, sageMakerClient)
+		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify that the SageMaker request was made.
 		Expect(receivedRequests.Len()).To(Equal(1))
@@ -215,8 +216,8 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 			Build()
 
 		// FailTestOnCreateK8sClient is designed to fail the test when Create is called.
-		spawner = createHpoTrainingJobSpawner(FailTestOnCreateK8sClient{ActualClient: k8sClient}, logf.Log, sageMakerClient)
-		spawner.SpawnMissingTrainingJobs(context.Background(), *createHpoJobWithGeneratedNames(false))
+		spawner = createHPOTrainingJobSpawner(FailTestOnCreateK8sClient{ActualClient: k8sClient}, logf.Log, sageMakerClient)
+		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify that the SageMaker requests were made.
 		Expect(receivedRequests.Len()).To(Equal(2))
@@ -242,11 +243,11 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 			AddListTrainingJobsForHyperParameterTuningJobResponse(listResponse).
 			AddDescribeTrainingJobResponse(missing).
 			Build()
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
 		hpoRegion := "hpo-region"
 		namespace := "namespace-1"
-		spawner.SpawnMissingTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", hpoRegion))
+		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify that missing jobs were created.
 		var createdTrainingJob trainingjobv1.TrainingJob
@@ -283,10 +284,10 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 			AddListTrainingJobsForHyperParameterTuningJobResponse(listResponse).
 			AddDescribeTrainingJobResponse(missing).
 			Build()
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
 		namespace := "namespace-1"
-		hpoJob := *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region")
+		hpoJob := *createHyperParameterTuningJobWithGeneratedNames()
 
 		sageMakerEndpoint := "https://" + uuid.New().String() + ".com"
 		hpoJob.Spec.SageMakerEndpoint = &sageMakerEndpoint
@@ -328,10 +329,10 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 			AddListTrainingJobsForHyperParameterTuningJobResponse(listResponse).
 			AddDescribeTrainingJobResponse(missing).
 			Build()
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
 		namespace := "namespace-1"
-		spawner.SpawnMissingTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region"))
+		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify that missing jobs were created.
 		var createdTrainingJob trainingjobv1.TrainingJob
@@ -424,10 +425,10 @@ var _ = Describe("DeleteSpawnedTrainingJobs", func() {
 			Build()
 
 		// Create spawner
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
 		// Run test
-		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region"))
+		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify expectations
 		Expect(err).ToNot(HaveOccurred())
@@ -460,10 +461,10 @@ var _ = Describe("DeleteSpawnedTrainingJobs", func() {
 			Build()
 
 		// Create spawner
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
 		// Run test
-		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region"))
+		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify expectations
 		Expect(err).ToNot(HaveOccurred())
@@ -494,10 +495,10 @@ var _ = Describe("DeleteSpawnedTrainingJobs", func() {
 			Build()
 
 		// Create spawner
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
 		// Run test
-		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region"))
+		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify expectations
 		Expect(err).ToNot(HaveOccurred())
@@ -517,10 +518,10 @@ var _ = Describe("DeleteSpawnedTrainingJobs", func() {
 			Build()
 
 		// Create spawner
-		spawner = createHpoTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(k8sClient, logf.Log, sageMakerClient)
 
 		// Run test
-		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region"))
+		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify expectations
 		Expect(err).To(HaveOccurred())
@@ -532,10 +533,10 @@ var _ = Describe("DeleteSpawnedTrainingJobs", func() {
 			Build()
 
 		// Create spawner
-		spawner = createHpoTrainingJobSpawner(FailToGetK8sClient{}, logf.Log, sageMakerClient)
+		spawner = createHPOTrainingJobSpawner(FailToGetK8sClient{}, logf.Log, sageMakerClient)
 
 		// Run test
-		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHpoJob(false, "hpo-k8s-name", namespace, "hpo-sagemaker-name", "aws-region"))
+		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
 
 		// Verify expectations
 		Expect(err).To(HaveOccurred())

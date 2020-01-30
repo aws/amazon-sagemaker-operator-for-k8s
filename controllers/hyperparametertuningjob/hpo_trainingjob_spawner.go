@@ -24,6 +24,7 @@ import (
 
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
@@ -288,24 +289,24 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJob(ctx context.Context, tra
 
 	var trainingJob trainingjobv1.TrainingJob
 	if err := s.K8sClient.Get(ctx, key, &trainingJob); err != nil {
-		return IgnoreNotFound(err)
+		return errors.Wrap(err, "Failed to fetch training job")
 	}
 
-	needsRemoveFinalizer := ContainsString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
+	needsRemoveFinalizer := controllers.ContainsString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
 	needsDelete := trainingJob.ObjectMeta.GetDeletionTimestamp().IsZero()
 
 	if needsRemoveFinalizer {
 		s.Log.Info("Removing HPO ownership finalizer from TrainingJob", "trainingJobName", trainingJobName)
-		trainingJob.ObjectMeta.Finalizers = RemoveString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
+		trainingJob.ObjectMeta.Finalizers = controllers.RemoveString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
 		if err := s.K8sClient.Update(ctx, &trainingJob); err != nil {
-			return IgnoreNotFound(err)
+			return errors.Wrap(err, "Failed to remove finalizer")
 		}
 	}
 
 	if needsDelete {
 		s.Log.Info("Deleting TrainingJob", "trainingJobName", trainingJobName)
 		if err := s.K8sClient.Delete(ctx, &trainingJob); err != nil {
-			return IgnoreNotFound(err)
+			return errors.Wrap(err, "Failed to delete training job")
 		}
 	}
 

@@ -39,7 +39,7 @@ type Comparison struct {
 // Determine if the given TrainingJobSpec matches the DescribeTrainingJobOutput. This converts the description to a TrainingJobSpec,
 // then selectively compares fields.
 func TrainingJobSpecMatchesDescription(description sagemaker.DescribeTrainingJobOutput, spec trainingjobv1.TrainingJobSpec) Comparison {
-	remoteSpec := CreateTrainingJobSpecFromDescription(description)
+	remoteSpec, _ := CreateTrainingJobSpecFromDescription(description)
 	differences := cmp.Diff(remoteSpec, spec, trainingJobSpecComparisonOptions...)
 	return createComparison(differences)
 }
