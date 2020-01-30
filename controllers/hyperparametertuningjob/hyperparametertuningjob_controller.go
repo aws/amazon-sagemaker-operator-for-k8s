@@ -57,7 +57,7 @@ type Reconciler struct {
 
 	createSageMakerClient       clientwrapper.SageMakerClientWrapperProvider
 	awsConfigLoader             controllers.AwsConfigLoader
-	createHpoTrainingJobSpawner HPOTrainingJobSpawnerProvider
+	createHPOTrainingJobSpawner HPOTrainingJobSpawnerProvider
 }
 
 // NewHyperparameterTuningJobReconciler creates a new reconciler with the default SageMaker client.
@@ -69,7 +69,7 @@ func NewHyperparameterTuningJobReconciler(client client.Client, log logr.Logger,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
 			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
 		},
-		createHpoTrainingJobSpawner: NewHPOTrainingJobSpawner,
+		createHPOTrainingJobSpawner: NewHPOTrainingJobSpawner,
 		awsConfigLoader:             controllers.NewAwsConfigLoader(),
 	}
 }
@@ -131,7 +131,7 @@ type reconcileRequestContext struct {
 	TuningJobName string
 
 	// Responsible for creating child k8s TrainingJob resources.
-	HpoTrainingJobSpawner HPOTrainingJobSpawner
+	HPOTrainingJobSpawner HPOTrainingJobSpawner
 }
 
 func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
@@ -180,6 +180,8 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 
 	switch ctx.TuningJobDescription.HyperParameterTuningJobStatus {
 	case sagemaker.HyperParameterTuningJobStatusInProgress:
+		ctx.HPOTrainingJobSpawner.SpawnMissingTrainingJobs(ctx, *ctx.TuningJob)
+
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			// Request to stop the job
 			if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil && !clientwrapper.IsStopHyperParameterTuningJob404Error(err) {
@@ -238,7 +240,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	ctx.SageMakerClient = r.createSageMakerClient(awsConfig)
 	ctx.Log.Info("Loaded AWS config")
 
-	ctx.HpoTrainingJobSpawner = r.createHpoTrainingJobSpawner(r, ctx.Log, ctx.SageMakerClient)
+	ctx.HPOTrainingJobSpawner = r.createHPOTrainingJobSpawner(r, ctx.Log, ctx.SageMakerClient)
 
 	return nil
 }
@@ -266,7 +268,7 @@ func (r *Reconciler) createHyperParameterTuningJob(ctx reconcileRequestContext) 
 func (r *Reconciler) cleanupAndRemoveFinalizer(ctx reconcileRequestContext) error {
 	var err error
 
-	if err = ctx.HpoTrainingJobSpawner.DeleteSpawnedTrainingJobs(ctx, *ctx.TuningJob); err != nil {
+	if err = ctx.HPOTrainingJobSpawner.DeleteSpawnedTrainingJobs(ctx, *ctx.TuningJob); err != nil {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Not all associated TrainingJobs jobs were deleted"))
 	}
 

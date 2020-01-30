@@ -51,11 +51,12 @@ type HPOTrainingJobSpawner interface {
 
 // NewHPOTrainingJobSpawner constructs a new HPOTrainingJobSpawner.
 func NewHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient clientwrapper.SageMakerClientWrapper) HPOTrainingJobSpawner {
-	return hpoTrainingJobSpawner{
+	spawner := hpoTrainingJobSpawner{
 		K8sClient:       k8sClient,
 		Log:             log.WithName("HPOTrainingJobSpawner"),
 		SageMakerClient: sageMakerClient,
 	}
+	return &spawner
 }
 
 // HPOTrainingJobSpawnerProvider constructs an HPO Training Job Spawner
