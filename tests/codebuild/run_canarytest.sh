@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source tests/codebuild/common.sh
+source ./common.sh
 
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails
