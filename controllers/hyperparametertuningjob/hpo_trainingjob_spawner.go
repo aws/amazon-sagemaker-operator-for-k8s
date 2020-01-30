@@ -243,7 +243,19 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 			wg.Add(1)
 			go func(trainingJobSummary sagemaker.HyperParameterTrainingJobSummary) {
 				defer wg.Done()
-				if err := s.deleteSpawnedTrainingJob(ctx, *trainingJobSummary.TrainingJobName, k8sNamespace); err != nil {
+
+				key := types.NamespacedName{
+					Namespace: k8sNamespace,
+					Name:      *trainingJobSummary.TrainingJobName,
+				}
+
+				var trainingJob trainingjobv1.TrainingJob
+				if err := s.K8sClient.Get(ctx, key, &trainingJob); err != nil {
+					// If the job has previously been deleted then we don't need to do
+					return
+				}
+
+				if err := s.deleteSpawnedTrainingJob(ctx, &trainingJob); err != nil {
 					errorsChannel <- err
 				}
 			}(trainingJobSummary)
@@ -280,33 +292,21 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 
 // Delete a single training job and remove its finalizer, if present.
 // Returns an error if any operation failed and needs to be retried.
-func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJob(ctx context.Context, trainingJobName, k8sNamespace string) error {
-
-	key := types.NamespacedName{
-		Namespace: k8sNamespace,
-		Name:      trainingJobName,
-	}
-
-	var trainingJob trainingjobv1.TrainingJob
-	if err := s.K8sClient.Get(ctx, key, &trainingJob); err != nil {
-		// If the job has previously been deleted then we don't need to do anything
-		return nil
-	}
-
+func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJob(ctx context.Context, trainingJob *trainingjobv1.TrainingJob) error {
 	needsRemoveFinalizer := controllers.ContainsString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
 	needsDelete := trainingJob.ObjectMeta.GetDeletionTimestamp().IsZero()
 
 	if needsRemoveFinalizer {
-		s.Log.Info("Removing HPO ownership finalizer from TrainingJob", "trainingJobName", trainingJobName)
+		s.Log.Info("Removing HPO ownership finalizer from TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
 		trainingJob.ObjectMeta.Finalizers = controllers.RemoveString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
-		if err := s.K8sClient.Update(ctx, &trainingJob); err != nil {
+		if err := s.K8sClient.Update(ctx, trainingJob); err != nil {
 			return errors.Wrap(err, "Failed to remove finalizer")
 		}
 	}
 
 	if needsDelete {
-		s.Log.Info("Deleting TrainingJob", "trainingJobName", trainingJobName)
-		if err := s.K8sClient.Delete(ctx, &trainingJob); err != nil {
+		s.Log.Info("Deleting TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
+		if err := s.K8sClient.Delete(ctx, trainingJob); err != nil {
 			return errors.Wrap(err, "Failed to delete training job")
 		}
 	}
