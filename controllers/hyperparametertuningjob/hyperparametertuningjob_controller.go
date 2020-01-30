@@ -353,6 +353,7 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tun
 	// When you call this function, update/refresh all the fields since we overwrite.
 	jobStatus.HyperParameterTuningJobStatus = tuningJobStatus
 	jobStatus.Additional = additional
+	jobStatus.SageMakerHyperParameterTuningJobName = ctx.TuningJobName
 
 	if err := r.Status().Update(ctx, ctx.TuningJob); err != nil {
 		err = errors.Wrap(err, "Unable to update status")

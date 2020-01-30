@@ -35,10 +35,10 @@ const (
 	StopTrainingJob404Code              = "ValidationException"
 	StopTrainingJob404MessagePrefix     = "Requested resource not found"
 
-	DescribeHyperParameterTuningJob404Code          = "ValidationException"
-	DescribeHyperParameterTuningJob404MessagePrefix = "Requested resource not found"
-	StopHyperParameterTuningJob404Code              = "ValidationException"
-	StopHyperParameterTuningJob404MessagePrefix     = "Requested resource not found"
+	DescribeHyperParameterTuningJob404Code          = "ResourceNotFound"
+	DescribeHyperParameterTuningJob404MessagePrefix = "Amazon SageMaker can't find a tuning job"
+	StopHyperParameterTuningJob404Code              = "ResourceNotFound"
+	StopHyperParameterTuningJob404MessagePrefix     = "Amazon SageMaker can't find a tuning job"
 
 	DeleteEndpoint404MessagePrefix                        = "Could not find endpoint"
 	DeleteEndpoint404Code                                 = "ValidationException"
