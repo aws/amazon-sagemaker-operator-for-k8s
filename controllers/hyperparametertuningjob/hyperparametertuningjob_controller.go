@@ -193,7 +193,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 
 	case sagemaker.HyperParameterTuningJobStatusCompleted:
 		if err = r.addBestTrainingJobToStatus(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to add model path to status"))
+			return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to add best training job to status"))
 		}
 		fallthrough
 

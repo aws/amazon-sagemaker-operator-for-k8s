@@ -29,6 +29,7 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
+	"github.com/go-logr/logr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
@@ -37,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -51,7 +53,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the
 	})
 
 	It("should not requeue if the HyperParameterTuningJob does not exist", func() {
-		controller := createReconcilerWithMockedDependencies(k8sClient, sageMakerClient, "1s")
+		controller := createReconciler(k8sClient, sageMakerClient, "1s")
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -62,7 +64,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the
 
 	It("should requeue if there was an error", func() {
 		mockK8sClient := FailToGetK8sClient{}
-		controller := createReconcilerWithMockedDependencies(mockK8sClient, sageMakerClient, "1s")
+		controller := createReconciler(mockK8sClient, sageMakerClient, "1s")
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -239,7 +241,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			shouldHaveFinalizer = true
 		})
 
-		Context("HyperParameterTuningJob has status 'InProgress'('Starting')", func() {
+		Context("HyperParameterTuningJob has status 'InProgress'", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusInProgress
 				mockSageMakerClientBuilder.
@@ -289,99 +291,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			})
 		})
 
-		Context("HyperParameterTuningJob has status 'InProgress'('Training')", func() {
-			BeforeEach(func() {
-				expectedStatus = sagemaker.HyperParameterTuningJobStatusInProgress
-				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
-			})
-
-			When("!HasDeletionTimestamp", func() {
-				It("Requeues after interval", func() {
-					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
-				})
-
-				It("Updates status", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
-				})
-
-				Context("Does not have a finalizer", func() {
-					BeforeEach(func() {
-						shouldHaveFinalizer = false
-					})
-
-					It("Adds a finalizer", func() {
-						ExpectToHaveFinalizer(tuningJob, controllers.SageMakerResourceFinalizerName)
-					})
-				})
-			})
-
-			When("HasDeletionTimestamp", func() {
-				BeforeEach(func() {
-					shouldHaveDeletionTimestamp = true
-					expectedStatus = sagemaker.HyperParameterTuningJobStatusStopping
-					mockSageMakerClientBuilder.
-						AddStopHyperParameterTuningJobResponse(sagemaker.StopHyperParameterTuningJobOutput{}).
-						AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
-				})
-
-				It("Stops the HyperParameterTuningJob", func() {
-					ExpectRequestToStopHyperParameterTuningJob(receivedRequests.Front().Next().Value, tuningJob)
-				})
-
-				It("Requeues after interval", func() {
-					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
-				})
-
-				It("Updates status to 'Stopping'('') and does not delete HyperParameterTuningJob", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
-				})
-			})
-		})
-
-		Context("HyperParameterTuningJob has status 'Stopping'('Starting')", func() {
-			BeforeEach(func() {
-				expectedStatus = sagemaker.HyperParameterTuningJobStatusStopping
-				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
-			})
-
-			When("!HasDeletionTimestamp", func() {
-				It("Requeues after interval", func() {
-					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
-				})
-
-				It("Updates status", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
-				})
-
-				Context("Does not have a finalizer", func() {
-					BeforeEach(func() {
-						shouldHaveFinalizer = false
-					})
-
-					It("Adds a finalizer", func() {
-						ExpectToHaveFinalizer(tuningJob, controllers.SageMakerResourceFinalizerName)
-					})
-				})
-			})
-
-			When("HasDeletionTimestamp", func() {
-				BeforeEach(func() {
-					shouldHaveDeletionTimestamp = true
-				})
-
-				It("Requeues after interval", func() {
-					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
-				})
-
-				It("Updates status to 'Stopping' and does not delete HyperParameterTuningJob", func() {
-					ExpectStatusToBe(tuningJob, string(sagemaker.HyperParameterTuningJobStatusStopping))
-				})
-			})
-		})
-
-		Context("HyperParameterTuningJob has status 'Stopping'('Downloading')", func() {
+		Context("HyperParameterTuningJob has status 'Stopping'", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusStopping
 				mockSageMakerClientBuilder.
@@ -510,8 +420,11 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 		Context("HyperParameterTuningJob has status 'Completed'", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusCompleted
+
+				describeOutput := CreateDescribeOutputWithOnlyStatus(expectedStatus)
+				describeOutput.BestTrainingJob = &sagemaker.HyperParameterTrainingJobSummary{}
 				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+					AddDescribeHyperParameterTuningJobResponse(describeOutput)
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -549,18 +462,26 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			})
 		})
 	})
-
 })
 
-func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) *Reconciler {
-	pollInterval := ParseDurationOrFail(pollIntervalStr)
+// Mock HpoTrainingJobSpawner that does nothing when called.
+type noopHPOTrainingJobSpawner struct {
+	HPOTrainingJobSpawner
+}
 
-	return &Reconciler{
-		Client:                k8sClient,
-		Log:                   ctrl.Log,
-		PollInterval:          pollInterval,
-		createSageMakerClient: CreateMockSageMakerClientWrapperProvider(sageMakerClient),
-		awsConfigLoader:       CreateMockAwsConfigLoader(),
+// Do nothing when called.
+func (noopHPOTrainingJobSpawner) SpawnMissingTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) {
+}
+
+// Do nothing when called.
+func (noopHPOTrainingJobSpawner) DeleteSpawnedTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) error {
+	return nil
+}
+
+// Create a provider that creates a mock HPO TrainingJob Spawner.
+func createMockHpoTrainingJobSpawnerProvider(spawner HPOTrainingJobSpawner) HPOTrainingJobSpawnerProvider {
+	return func(_ client.Client, _ logr.Logger, _ clientwrapper.SageMakerClientWrapper) HPOTrainingJobSpawner {
+		return spawner
 	}
 }
 
@@ -568,11 +489,12 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return &Reconciler{
-		Client:                k8sClient,
-		Log:                   ctrl.Log,
-		PollInterval:          pollInterval,
-		createSageMakerClient: CreateMockSageMakerClientWrapperProvider(sageMakerClient),
-		awsConfigLoader:       CreateMockAwsConfigLoader(),
+		Client:                      k8sClient,
+		Log:                         ctrl.Log,
+		PollInterval:                pollInterval,
+		createSageMakerClient:       CreateMockSageMakerClientWrapperProvider(sageMakerClient),
+		awsConfigLoader:             CreateMockAwsConfigLoader(),
+		createHpoTrainingJobSpawner: createMockHpoTrainingJobSpawnerProvider(noopHPOTrainingJobSpawner{}),
 	}
 }
 
