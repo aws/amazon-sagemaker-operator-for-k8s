@@ -218,12 +218,18 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 	return nil
 }
 
+<<<<<<< HEAD
 // Initialize fields on the context object which will be used later.
 func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	// Ensure we generate a new name and populate the spec if none was specified
 	if ctx.TuningJob.Spec.HyperParameterTuningJobName == nil || len(*ctx.TuningJob.Spec.HyperParameterTuningJobName) == 0 {
 		generatedName := controllers.GetGeneratedResourceName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)
 		ctx.TuningJob.Spec.HyperParameterTuningJobName = &generatedName
+=======
+func (r *HyperparameterTuningJobReconciler) getHyperParameterTuningJobName(state hpojobv1.HyperparameterTuningJob) string {
+	return GetGeneratedResourceName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), 32)
+}
+>>>>>>> Refactor name generation
 
 		if err := r.Update(ctx, ctx.TuningJob); err != nil {
 			ctx.Log.Info("Error while updating hyperparameter tuning job name in spec")

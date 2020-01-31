@@ -269,7 +269,15 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 				createdRequest := req.(*sagemaker.CreateEndpointInput)
 				Expect(*createdRequest.EndpointConfigName).To(Equal(endpointConfigSageMakerName))
+<<<<<<< HEAD
 				Expect(*createdRequest.EndpointName).To(Equal(GetGeneratedResourceName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+=======
+<<<<<<< HEAD
+				Expect(*createdRequest.EndpointName).To(Equal(GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+=======
+				Expect(*createdRequest.EndpointName).To(Equal(GetGeneratedResourceName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+>>>>>>> Refactor name generation
+>>>>>>> Refactor name generation
 			})
 
 			It("Requeues after interval", func() {
@@ -1057,7 +1065,15 @@ func ExpectRequestToDeleteHostingDeployment(req interface{}, deployment *hosting
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.DeleteEndpointInput)(nil)))
 
 	deleteRequest := req.(*sagemaker.DeleteEndpointInput)
+<<<<<<< HEAD
 	Expect(*deleteRequest.EndpointName).To(Equal(GetGeneratedResourceName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+=======
+<<<<<<< HEAD
+	Expect(*deleteRequest.EndpointName).To(Equal(GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+=======
+	Expect(*deleteRequest.EndpointName).To(Equal(GetGeneratedResourceName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+>>>>>>> Refactor name generation
+>>>>>>> Refactor name generation
 }
 
 // Helper function to verify that the specified object is n UpdateEndpointInput and that it requests to update the HostingDeployment correctly.
@@ -1065,7 +1081,15 @@ func ExpectRequestToUpdateHostingDeployment(req interface{}, deployment *hosting
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.UpdateEndpointInput)(nil)))
 
 	updateRequest := req.(*sagemaker.UpdateEndpointInput)
+<<<<<<< HEAD
 	Expect(*updateRequest.EndpointName).To(Equal(GetGeneratedResourceName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+=======
+<<<<<<< HEAD
+	Expect(*updateRequest.EndpointName).To(Equal(GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+=======
+	Expect(*updateRequest.EndpointName).To(Equal(GetGeneratedResourceName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+>>>>>>> Refactor name generation
+>>>>>>> Refactor name generation
 	Expect(*updateRequest.EndpointConfigName).To(Equal(expectedEndpointConfigName))
 }
 
