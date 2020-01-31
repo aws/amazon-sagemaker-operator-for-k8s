@@ -274,7 +274,7 @@ func (r *HyperparameterTuningJobReconciler) addFinalizerAndRequeue(ctx reconcile
 }
 
 func (r *HyperparameterTuningJobReconciler) getHyperParameterTuningJobName(state hpojobv1.HyperparameterTuningJob) string {
-	return GetGeneratedJobName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), 32)
+	return GetGeneratedResourceName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), 32)
 }
 
 func (r *HyperparameterTuningJobReconciler) getSageMakerDescription(ctx reconcileRequestContext) (*sagemaker.DescribeHyperParameterTuningJobOutput, awserr.RequestFailure) {

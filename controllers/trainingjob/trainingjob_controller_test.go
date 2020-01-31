@@ -215,7 +215,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateTrainingJobInput)(nil)))
 
 				createdRequest := req.(*sagemaker.CreateTrainingJobInput)
-				Expect(*createdRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
+				Expect(*createdRequest.TrainingJobName).To(Equal(controllers.GetGeneratedResourceName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
 			})
 
 			It("Requeues after interval", func() {
@@ -227,11 +227,11 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 
 			It("Adds the training job name to the spec", func() {
-				ExpectTrainingJobNameInSpec(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
+				ExpectTrainingJobNameInSpec(controllers.GetGeneratedResourceName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
 			})
 
 			It("Adds the training job name to the status", func() {
-				ExpectTrainingJobNameInStatus(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
+				ExpectTrainingJobNameInStatus(controllers.GetGeneratedResourceName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
 			})
 
 			Context("Spec defines TrainingJobName", func() {
@@ -735,7 +735,7 @@ func ExpectRequestToStopTrainingJob(req interface{}, trainingJob *trainingjobv1.
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.StopTrainingJobInput)(nil)))
 
 	stopRequest := req.(*sagemaker.StopTrainingJobInput)
-	Expect(*stopRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
+	Expect(*stopRequest.TrainingJobName).To(Equal(controllers.GetGeneratedResourceName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
 }
 
 // Expect the SageMakerTrainingJobName to be set with a given value in the training job status.

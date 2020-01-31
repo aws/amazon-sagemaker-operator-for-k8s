@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -26,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("GetGeneratedJobName", func() {
+var _ = Describe("GetGeneratedResourceName", func() {
 
 	var (
 		uid            types.UID
@@ -35,7 +36,9 @@ var _ = Describe("GetGeneratedJobName", func() {
 
 		uidWithoutHyphens string
 
-		generatedJobName string
+		generatedJobName            string
+		generatedPostfix            string
+		generatedJobNameWithPostfix string
 	)
 
 	BeforeEach(func() {
@@ -44,7 +47,8 @@ var _ = Describe("GetGeneratedJobName", func() {
 
 	JustBeforeEach(func() {
 		uidWithoutHyphens = strings.Replace(string(uid), "-", "", -1)
-		generatedJobName = GetGeneratedJobName(uid, objectMetaName, maxNameLen)
+		generatedJobName = GetGeneratedResourceName(uid, objectMetaName, maxNameLen)
+		generatedJobNameWithPostfix = GetGeneratedResourceName(uid, objectMetaName, maxNameLen, generatedPostfix)
 	})
 
 	When("maxNameLen is sufficiently large", func() {
@@ -99,7 +103,7 @@ var _ = Describe("GetGeneratedJobName", func() {
 				Expect(len(generatedJobName)).To(BeNumerically("<=", maxNameLen))
 			})
 
-			It("Does not start with a hypthen", func() {
+			It("Does not start with a hyphen", func() {
 				Expect(generatedJobName[0]).ToNot(Equal("-"))
 			})
 		})
@@ -146,6 +150,43 @@ var _ = Describe("GetGeneratedJobName", func() {
 
 		It("Is contained in the full hyphen-less UID", func() {
 			Expect(uidWithoutHyphens).To(ContainSubstring(generatedJobName))
+		})
+	})
+
+	When("An additional postfix is required and maxNameLen is sufficiently large", func() {
+		BeforeEach(func() {
+			maxNameLen = 253
+			objectMetaName = "object.meta.name"
+			generatedPostfix = "generated.postfix"
+			fmt.Printf("Hey Meghna, the generated name is : %s", generatedJobNameWithPostfix)
+		})
+
+		It("Concatenates the name, shortened uid, generatedPostfix", func() {
+			Expect(generatedJobNameWithPostfix).To(ContainSubstring(objectMetaName))
+			Expect(generatedJobNameWithPostfix).To(ContainSubstring(uidWithoutHyphens))
+			Expect(generatedJobNameWithPostfix).To(ContainSubstring(generatedPostfix))
+		})
+
+		It("Length does not exceed maxNameLen", func() {
+			Expect(len(generatedJobNameWithPostfix)).To(BeNumerically("<=", maxNameLen))
+		})
+	})
+
+	When("An additional postfix is required and maxNameLen is not large enough for objectMetaName", func() {
+		BeforeEach(func() {
+			maxNameLen = 64
+			objectMetaName = strings.Repeat("A", 70)
+			generatedPostfix = "generated.postfix"
+			fmt.Printf("Hey Meghna, the generated name is : %s", generatedJobNameWithPostfix)
+		})
+
+		It("Concatenates the name, shortened uid, generatedPostfix", func() {
+			Expect(generatedJobNameWithPostfix).To(ContainSubstring(uidWithoutHyphens))
+			Expect(generatedJobNameWithPostfix).To(ContainSubstring(generatedPostfix))
+		})
+
+		It("Length does not exceed maxNameLen", func() {
+			Expect(len(generatedJobNameWithPostfix)).To(BeNumerically("<=", maxNameLen))
 		})
 	})
 })

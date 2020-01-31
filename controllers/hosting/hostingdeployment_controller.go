@@ -19,13 +19,14 @@ package hosting
 import (
 	"context"
 	"fmt"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -342,7 +343,7 @@ func (r *HostingDeploymentReconciler) cleanupAndRemoveFinalizer(ctx reconcileReq
 
 // Initialize fields on the context object which will be used later.
 func (r *HostingDeploymentReconciler) initializeContext(ctx *reconcileRequestContext) error {
-	ctx.EndpointName = GetSageMakerEndpointName(*ctx.Deployment)
+	ctx.EndpointName = GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
 	r.Log.Info("SageMaker EndpointName", "name", ctx.EndpointName)
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
@@ -386,7 +387,7 @@ func (r *HostingDeploymentReconciler) createCreateEndpointInput(ctx reconcileReq
 		return nil, err
 	}
 
-	endpointName := GetSageMakerEndpointName(*ctx.Deployment)
+	endpointName := GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
 
 	createInput := &sagemaker.CreateEndpointInput{
 		EndpointConfigName: &endpointConfigName,
@@ -468,22 +469,28 @@ func convertTimeOrDefault(time *time.Time, defaultValue *metav1.Time) *metav1.Ti
 	return &converted
 }
 
-// Get the SageMaker Endpoint name given a HostingDeployment.
-func GetSageMakerEndpointName(desiredDeployment hostingv1.HostingDeployment) string {
-	SMMaxLen := 63
-	name := desiredDeployment.ObjectMeta.GetName()
-	uid := strings.Replace(string(desiredDeployment.ObjectMeta.GetUID()), "-", "", -1)
-	smEndpointName := name + "-" + uid
-	if len(smEndpointName) > SMMaxLen {
-		smEndpointName = name[:SMMaxLen-len(uid)-1] + "-" + uid
-	}
-	return smEndpointName
-}
-
 func (r *HostingDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&hostingv1.HostingDeployment{}).
 		// Ignore status-only and metadata-only updates
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
+}
+
+// Get the Kubernetes name of the Model/EndpointConfig. This must be idempotent so that future reconciler invocations
+// are able to find the object.
+// Kubernetes resources can have names up to 253 characters long.
+// The characters allowed in names are: digits (0-9), lower case letters (a-z), -, and .
+func GetKubernetesNamespacedName(objectName string, hostingDeployment hostingv1.HostingDeployment) types.NamespacedName {
+	k8sMaxLen := 253
+	uid := hostingDeployment.ObjectMeta.GetUID()
+	generation := strconv.FormatInt(hostingDeployment.ObjectMeta.GetGeneration(), 10)
+	generatedPostfix := generation + "-"
+
+	name := GetGeneratedResourceName(uid, objectName, k8sMaxLen, generatedPostfix)
+
+	return types.NamespacedName{
+		Name:      name,
+		Namespace: hostingDeployment.ObjectMeta.GetNamespace(),
+	}
 }

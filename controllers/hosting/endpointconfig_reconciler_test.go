@@ -98,7 +98,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 
 	It("Will not create if an EndpointConfig exists already and they are deep equal", func() {
 		desired = createHostingDeploymentWithBasicProductionVariant()
-		key := GetKubernetesEndpointConfigNamespacedName(desired)
+		key := GetKubernetesNamespacedName(desired.ObjectMeta.GetName(), desired)
 
 		err := k8sClient.Create(context.Background(), &endpointconfigv1.EndpointConfig{
 			ObjectMeta: metav1.ObjectMeta{
@@ -122,7 +122,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 		updateEndpointConfigStatus(key, endpointconfigcontroller.CreatedStatus, "sagemaker-endpoint-name")
 
 		modelName := *desired.Spec.ProductionVariants[0].ModelName
-		modelNamespacedName := GetKubernetesModelNamespacedName(modelName, desired)
+		modelNamespacedName := GetKubernetesNamespacedName(modelName, desired)
 		Expect(createCreatedModelWithAnySageMakerName(modelNamespacedName, desired)).ToNot(HaveOccurred())
 
 		// Fail test if Create is called on k8s client.
@@ -146,7 +146,7 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 
 			// Create model correct status
 			modelName := *desired.Spec.ProductionVariants[0].ModelName
-			modelNamespacedName := GetKubernetesModelNamespacedName(modelName, desired)
+			modelNamespacedName := GetKubernetesNamespacedName(modelName, desired)
 
 			Expect(createCreatedModelWithAnySageMakerName(modelNamespacedName, desired)).ToNot(HaveOccurred())
 		})
@@ -179,12 +179,12 @@ var _ = Describe("EndpointConfigReconciler.Reconcile", func() {
 				},
 			}
 
-			expectedEndpointConfigNamespacedName = GetKubernetesEndpointConfigNamespacedName(desired)
+			expectedEndpointConfigNamespacedName = GetKubernetesNamespacedName(desired.ObjectMeta.GetName(), desired)
 
 			// Create models
 
 			modelName := *desired.Spec.ProductionVariants[0].ModelName
-			modelNamespacedName := GetKubernetesModelNamespacedName(modelName, desired)
+			modelNamespacedName := GetKubernetesNamespacedName(modelName, desired)
 			Expect(createCreatedModelWithAnySageMakerName(modelNamespacedName, desired)).ToNot(HaveOccurred())
 
 			reconciler.Reconcile(context.Background(), &desired, true)
@@ -256,12 +256,12 @@ var _ = Describe("Delete EndpointConfigReconciler.Reconcile", func() {
 			},
 		}
 
-		expectedEndpointConfigNamespacedName = GetKubernetesEndpointConfigNamespacedName(desired)
+		expectedEndpointConfigNamespacedName = GetKubernetesNamespacedName(desired.ObjectMeta.GetName(), desired)
 
 		// Create models
 
 		modelName := *desired.Spec.ProductionVariants[0].ModelName
-		modelNamespacedName := GetKubernetesModelNamespacedName(modelName, desired)
+		modelNamespacedName := GetKubernetesNamespacedName(modelName, desired)
 		Expect(createCreatedModelWithAnySageMakerName(modelNamespacedName, desired)).ToNot(HaveOccurred())
 
 		reconciler.Reconcile(context.Background(), &desired, true)
@@ -332,11 +332,11 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 			},
 		}
 
-		endpointConfigNamespacedName = GetKubernetesEndpointConfigNamespacedName(*desired)
+		endpointConfigNamespacedName = GetKubernetesNamespacedName(desired.ObjectMeta.GetName(), *desired)
 		err := createCreatedEndpointConfig(endpointConfigNamespacedName, *desired, "")
 		Expect(err).ToNot(HaveOccurred())
 
-		err = createCreatedModelWithAnySageMakerName(GetKubernetesModelNamespacedName(modelName, *desired), *desired)
+		err = createCreatedModelWithAnySageMakerName(GetKubernetesNamespacedName(modelName, *desired), *desired)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -351,7 +351,7 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 		err = k8sClient.Delete(context.Background(), &endpointConfig)
 		Expect(err).ToNot(HaveOccurred())
 
-		modelNamespacedName := GetKubernetesModelNamespacedName(modelName, *desired)
+		modelNamespacedName := GetKubernetesNamespacedName(modelName, *desired)
 		var model modelv1.Model
 		err = k8sClient.Get(context.Background(), types.NamespacedName{
 			Namespace: modelNamespacedName.Namespace,

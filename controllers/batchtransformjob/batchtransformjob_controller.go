@@ -262,7 +262,7 @@ func (r *BatchTransformJobReconciler) addFinalizerAndRequeue(ctx reconcileReques
 }
 
 func (r *BatchTransformJobReconciler) getTransformJobName(state batchtransformjobv1.BatchTransformJob) string {
-	return GetGeneratedJobName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), 63)
+	return GetGeneratedResourceName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), 63)
 }
 
 func (r *BatchTransformJobReconciler) reconcileSpecWithDescription(ctx reconcileRequestContext) (ctrl.Result, error) {
