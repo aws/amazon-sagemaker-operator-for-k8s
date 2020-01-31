@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -178,7 +176,7 @@ func (r *endpointConfigReconciler) extractDesiredEndpointConfigFromHostingDeploy
 
 	// TODO need to rename production variant names to remove "initial"
 
-	namespacedName := GetKubernetesEndpointConfigNamespacedName(*desiredDeployment)
+	namespacedName := GetKubernetesNamespacedName(desiredDeployment.ObjectMeta.GetName(), *desiredDeployment)
 
 	// Add labels to endpointconfig that indicate which particular HostingDeployment
 	// owns it.
@@ -210,7 +208,7 @@ func (r *endpointConfigReconciler) resolveSageMakerModelName(ctx context.Context
 		return nil, fmt.Errorf("Unable to resolve SageMaker model name for nil deployment")
 	}
 
-	namespacedName := GetKubernetesModelNamespacedName(k8sModelName, *desiredDeployment)
+	namespacedName := GetKubernetesNamespacedName(k8sModelName, *desiredDeployment)
 
 	var model modelv1.Model
 	if err := r.k8sClient.Get(ctx, namespacedName, &model); err != nil {
@@ -226,28 +224,6 @@ func (r *endpointConfigReconciler) resolveSageMakerModelName(ctx context.Context
 	}
 
 	return &model.Status.SageMakerModelName, nil
-}
-
-// Get the idempotent name of the EndpointConfig in Kubernetes.
-// Kubernetes resources can have names up to 253 characters long.
-// The characters allowed in names are: digits (0-9), lower case letters (a-z), -, and .
-func GetKubernetesEndpointConfigNamespacedName(deployment hostingv1.HostingDeployment) types.NamespacedName {
-	k8sMaxLen := 253
-	name := deployment.ObjectMeta.GetName()
-	uid := strings.Replace(string(deployment.ObjectMeta.GetUID()), "-", "", -1)
-	generation := strconv.FormatInt(deployment.ObjectMeta.GetGeneration(), 10)
-
-	requiredPostfix := "-" + generation + "-" + uid
-	endpointConfigName := name + requiredPostfix
-
-	if len(endpointConfigName) > k8sMaxLen {
-		endpointConfigName = name[:k8sMaxLen-len(requiredPostfix)] + requiredPostfix
-	}
-
-	return types.NamespacedName{
-		Name:      endpointConfigName,
-		Namespace: deployment.ObjectMeta.GetNamespace(),
-	}
 }
 
 // Get the existing Kubernetes EndpointConfig. If it does not exist, return nil.

@@ -19,7 +19,6 @@ package endpointconfig
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -150,7 +149,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 	}
 
 	// Get SageMaker endpointConfig description.
-	if ctx.EndpointConfigDescription, err = ctx.SageMakerClient.DescribeEndpointConfig(ctx, generateEndpointConfigName(ctx.EndpointConfig)); err != nil {
+	if ctx.EndpointConfigDescription, err = ctx.SageMakerClient.DescribeEndpointConfig(ctx, GetGeneratedJobName(ctx.EndpointConfig.ObjectMeta.GetUID(), ctx.EndpointConfig.ObjectMeta.GetName(), 63)); err != nil {
 		return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to get SageMaker EndpointConfig description"))
 	}
 
@@ -163,7 +162,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 
 	// If update or delete, delete the existing endpointConfig.
 	if action == NeedsDelete || action == NeedsUpdate {
-		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, generateEndpointConfigName(ctx.EndpointConfig)); err != nil {
+		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, GetGeneratedJobName(ctx.EndpointConfig.ObjectMeta.GetUID(), ctx.EndpointConfig.ObjectMeta.GetName(), 63)); err != nil {
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to delete SageMaker endpointConfig"))
 		}
 
@@ -173,7 +172,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 
 	// If update or create, create the desired endpointConfig.
 	if action == NeedsCreate || action == NeedsUpdate {
-		if ctx.EndpointConfigDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.EndpointConfig.Spec, generateEndpointConfigName(ctx.EndpointConfig)); err != nil {
+		if ctx.EndpointConfigDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.EndpointConfig.Spec, GetGeneratedJobName(ctx.EndpointConfig.ObjectMeta.GetUID(), ctx.EndpointConfig.ObjectMeta.GetName(), 63)); err != nil {
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to create SageMaker endpointConfig"))
 		}
 	}
@@ -326,19 +325,6 @@ func (r *EndpointConfigReconciler) updateStatusWithAdditional(ctx reconcileReque
 	}
 
 	return nil
-}
-
-func generateEndpointConfigName(endpointConfig *endpointconfigv1.EndpointConfig) string {
-	sageMakerMaxNameLen := 63
-	name := endpointConfig.ObjectMeta.GetName()
-	requiredPostfix := "-" + strings.Replace(string(endpointConfig.ObjectMeta.GetUID()), "-", "", -1)
-
-	sageMakerEndpointConfigName := name + requiredPostfix
-	if len(sageMakerEndpointConfigName) > sageMakerMaxNameLen {
-		sageMakerEndpointConfigName = name[:sageMakerMaxNameLen-len(requiredPostfix)] + requiredPostfix
-	}
-
-	return sageMakerEndpointConfigName
 }
 
 // TODO add code that ignores status, metadata updates.
