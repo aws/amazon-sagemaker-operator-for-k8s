@@ -165,7 +165,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 		})
 	})
 
-	Context("K8s client fails to update", func() {
+	Context("K8s client fails to update generated spec name", func() {
 		BeforeEach(func() {
 			kubernetesClient = FailToUpdateK8sClient{ActualClient: kubernetesClient}
 
