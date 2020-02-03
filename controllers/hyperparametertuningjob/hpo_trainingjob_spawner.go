@@ -243,7 +243,12 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 
 				var trainingJob trainingjobv1.TrainingJob
 				if err := s.K8sClient.Get(ctx, key, &trainingJob); err != nil {
-					// If the job has previously been deleted then we don't need to do
+					// If the job has previously been deleted, we are done with it
+					if apierrs.IsNotFound(err) {
+						return
+					}
+
+					errorsChannel <- err
 					return
 				}
 

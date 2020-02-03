@@ -185,6 +185,33 @@ func createCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.Hyperparamet
 	return target, nil
 }
 
+// ConvertHyperParameterTrainingJobSummaryFromSageMaker converts a HyperParameterTrainingJobSummary to a Kubernetes SageMaker type, returning errors if there are any.
+func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.HyperParameterTrainingJobSummary) (*commonv1.HyperParameterTrainingJobSummary, error) {
+	var target commonv1.HyperParameterTrainingJobSummary
+
+	// Kubebuilder does not support arbitrary maps, so we encode these as KeyValuePairs.
+	// After the JSON conversion, we will re-set the KeyValuePairs as map elements.
+	var tunedHyperParameters []*commonv1.KeyValuePair = []*commonv1.KeyValuePair{}
+
+	for name, value := range source.TunedHyperParameters {
+		tunedHyperParameters = append(tunedHyperParameters, &commonv1.KeyValuePair{
+			Name:  name,
+			Value: value,
+		})
+	}
+
+	// TODO we should consider an alternative approach, see comments in TrainingController.
+	str, err := json.Marshal(source)
+	if err != nil {
+		return nil, err
+	}
+
+	json.Unmarshal(str, &target)
+
+	target.TunedHyperParameters = tunedHyperParameters
+	return &target, nil
+}
+
 // Create a CreateModel request input from a Kubernetes Model spec.
 func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) (*sagemaker.CreateModelInput, error) {
 

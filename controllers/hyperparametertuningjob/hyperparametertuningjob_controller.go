@@ -18,7 +18,6 @@ package hyperparametertuningjob
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -178,9 +177,14 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		}
 	}
 
+	// Spawn training jobs regardless of the status
+	ctx.HPOTrainingJobSpawner.SpawnMissingTrainingJobs(ctx, *ctx.TuningJob)
+	if err = r.addBestTrainingJobToStatus(ctx); err != nil {
+		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to add best training job to status"))
+	}
+
 	switch ctx.TuningJobDescription.HyperParameterTuningJobStatus {
 	case sagemaker.HyperParameterTuningJobStatusInProgress:
-		ctx.HPOTrainingJobSpawner.SpawnMissingTrainingJobs(ctx, *ctx.TuningJob)
 
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			// Request to stop the job
@@ -195,9 +199,6 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		break
 
 	case sagemaker.HyperParameterTuningJobStatusCompleted:
-		if err = r.addBestTrainingJobToStatus(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to add best training job to status"))
-		}
 		fallthrough
 
 	case sagemaker.HyperParameterTuningJobStatusStopped, sagemaker.HyperParameterTuningJobStatusFailed:
@@ -281,23 +282,14 @@ func (r *Reconciler) cleanupAndRemoveFinalizer(ctx reconcileRequestContext) erro
 	return nil
 }
 
-// If job is running, stop it and requeue
-// If job is stopping, update status and requeue
-// If job has finished, failed or stopped remove finalizer and don't requeue
-func (r *Reconciler) deleteHyperparameterTuningJob(ctx reconcileRequestContext) error {
-	if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Clean up all models and endpoints, then remove the HostingDeployment finalizer.
+// Add information regarding the best training job from the tuning job to the status inputs.
 func (r *Reconciler) addBestTrainingJobToStatus(ctx reconcileRequestContext) error {
 	if ctx.TuningJobDescription.BestTrainingJob == nil {
-		return errors.New("No BestTrainingJob in HPO description")
+		// Best training job information is not available yet.
+		return nil
 	}
 
-	bestTrainingJob, err := convertHyperParameterTrainingJobSummaryFromSageMaker(ctx.TuningJobDescription.BestTrainingJob)
+	bestTrainingJob, err := sdkutil.ConvertHyperParameterTrainingJobSummaryFromSageMaker(ctx.TuningJobDescription.BestTrainingJob)
 
 	if err != nil {
 		return err
@@ -306,33 +298,6 @@ func (r *Reconciler) addBestTrainingJobToStatus(ctx reconcileRequestContext) err
 	ctx.TuningJob.Status.BestTrainingJob = bestTrainingJob
 
 	return nil
-}
-
-// Convert an aws-go-sdk-v2 HyperParameterTrainingJobSummary to a Kubernetes SageMaker type, returning errors if there are any.
-func convertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.HyperParameterTrainingJobSummary) (*commonv1.HyperParameterTrainingJobSummary, error) {
-	var target commonv1.HyperParameterTrainingJobSummary
-
-	// Kubebuilder does not support arbitrary maps, so we encode these as KeyValuePairs.
-	// After the JSON conversion, we will re-set the KeyValuePairs as map elements.
-	var tunedHyperParameters []*commonv1.KeyValuePair = []*commonv1.KeyValuePair{}
-
-	for name, value := range source.TunedHyperParameters {
-		tunedHyperParameters = append(tunedHyperParameters, &commonv1.KeyValuePair{
-			Name:  name,
-			Value: value,
-		})
-	}
-
-	// TODO we should consider an alternative approach, see comments in TrainingController.
-	str, err := json.Marshal(source)
-	if err != nil {
-		return nil, err
-	}
-
-	json.Unmarshal(str, &target)
-
-	target.TunedHyperParameters = tunedHyperParameters
-	return &target, nil
 }
 
 func (r *Reconciler) updateStatus(ctx reconcileRequestContext, tuningJobStatus string) error {
@@ -353,7 +318,9 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tun
 	// When you call this function, update/refresh all the fields since we overwrite.
 	jobStatus.HyperParameterTuningJobStatus = tuningJobStatus
 	jobStatus.Additional = additional
+
 	jobStatus.SageMakerHyperParameterTuningJobName = ctx.TuningJobName
+	jobStatus.TrainingJobStatusCounters = newTrainingJobStatusCountersFromDescription(ctx.TuningJobDescription)
 
 	if err := r.Status().Update(ctx, ctx.TuningJob); err != nil {
 		err = errors.Wrap(err, "Unable to update status")
@@ -362,16 +329,6 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tun
 	}
 
 	return nil
-}
-
-// SetupWithManager configures the manager to recognise the controller.
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&hpojobv1.HyperparameterTuningJob{}).
-		// Ignore status-only and metadata-only updates
-		WithEventFilter(predicate.GenerationChangedPredicate{}).
-		Complete(r)
 }
 
 func newTrainingJobStatusCountersFromDescription(sageMakerDescription *sagemaker.DescribeHyperParameterTuningJobOutput) *commonv1.TrainingJobStatusCounters {
@@ -394,4 +351,14 @@ func newTrainingJobStatusCountersFromDescription(sageMakerDescription *sagemaker
 	}
 
 	return &commonv1.TrainingJobStatusCounters{}
+}
+
+// SetupWithManager configures the manager to recognise the controller.
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&hpojobv1.HyperparameterTuningJob{}).
+		// Ignore status-only and metadata-only updates
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		Complete(r)
 }
