@@ -165,6 +165,19 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 		})
 	})
 
+	Context("K8s client fails to update generated spec name", func() {
+		BeforeEach(func() {
+			kubernetesClient = FailToUpdateK8sClient{ActualClient: kubernetesClient}
+
+			shouldHaveDeletionTimestamp = false
+			shouldHaveFinalizer = true
+		})
+
+		It("Requeues immediately", func() {
+			ExpectRequeueImmediately(reconcileResult, reconcileError)
+		})
+	})
+
 	Context("TrainingJob does not exist", func() {
 
 		BeforeEach(func() {
@@ -173,7 +186,6 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 		})
 
 		Context("HasDeletionTimestamp", func() {
-
 			BeforeEach(func() {
 				shouldHaveDeletionTimestamp = true
 				shouldHaveFinalizer = true
@@ -199,7 +211,6 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 
 			It("Creates a TrainingJob", func() {
-
 				req := receivedRequests.Front().Next().Value
 				Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateTrainingJobInput)(nil)))
 
@@ -215,9 +226,23 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				ExpectStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusInProgress), string(sagemaker.SecondaryStatusStarting))
 			})
 
+			It("Adds the training job name to the spec", func() {
+				ExpectTrainingJobNameInSpec(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
+			})
+
+			It("Adds the training job name to the status", func() {
+				ExpectTrainingJobNameInStatus(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
+			})
+
 			Context("Spec defines TrainingJobName", func() {
+				var (
+					// Defines the training job name that would be specified in the spec.
+					specifiedTrainingJobName string
+				)
+
 				BeforeEach(func() {
-					trainingJob.Spec.TrainingJobName = ToStringPtr("training-job-name")
+					specifiedTrainingJobName = "training-job-name"
+					trainingJob.Spec.TrainingJobName = ToStringPtr(specifiedTrainingJobName)
 				})
 
 				It("Creates a TrainingJob", func() {
@@ -225,7 +250,15 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 					Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateTrainingJobInput)(nil)))
 
 					createdRequest := req.(*sagemaker.CreateTrainingJobInput)
-					Expect(*createdRequest.TrainingJobName).To(Equal("training-job-name"))
+					Expect(*createdRequest.TrainingJobName).To(Equal(specifiedTrainingJobName))
+				})
+
+				It("Does not modify the job name in the spec", func() {
+					ExpectTrainingJobNameInSpec(specifiedTrainingJobName, trainingJob)
+				})
+
+				It("Adds the training job name to the status", func() {
+					ExpectTrainingJobNameInStatus(specifiedTrainingJobName, trainingJob)
 				})
 			})
 		})
@@ -703,4 +736,28 @@ func ExpectRequestToStopTrainingJob(req interface{}, trainingJob *trainingjobv1.
 
 	stopRequest := req.(*sagemaker.StopTrainingJobInput)
 	Expect(*stopRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
+}
+
+// Expect the SageMakerTrainingJobName to be set with a given value in the training job status.
+func ExpectTrainingJobNameInStatus(trainingJobName string, trainingJob *trainingjobv1.TrainingJob) {
+	var actual trainingjobv1.TrainingJob
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: trainingJob.ObjectMeta.Namespace,
+		Name:      trainingJob.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(actual.Status.SageMakerTrainingJobName).To(Equal(trainingJobName))
+}
+
+// Expect the TrainingJobName to be set with a given value in the spec.
+func ExpectTrainingJobNameInSpec(trainingJobName string, trainingJob *trainingjobv1.TrainingJob) {
+	var actual trainingjobv1.TrainingJob
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: trainingJob.ObjectMeta.Namespace,
+		Name:      trainingJob.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(*actual.Spec.TrainingJobName).To(Equal(trainingJobName))
 }

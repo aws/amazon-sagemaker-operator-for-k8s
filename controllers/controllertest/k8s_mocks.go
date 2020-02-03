@@ -97,14 +97,28 @@ type FailToUpdateK8sClient struct {
 	ActualClient client.Client
 }
 
+type FailToUpdateK8sStatusWriter struct {
+	client.StatusWriter
+}
+
 // Get should work normally.
 func (m FailToUpdateK8sClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
 	return m.ActualClient.Get(ctx, key, obj)
 }
 
-// Always return error on Update.
+// Update should always return error on Update.
 func (m FailToUpdateK8sClient) Update(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error {
 	return fmt.Errorf("unable to Update")
+}
+
+// Status should always return a mock status writer with Update patched.
+func (m FailToUpdateK8sClient) Status() client.StatusWriter {
+	return &FailToUpdateK8sStatusWriter{}
+}
+
+// Update should always return an error.
+func (m FailToUpdateK8sStatusWriter) Update(_ context.Context, _ runtime.Object, _ ...client.UpdateOption) error {
+	return fmt.Errorf("unable to update status")
 }
 
 // Mock of Kubernetes client.Client that always returns error when Create is invoked.
