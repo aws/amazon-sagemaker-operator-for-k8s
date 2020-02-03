@@ -76,7 +76,7 @@ type hpoTrainingJobSpawner struct {
 // Note that the TrainingJobs corresponding to the HPO job are created in the same Kubernetes namespace as the HPO job.
 func (s hpoTrainingJobSpawner) SpawnMissingTrainingJobs(ctx context.Context, hpoJob hpojobv1.HyperparameterTuningJob) {
 
-	hpoJobName := hpoJob.Status.SageMakerHyperParameterTuningJobName
+	hpoJobName := hpoJob.Spec.HyperParameterTuningJobName
 	k8sNamespace := hpoJob.ObjectMeta.GetNamespace()
 	awsRegion := *hpoJob.Spec.Region
 	sageMakerEndpoint := hpoJob.Spec.SageMakerEndpoint
