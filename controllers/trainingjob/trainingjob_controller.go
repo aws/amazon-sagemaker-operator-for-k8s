@@ -245,12 +245,6 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 func (r *Reconciler) initializeTrainingJobName(ctx *reconcileRequestContext) error {
 	ctx.TrainingJob.Spec.TrainingJobName = &ctx.TrainingJobName
 
-	ctx.TrainingJob.Status.SageMakerTrainingJobName = ctx.TrainingJobName
-	//TODO: Convert it to tinyurl or even better can we expose CW url via API server proxy UI?
-	ctx.TrainingJob.Status.CloudWatchLogUrl = "https://" + *ctx.TrainingJob.Spec.Region + ".console.aws.amazon.com/cloudwatch/home?region=" +
-		*ctx.TrainingJob.Spec.Region + "#logStream:group=/aws/sagemaker/TrainingJobs;prefix=" +
-		ctx.TrainingJobName + ";streamFilter=typeLogStreamPrefix"
-
 	if err := r.Status().Update(ctx, ctx.TrainingJob); err != nil {
 		ctx.Log.Error(err, "Error while updating training job name")
 		return err
@@ -330,6 +324,12 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tra
 	jobStatus.TrainingJobStatus = trainingJobPrimaryStatus
 	jobStatus.SecondaryStatus = trainingJobSecondaryStatus
 	jobStatus.Additional = additional
+
+	jobStatus.SageMakerTrainingJobName = ctx.TrainingJobName
+	//TODO: Convert it to tinyurl or even better can we expose CW url via API server proxy UI?
+	jobStatus.CloudWatchLogUrl = "https://" + *ctx.TrainingJob.Spec.Region + ".console.aws.amazon.com/cloudwatch/home?region=" +
+		*ctx.TrainingJob.Spec.Region + "#logStream:group=/aws/sagemaker/TrainingJobs;prefix=" +
+		ctx.TrainingJobName + ";streamFilter=typeLogStreamPrefix"
 
 	if err := r.Status().Update(ctx, ctx.TrainingJob); err != nil {
 		err = errors.Wrap(err, "Unable to update status")
