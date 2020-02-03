@@ -199,7 +199,6 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 
 			It("Creates a TrainingJob", func() {
-
 				req := receivedRequests.Front().Next().Value
 				Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateTrainingJobInput)(nil)))
 
@@ -215,6 +214,14 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				ExpectStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusInProgress), string(sagemaker.SecondaryStatusStarting))
 			})
 
+			It("Adds the training job name to the spec", func() {
+				ExpectTrainingJobNameInSpec(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
+			})
+
+			It("Adds the training job name to the status", func() {
+				ExpectTrainingJobNameInStatus(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength), trainingJob)
+			})
+
 			Context("Spec defines TrainingJobName", func() {
 				BeforeEach(func() {
 					trainingJob.Spec.TrainingJobName = ToStringPtr("training-job-name")
@@ -226,6 +233,14 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 
 					createdRequest := req.(*sagemaker.CreateTrainingJobInput)
 					Expect(*createdRequest.TrainingJobName).To(Equal("training-job-name"))
+				})
+
+				It("Does not modify the job name in the spec", func() {
+					ExpectTrainingJobNameInSpec("training-job-name", trainingJob)
+				})
+
+				It("Adds the training job name to the status", func() {
+					ExpectTrainingJobNameInStatus("training-job-name", trainingJob)
 				})
 			})
 		})
@@ -703,4 +718,28 @@ func ExpectRequestToStopTrainingJob(req interface{}, trainingJob *trainingjobv1.
 
 	stopRequest := req.(*sagemaker.StopTrainingJobInput)
 	Expect(*stopRequest.TrainingJobName).To(Equal(controllers.GetGeneratedJobName(trainingJob.ObjectMeta.GetUID(), trainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)))
+}
+
+// Expect the SageMakerTrainingJobName to be set with a given value in the training job status.
+func ExpectTrainingJobNameInStatus(trainingJobName string, trainingJob *trainingjobv1.TrainingJob) {
+	var actual trainingjobv1.TrainingJob
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: trainingJob.ObjectMeta.Namespace,
+		Name:      trainingJob.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(actual.Status.SageMakerTrainingJobName).To(Equal(trainingJobName))
+}
+
+// Expect the TrainingJobName to be set with a given value in the spec.
+func ExpectTrainingJobNameInSpec(trainingJobName string, trainingJob *trainingjobv1.TrainingJob) {
+	var actual trainingjobv1.TrainingJob
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: trainingJob.ObjectMeta.Namespace,
+		Name:      trainingJob.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(*actual.Spec.TrainingJobName).To(Equal(trainingJobName))
 }
