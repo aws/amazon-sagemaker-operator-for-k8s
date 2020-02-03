@@ -81,18 +81,13 @@ func (s hpoTrainingJobSpawner) SpawnMissingTrainingJobs(ctx context.Context, hpo
 	awsRegion := *hpoJob.Spec.Region
 	sageMakerEndpoint := hpoJob.Spec.SageMakerEndpoint
 
-	paginator, err := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
-
-	if err != nil {
-		s.Log.Info("Unable to get a list of training jobs for HPO", "err", err)
-	}
+	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
 
 	// WaitGroup allowing us to do checks in parallel.
 	var wg sync.WaitGroup
 
 	for paginator.Next(ctx) {
-		page := paginator.CurrentPage()
-		list := page.TrainingJobSummaries
+		list := paginator.CurrentPage()
 		s.Log.Info("Got a page of TrainingJobs to spawn", "length", len(list))
 
 		// For every training job, check if it exists in Kubernetes. If not, create it.
@@ -231,16 +226,12 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 	errorsChannel := make(chan error)
 
 	// Create paginated request to get TrainingJobs associated with HPO job.
-	paginator, err := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
-
-	if err != nil {
-		s.Log.Info("Unable to get a list of training jobs for HPO", "err", err)
-	}
+	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
 
 	// For every TrainingJob, spawn a goroutine that deletes the k8s job if it exists.
 	for paginator.Next(ctx) {
-		page := paginator.CurrentPage()
-		for _, trainingJobSummary := range page.TrainingJobSummaries {
+		list := paginator.CurrentPage()
+		for _, trainingJobSummary := range list {
 			wg.Add(1)
 			go func(trainingJobSummary sagemaker.HyperParameterTrainingJobSummary) {
 				defer wg.Done()
