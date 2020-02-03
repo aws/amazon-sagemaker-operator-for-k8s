@@ -81,7 +81,7 @@ func (s hpoTrainingJobSpawner) SpawnMissingTrainingJobs(ctx context.Context, hpo
 	awsRegion := *hpoJob.Spec.Region
 	sageMakerEndpoint := hpoJob.Spec.SageMakerEndpoint
 
-	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
+	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, *hpoJobName)
 
 	// WaitGroup allowing us to do checks in parallel.
 	var wg sync.WaitGroup
