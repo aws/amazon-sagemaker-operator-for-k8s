@@ -226,6 +226,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		ctx.TrainingJobName = *ctx.TrainingJob.Spec.TrainingJobName
 	} else {
 		ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)
+		ctx.TrainingJob.Spec.TrainingJobName = &ctx.TrainingJobName
 	}
 	ctx.Log.Info("TrainingJob", "name", ctx.TrainingJobName)
 
@@ -308,6 +309,9 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tra
 	ctx.Log.Info("updateStatusWithAdditional", "trainingJobPrimaryStatus", trainingJobPrimaryStatus, "trainingJobSecondaryStatus", trainingJobSecondaryStatus, "additional", additional)
 
 	jobStatus := &ctx.TrainingJob.Status
+
+	jobStatus.SageMakerTrainingJobName = ctx.TrainingJobName
+
 	// When you call this function, update/refresh all the fields since we overwrite.
 	jobStatus.TrainingJobStatus = trainingJobPrimaryStatus
 	jobStatus.SecondaryStatus = trainingJobSecondaryStatus
