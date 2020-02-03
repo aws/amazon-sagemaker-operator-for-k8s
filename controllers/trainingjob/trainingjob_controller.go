@@ -226,7 +226,12 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		ctx.TrainingJobName = *ctx.TrainingJob.Spec.TrainingJobName
 	} else {
 		ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)
-		r.initializeTrainingJobName(ctx)
+		ctx.TrainingJob.Spec.TrainingJobName = &ctx.TrainingJobName
+
+		if err := r.Update(ctx, ctx.TrainingJob); err != nil {
+			ctx.Log.Info("Error while updating training job name in spec")
+			return err
+		}
 	}
 	ctx.Log.Info("TrainingJob", "name", ctx.TrainingJobName)
 
@@ -239,16 +244,6 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	ctx.SageMakerClient = r.createSageMakerClient(awsConfig)
 	ctx.Log.Info("Loaded AWS config")
 
-	return nil
-}
-
-func (r *Reconciler) initializeTrainingJobName(ctx *reconcileRequestContext) error {
-	ctx.TrainingJob.Spec.TrainingJobName = &ctx.TrainingJobName
-
-	if err := r.Status().Update(ctx, ctx.TrainingJob); err != nil {
-		ctx.Log.Error(err, "Error while updating training job name")
-		return err
-	}
 	return nil
 }
 
