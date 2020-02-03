@@ -103,10 +103,14 @@ func createHyperParameterTuningJobWithStatus(name, namespace string) *hpojobv1.H
 	// Create the base spec
 	original := createHyperParameterTuningJob(name, namespace)
 
+	jobName := GetGeneratedJobName("uid", name, MaxHyperParameterTuningJobNameLength)
+
+	original.Spec.HyperParameterTuningJobName = &jobName
+
 	// Apply a status over it
 	original.Status = hpojobv1.HyperparameterTuningJobStatus{
 		HyperParameterTuningJobStatus:        string(sagemaker.HyperParameterTuningJobStatusInProgress),
-		SageMakerHyperParameterTuningJobName: GetGeneratedJobName("uid", name, MaxHyperParameterTuningJobNameLength),
+		SageMakerHyperParameterTuningJobName: jobName,
 	}
 
 	return original
@@ -208,7 +212,7 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 
 		// FailTestOnGetK8sClient is designed to fail the test when Get is called.
 		spawner = createHPOTrainingJobSpawner(FailTestOnGetK8sClient{}, logf.Log, sageMakerClient)
-		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
+		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithStatus("hpo-job", "custom-namespace"))
 
 		// Verify that the SageMaker request was made.
 		Expect(receivedRequests.Len()).To(Equal(1))
@@ -231,7 +235,7 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 
 		// FailTestOnCreateK8sClient is designed to fail the test when Create is called.
 		spawner = createHPOTrainingJobSpawner(FailTestOnCreateK8sClient{ActualClient: k8sClient}, logf.Log, sageMakerClient)
-		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithGeneratedNames())
+		spawner.SpawnMissingTrainingJobs(context.Background(), *createHyperParameterTuningJobWithStatus("hpo-job", "custom-namespace"))
 
 		// Verify that the SageMaker requests were made.
 		Expect(receivedRequests.Len()).To(Equal(2))

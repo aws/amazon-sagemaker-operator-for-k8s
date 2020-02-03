@@ -524,7 +524,7 @@ type hyperParameterTuningJobPaginator struct {
 
 // Next will attempt to retrieve the next page of training jobs.
 func (p *hyperParameterTuningJobPaginator) Next(ctx context.Context) bool {
-	return p.Next(ctx)
+	return p.paginator.Next(ctx)
 }
 
 // CurrentPage returns the list of training job summaries provided by the current page.
@@ -536,5 +536,5 @@ func (p *hyperParameterTuningJobPaginator) CurrentPage() []sagemaker.HyperParame
 
 // Err returns the error the paginator encountered when retrieving the next page.
 func (p *hyperParameterTuningJobPaginator) Err() error {
-	return p.Err()
+	return p.paginator.Err()
 }

@@ -229,6 +229,12 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		ctx.TuningJobName = *ctx.TuningJob.Spec.HyperParameterTuningJobName
 	} else {
 		ctx.TuningJobName = controllers.GetGeneratedJobName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)
+		ctx.TuningJob.Spec.HyperParameterTuningJobName = &ctx.TuningJobName
+
+		if err := r.Update(ctx, ctx.TuningJob); err != nil {
+			ctx.Log.Info("Error while updating hyperparameter tuning job name in spec")
+			return err
+		}
 	}
 	ctx.Log.Info("TuningJob", "name", ctx.TuningJobName)
 
