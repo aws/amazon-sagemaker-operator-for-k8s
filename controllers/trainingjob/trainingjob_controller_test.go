@@ -165,6 +165,19 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 		})
 	})
 
+	Context("K8s client fails to update", func() {
+		BeforeEach(func() {
+			kubernetesClient = FailToUpdateK8sClient{ActualClient: kubernetesClient}
+
+			shouldHaveDeletionTimestamp = false
+			shouldHaveFinalizer = true
+		})
+
+		It("Requeues immediately", func() {
+			ExpectRequeueImmediately(reconcileResult, reconcileError)
+		})
+	})
+
 	Context("TrainingJob does not exist", func() {
 
 		BeforeEach(func() {
@@ -173,7 +186,6 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 		})
 
 		Context("HasDeletionTimestamp", func() {
-
 			BeforeEach(func() {
 				shouldHaveDeletionTimestamp = true
 				shouldHaveFinalizer = true
@@ -223,8 +235,14 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 
 			Context("Spec defines TrainingJobName", func() {
+				var (
+					// Defines the training job name that would be specified in the spec.
+					specifiedTrainingJobName string
+				)
+
 				BeforeEach(func() {
-					trainingJob.Spec.TrainingJobName = ToStringPtr("training-job-name")
+					specifiedTrainingJobName = "training-job-name"
+					trainingJob.Spec.TrainingJobName = ToStringPtr(specifiedTrainingJobName)
 				})
 
 				It("Creates a TrainingJob", func() {
@@ -232,15 +250,15 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 					Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateTrainingJobInput)(nil)))
 
 					createdRequest := req.(*sagemaker.CreateTrainingJobInput)
-					Expect(*createdRequest.TrainingJobName).To(Equal("training-job-name"))
+					Expect(*createdRequest.TrainingJobName).To(Equal(specifiedTrainingJobName))
 				})
 
 				It("Does not modify the job name in the spec", func() {
-					ExpectTrainingJobNameInSpec("training-job-name", trainingJob)
+					ExpectTrainingJobNameInSpec(specifiedTrainingJobName, trainingJob)
 				})
 
 				It("Adds the training job name to the status", func() {
-					ExpectTrainingJobNameInStatus("training-job-name", trainingJob)
+					ExpectTrainingJobNameInStatus(specifiedTrainingJobName, trainingJob)
 				})
 			})
 		})
