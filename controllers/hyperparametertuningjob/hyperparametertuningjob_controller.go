@@ -133,6 +133,9 @@ type reconcileRequestContext struct {
 	HPOTrainingJobSpawner HPOTrainingJobSpawner
 }
 
+// Queries SageMaker for the HyperParamaterTuningJob. If it does not exist, it creates the
+// Tuning job. If it does exist, it attempts to update the status of the k8s resource
+// to match the current state of the SageMaker resource.
 func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 	var err error
 
@@ -187,7 +190,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 	case sagemaker.HyperParameterTuningJobStatusInProgress:
 
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
-			// Request to stop the job
+			// Request to stop the job. If SageMaker returns a 404 then the job has already been deleted.
 			if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil && !clientwrapper.IsStopHyperParameterTuningJob404Error(err) {
 				return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to delete hyperparameter tuning job"))
 			}
@@ -254,13 +257,11 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 
 // Creates the hyperparameter tuning job in SageMaker
 func (r *Reconciler) createHyperParameterTuningJob(ctx reconcileRequestContext) error {
-	var createTuningJobInput sagemaker.CreateHyperParameterTuningJobInput
+	createTuningJobInput, err := sdkutil.CreateCreateHyperParameterTuningJobInputFromSpec(ctx.TuningJob.Spec)
 
-	if ctx.TuningJob.Spec.HyperParameterTuningJobName == nil || len(*ctx.TuningJob.Spec.HyperParameterTuningJobName) == 0 {
-		ctx.TuningJob.Spec.HyperParameterTuningJobName = &ctx.TuningJobName
+	if err != nil {
+		return errors.Wrap(err, "Unable to create a CreateHyperParameterTuningJobInput from spec")
 	}
-
-	createTuningJobInput = sdkutil.CreateCreateHyperParameterTuningJobInputFromSpec(ctx.TuningJob.Spec)
 
 	ctx.Log.Info("Creating TuningJob in SageMaker", "input", createTuningJobInput)
 
@@ -271,7 +272,7 @@ func (r *Reconciler) createHyperParameterTuningJob(ctx reconcileRequestContext) 
 	return nil
 }
 
-// Clean up all models and endpoints, then remove the HostingDeployment finalizer.
+// Clean up all spawned training jobs, then remove the HyperParameterTuningJob finalizer.
 func (r *Reconciler) cleanupAndRemoveFinalizer(ctx reconcileRequestContext) error {
 	var err error
 
@@ -306,6 +307,9 @@ func (r *Reconciler) addBestTrainingJobToStatus(ctx reconcileRequestContext) err
 	return nil
 }
 
+// If this function returns an error, the status update has failed, and the reconciler should always requeue.
+// This prevents the case where a terminal status fails to persist to the Kubernetes datastore yet we stop
+// reconciling and thus leave the job in an unfinished state.
 func (r *Reconciler) updateStatus(ctx reconcileRequestContext, tuningJobStatus string) error {
 	return r.updateStatusWithAdditional(ctx, tuningJobStatus, "")
 }

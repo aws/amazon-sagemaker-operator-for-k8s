@@ -142,18 +142,8 @@ func createCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) (s
 	return output, nil
 }
 
-// Create a CreateHyperParameterTuningJobInput from a HyperParameterTuningJobSpec.
-// This panics if json libraries are unable to serialize the spec or deserialize the serialization.
-func CreateCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.HyperparameterTuningJobSpec) sagemaker.CreateHyperParameterTuningJobInput {
-	if input, err := createCreateHyperParameterTuningJobInputFromSpec(spec); err == nil {
-		return input
-	} else {
-		panic("Unable to create CreateHyperParameterTuningJobInput from spec : " + err.Error())
-	}
-}
-
-// Create a CreateHPO request input from a Kubernetes HPO spec.
-func createCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.HyperparameterTuningJobSpec) (sagemaker.CreateHyperParameterTuningJobInput, error) {
+// CreateCreateHyperParameterTuningJobInputFromSpec creates a CreateHPO request input from a Kubernetes HPO spec.
+func CreateCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.HyperparameterTuningJobSpec) (sagemaker.CreateHyperParameterTuningJobInput, error) {
 	var target sagemaker.CreateHyperParameterTuningJobInput
 
 	// Kubebuilder does not support arbitrary maps, so we encode these as KeyValuePairs.
