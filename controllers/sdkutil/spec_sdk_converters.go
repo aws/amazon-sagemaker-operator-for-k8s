@@ -202,6 +202,29 @@ func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.Hype
 	return &target, nil
 }
 
+// CreateTrainingJobStatusCountersFromDescription creates a set of TrainingJobStatusCounters from a DescribeHyperParameterTuningJobOutput
+func CreateTrainingJobStatusCountersFromDescription(sageMakerDescription *sagemaker.DescribeHyperParameterTuningJobOutput) *commonv1.TrainingJobStatusCounters {
+	if sageMakerDescription != nil && sageMakerDescription.TrainingJobStatusCounters != nil {
+		var totalError *int64 = nil
+
+		if sageMakerDescription.TrainingJobStatusCounters.NonRetryableError != nil && sageMakerDescription.TrainingJobStatusCounters.RetryableError != nil {
+			totalErrorVal := *sageMakerDescription.TrainingJobStatusCounters.NonRetryableError + *sageMakerDescription.TrainingJobStatusCounters.RetryableError
+			totalError = &totalErrorVal
+		}
+
+		return &commonv1.TrainingJobStatusCounters{
+			Completed:         sageMakerDescription.TrainingJobStatusCounters.Completed,
+			InProgress:        sageMakerDescription.TrainingJobStatusCounters.InProgress,
+			NonRetryableError: sageMakerDescription.TrainingJobStatusCounters.NonRetryableError,
+			RetryableError:    sageMakerDescription.TrainingJobStatusCounters.RetryableError,
+			TotalError:        totalError,
+			Stopped:           sageMakerDescription.TrainingJobStatusCounters.Stopped,
+		}
+	}
+
+	return &commonv1.TrainingJobStatusCounters{}
+}
+
 // Create a CreateModel request input from a Kubernetes Model spec.
 func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) (*sagemaker.CreateModelInput, error) {
 

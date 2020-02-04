@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
@@ -330,7 +329,7 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tun
 	jobStatus.Additional = additional
 
 	jobStatus.SageMakerHyperParameterTuningJobName = ctx.TuningJobName
-	jobStatus.TrainingJobStatusCounters = newTrainingJobStatusCountersFromDescription(ctx.TuningJobDescription)
+	jobStatus.TrainingJobStatusCounters = sdkutil.CreateTrainingJobStatusCountersFromDescription(ctx.TuningJobDescription)
 
 	if err := r.Status().Update(ctx, ctx.TuningJob); err != nil {
 		err = errors.Wrap(err, "Unable to update status")
@@ -339,28 +338,6 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tun
 	}
 
 	return nil
-}
-
-func newTrainingJobStatusCountersFromDescription(sageMakerDescription *sagemaker.DescribeHyperParameterTuningJobOutput) *commonv1.TrainingJobStatusCounters {
-	if sageMakerDescription != nil && sageMakerDescription.TrainingJobStatusCounters != nil {
-		var totalError *int64 = nil
-
-		if sageMakerDescription.TrainingJobStatusCounters.NonRetryableError != nil && sageMakerDescription.TrainingJobStatusCounters.RetryableError != nil {
-			totalErrorVal := *sageMakerDescription.TrainingJobStatusCounters.NonRetryableError + *sageMakerDescription.TrainingJobStatusCounters.RetryableError
-			totalError = &totalErrorVal
-		}
-
-		return &commonv1.TrainingJobStatusCounters{
-			Completed:         sageMakerDescription.TrainingJobStatusCounters.Completed,
-			InProgress:        sageMakerDescription.TrainingJobStatusCounters.InProgress,
-			NonRetryableError: sageMakerDescription.TrainingJobStatusCounters.NonRetryableError,
-			RetryableError:    sageMakerDescription.TrainingJobStatusCounters.RetryableError,
-			TotalError:        totalError,
-			Stopped:           sageMakerDescription.TrainingJobStatusCounters.Stopped,
-		}
-	}
-
-	return &commonv1.TrainingJobStatusCounters{}
 }
 
 // SetupWithManager configures the manager to recognise the controller.
