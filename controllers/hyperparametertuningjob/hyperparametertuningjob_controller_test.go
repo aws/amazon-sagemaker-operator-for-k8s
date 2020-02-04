@@ -53,7 +53,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the
 	})
 
 	It("should not requeue if the HyperParameterTuningJob does not exist", func() {
-		controller := createReconciler(k8sClient, sageMakerClient, "1s", noopHPOTrainingJobSpawner{})
+		controller := createReconciler(k8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -64,7 +64,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the
 
 	It("should requeue if there was an error", func() {
 		mockK8sClient := FailToGetK8sClient{}
-		controller := createReconciler(mockK8sClient, sageMakerClient, "1s", noopHPOTrainingJobSpawner{})
+		controller := createReconciler(mockK8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
 
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
@@ -84,7 +84,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 		mockSageMakerClientBuilder *MockSageMakerClientBuilder
 
 		// A mock job spawner.
-		jobSpawner *noopHPOTrainingJobSpawner
+		jobSpawner *mockTrackingHPOTrainingJobSpawner
 
 		// The total number of requests added to the mock SageMaker client builder.
 		expectedRequestCount int
@@ -130,7 +130,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 		sageMakerClient := mockSageMakerClientBuilder.Build()
 		expectedRequestCount = mockSageMakerClientBuilder.GetAddedResponsesLen()
 
-		jobSpawner = &noopHPOTrainingJobSpawner{
+		jobSpawner = &mockTrackingHPOTrainingJobSpawner{
 			spawnMissingTrainingJobsCalls:  ToIntPtr(0),
 			deleteSpawnedTrainingJobsCalls: ToIntPtr(0),
 		}
@@ -265,7 +265,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner)
+					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -385,7 +385,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner)
+					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1)
 				})
 			})
 		})
@@ -431,7 +431,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner)
+					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1)
 				})
 			})
 		})
@@ -480,15 +480,15 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner)
+					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1)
 				})
 			})
 		})
 	})
 })
 
-// Mock HpoTrainingJobSpawner that does nothing when called.
-type noopHPOTrainingJobSpawner struct {
+// Mock HPOTrainingJobSpawner that tracks number of calls to each method.
+type mockTrackingHPOTrainingJobSpawner struct {
 	HPOTrainingJobSpawner
 
 	// The number of times SpawnMissingTrainingJobs was called.
@@ -499,12 +499,12 @@ type noopHPOTrainingJobSpawner struct {
 }
 
 // Do nothing when called.
-func (s noopHPOTrainingJobSpawner) SpawnMissingTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) {
+func (s mockTrackingHPOTrainingJobSpawner) SpawnMissingTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) {
 	(*s.spawnMissingTrainingJobsCalls)++
 }
 
 // Do nothing when called.
-func (s noopHPOTrainingJobSpawner) DeleteSpawnedTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) error {
+func (s mockTrackingHPOTrainingJobSpawner) DeleteSpawnedTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) error {
 	(*s.deleteSpawnedTrainingJobsCalls)++
 	return nil
 }
@@ -657,11 +657,11 @@ func ExpectRequestToStopHyperParameterTuningJob(req interface{}, tuningJob *hpoj
 }
 
 // Helper function to verify that the controller attempted to delete the spawned training jobs.
-func ExpectDeletedSpawnedTrainingJobs(spawner noopHPOTrainingJobSpawner) {
-	Expect(spawner.deleteSpawnedTrainingJobsCalls).ToNot(Equal(0))
+func ExpectDeletedSpawnedTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int) {
+	Expect(*spawner.deleteSpawnedTrainingJobsCalls).To(Equal(calls))
 }
 
 // Helper function to verify that the controller attempted to spawn the missing child training jobs.
-func ExpectSpawnMissingTrainingJobs(spawner noopHPOTrainingJobSpawner) {
-	Expect(spawner.spawnMissingTrainingJobsCalls).ToNot(Equal(0))
+func ExpectSpawnMissingTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int) {
+	Expect(*spawner.spawnMissingTrainingJobsCalls).To(Equal(calls))
 }
