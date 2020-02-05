@@ -76,12 +76,12 @@ type hpoTrainingJobSpawner struct {
 // Note that the TrainingJobs corresponding to the HPO job are created in the same Kubernetes namespace as the HPO job.
 func (s hpoTrainingJobSpawner) SpawnMissingTrainingJobs(ctx context.Context, hpoJob hpojobv1.HyperparameterTuningJob) {
 
-	hpoJobName := hpoJob.Spec.HyperParameterTuningJobName
+	hpoJobName := *hpoJob.Spec.HyperParameterTuningJobName
 	k8sNamespace := hpoJob.ObjectMeta.GetNamespace()
 	awsRegion := *hpoJob.Spec.Region
 	sageMakerEndpoint := hpoJob.Spec.SageMakerEndpoint
 
-	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, *hpoJobName)
+	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
 
 	// WaitGroup allowing us to do checks in parallel.
 	var wg sync.WaitGroup
@@ -199,7 +199,7 @@ func (s hpoTrainingJobSpawner) getKubernetesTrainingJobSpec(ctx context.Context,
 // This returns an error if at least one job could not be deleted, indicating to the caller that a retry is needed.
 func (s hpoTrainingJobSpawner) DeleteSpawnedTrainingJobs(ctx context.Context, hpoJob hpojobv1.HyperparameterTuningJob) error {
 
-	hpoJobName := hpoJob.Status.SageMakerHyperParameterTuningJobName
+	hpoJobName := *hpoJob.Spec.HyperParameterTuningJobName
 	k8sNamespace := hpoJob.ObjectMeta.GetNamespace()
 
 	errors := s.deleteSpawnedTrainingJobsConcurrently(ctx, hpoJobName, k8sNamespace)

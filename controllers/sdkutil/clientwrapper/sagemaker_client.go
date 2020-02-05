@@ -517,10 +517,10 @@ type HyperParameterTuningJobPaginator interface {
 }
 
 type hyperParameterTuningJobPaginator struct {
-	HyperParameterTuningJobPaginator
-
 	paginator *sagemaker.ListTrainingJobsForHyperParameterTuningJobPaginator
 }
+
+var _ HyperParameterTuningJobPaginator = (*hyperParameterTuningJobPaginator)(nil)
 
 // Next will attempt to retrieve the next page of training jobs.
 func (p *hyperParameterTuningJobPaginator) Next(ctx context.Context) bool {

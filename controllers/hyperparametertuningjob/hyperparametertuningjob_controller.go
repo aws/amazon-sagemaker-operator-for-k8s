@@ -200,10 +200,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		}
 		break
 
-	case sagemaker.HyperParameterTuningJobStatusCompleted:
-		fallthrough
-
-	case sagemaker.HyperParameterTuningJobStatusStopped, sagemaker.HyperParameterTuningJobStatusFailed:
+	case sagemaker.HyperParameterTuningJobStatusStopped, sagemaker.HyperParameterTuningJobStatusFailed, sagemaker.HyperParameterTuningJobStatusCompleted:
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			return r.cleanupAndRemoveFinalizer(ctx)
 		}
@@ -226,18 +223,17 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 
 // Initialize fields on the context object which will be used later.
 func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
-	// Ensure we are using the job name specified in the spec
-	if ctx.TuningJob.Spec.HyperParameterTuningJobName != nil {
-		ctx.TuningJobName = *ctx.TuningJob.Spec.HyperParameterTuningJobName
-	} else {
-		ctx.TuningJobName = controllers.GetGeneratedJobName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)
-		ctx.TuningJob.Spec.HyperParameterTuningJobName = &ctx.TuningJobName
+	// Ensure we generate a new name and populate the spec if none was specified
+	if ctx.TuningJob.Spec.HyperParameterTuningJobName == nil {
+		generatedName := controllers.GetGeneratedJobName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)
+		ctx.TuningJob.Spec.HyperParameterTuningJobName = &generatedName
 
 		if err := r.Update(ctx, ctx.TuningJob); err != nil {
 			ctx.Log.Info("Error while updating hyperparameter tuning job name in spec")
 			return err
 		}
 	}
+	ctx.TuningJobName = *ctx.TuningJob.Spec.HyperParameterTuningJobName
 	ctx.Log.Info("TuningJob", "name", ctx.TuningJobName)
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.TuningJob.Spec.Region, ctx.TuningJob.Spec.SageMakerEndpoint)
@@ -292,6 +288,7 @@ func (r *Reconciler) cleanupAndRemoveFinalizer(ctx reconcileRequestContext) erro
 func (r *Reconciler) addBestTrainingJobToStatus(ctx reconcileRequestContext) error {
 	if ctx.TuningJobDescription.BestTrainingJob == nil {
 		// Best training job information is not available yet.
+		ctx.Log.Info("BestTrainingJob was not specified in HPO description")
 		return nil
 	}
 
@@ -306,13 +303,14 @@ func (r *Reconciler) addBestTrainingJobToStatus(ctx reconcileRequestContext) err
 	return nil
 }
 
-// If this function returns an error, the status update has failed, and the reconciler should always requeue.
-// This prevents the case where a terminal status fails to persist to the Kubernetes datastore yet we stop
-// reconciling and thus leave the job in an unfinished state.
+// Update the status and other informational fields.
+// Returns an error if there was a failure to update.
 func (r *Reconciler) updateStatus(ctx reconcileRequestContext, tuningJobStatus string) error {
 	return r.updateStatusWithAdditional(ctx, tuningJobStatus, "")
 }
 
+// Helper method to update the status with the error message and status. If there was an error updating the status, return
+// that error instead.
 func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, tuningJobStatus string, reconcileErr error) error {
 	if err := r.updateStatusWithAdditional(ctx, tuningJobStatus, reconcileErr.Error()); err != nil {
 		return errors.Wrapf(reconcileErr, "Unable to update status with error. Status failure was caused by: '%s'", err.Error())
@@ -320,6 +318,8 @@ func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, tun
 	return reconcileErr
 }
 
+// Update the status and other informational fields. The "additional" parameter should be used to convey additional error information. Leave empty to omit.
+// Returns an error if there was a failure to update.
 func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tuningJobStatus, additional string) error {
 	ctx.Log.Info("updateStatusWithAdditional", "tuningJobStatus", tuningJobStatus, "additional", additional)
 

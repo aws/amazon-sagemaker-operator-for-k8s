@@ -43,34 +43,48 @@ import (
 )
 
 var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the Kubernetes job", func() {
-
 	var (
 		sageMakerClient sagemakeriface.ClientAPI
+
+		// The custom HPO reconciler to use
+		reconciler *Reconciler
+
+		// The controller result.
+		reconcileResult ctrl.Result
+
+		// The controller error result.
+		reconcileError error
 	)
 
 	BeforeEach(func() {
 		sageMakerClient = NewMockSageMakerClientBuilder(GinkgoT()).Build()
 	})
 
-	It("should not requeue if the HyperParameterTuningJob does not exist", func() {
-		controller := createReconciler(k8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
-
+	JustBeforeEach(func() {
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
-		result, err := controller.Reconcile(request)
-
-		ExpectNoRequeue(result, err)
+		reconcileResult, reconcileError = reconciler.Reconcile(request)
 	})
 
-	It("should requeue if there was an error", func() {
-		mockK8sClient := FailToGetK8sClient{}
-		controller := createReconciler(mockK8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
+	Context("No error with the K8s client", func() {
+		BeforeEach(func() {
+			reconciler = createReconciler(k8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
+		})
 
-		request := CreateReconciliationRequest("non-existent-name", "namespace")
+		It("should not requeue", func() {
+			ExpectNoRequeue(reconcileResult, reconcileError)
+		})
+	})
 
-		result, err := controller.Reconcile(request)
+	Context("An error occurred with the K8s client", func() {
+		BeforeEach(func() {
+			mockK8sClient := FailToGetK8sClient{}
+			reconciler = createReconciler(mockK8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
+		})
 
-		ExpectRequeueImmediately(result, err)
+		It("should requeue immediately", func() {
+			ExpectRequeueImmediately(reconcileResult, reconcileError)
+		})
 	})
 })
 
