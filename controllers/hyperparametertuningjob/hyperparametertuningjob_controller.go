@@ -167,7 +167,8 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 	// The resource does not exist within SageMaker yet.
 	if ctx.TuningJobDescription == nil {
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
-			return r.cleanupAndRemoveFinalizer(ctx)
+			// Don't attempt to clean up resources as none shouldp be
+			return r.removeFinalizer(ctx)
 		}
 
 		if err = r.createHyperParameterTuningJob(ctx); err != nil {
@@ -187,7 +188,6 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 
 	switch ctx.TuningJobDescription.HyperParameterTuningJobStatus {
 	case sagemaker.HyperParameterTuningJobStatusInProgress:
-
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			// Request to stop the job. If SageMaker returns a 404 then the job has already been deleted.
 			if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil && !clientwrapper.IsStopHyperParameterTuningJob404Error(err) {
@@ -198,13 +198,11 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 				return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to describe SageMaker hyperparameter tuning job"))
 			}
 		}
-		break
 
 	case sagemaker.HyperParameterTuningJobStatusStopped, sagemaker.HyperParameterTuningJobStatusFailed, sagemaker.HyperParameterTuningJobStatusCompleted:
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			return r.cleanupAndRemoveFinalizer(ctx)
 		}
-		break
 
 	case sagemaker.HyperParameterTuningJobStatusStopping:
 		break
@@ -274,6 +272,13 @@ func (r *Reconciler) cleanupAndRemoveFinalizer(ctx reconcileRequestContext) erro
 	if err = ctx.HPOTrainingJobSpawner.DeleteSpawnedTrainingJobs(ctx, *ctx.TuningJob); err != nil {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Not all associated TrainingJobs jobs were deleted"))
 	}
+
+	return r.removeFinalizer(ctx)
+}
+
+// Removes the operator finalizer from the HyperParameterTuningJob.
+func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
+	var err error
 
 	ctx.TuningJob.ObjectMeta.Finalizers = controllers.RemoveString(ctx.TuningJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
 	if err = r.Update(ctx, ctx.TuningJob); err != nil {
