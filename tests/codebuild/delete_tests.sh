@@ -42,7 +42,7 @@ function verify_delete()
   local k8s_resource_name="$(kubectl apply -f "${file_name}" -o json | jq -r ".metadata.name")"
 
   # Wait until job has started.
-  if ! wait_for_crd_status_else_fail "$crd_type" "$k8s_resource_name" "$timeout" "InProgress"; then
+  if ! wait_for_crd_status "$crd_type" "$k8s_resource_name" "$timeout" "InProgress"; then
       echo "[FAILED] Waiting for status InProgress failed"
       exit 1
   fi
@@ -73,7 +73,7 @@ function verify_delete()
   kubectl delete -f "${file_name}" &
 
   # Wait for the status to be Stopping. If it does not happen, then check if the job still exists. If it doesn't, then the delete occurred. If it still exists, then the delete failed.
-  if ! wait_for_crd_status_else_fail "${crd_type}" "${k8s_resource_name}" "${timeout}" "Stopping" && kubectl get "${crd_type}" "${k8s_resource_name}"; then
+  if ! wait_for_crd_status "${crd_type}" "${k8s_resource_name}" "${timeout}" "Stopping" && kubectl get "${crd_type}" "${k8s_resource_name}"; then
       echo "[FAILED] Waiting for status Stopping failed"
       exit 1
   fi

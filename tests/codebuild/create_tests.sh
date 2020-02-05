@@ -111,7 +111,7 @@ function verify_test()
   fi
 
   echo "Waiting for job to complete"
-  if ! wait_for_crd_status_else_fail "$crd_type" "$crd_instance" "$timeout" "$desired_status"; then
+  if ! wait_for_crd_status "$crd_type" "$crd_instance" "$timeout" "$desired_status"; then
       echo "[FAILED] Waiting for status Completed failed"
       exit 1
   fi
