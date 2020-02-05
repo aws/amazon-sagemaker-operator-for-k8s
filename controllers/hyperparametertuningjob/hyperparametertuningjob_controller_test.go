@@ -107,6 +107,9 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 		// The mock hyperparametertuning job.
 		tuningJob *hpojobv1.HyperparameterTuningJob
 
+		// A summary of the HyperParameterTuningJob best training job.
+		bestTrainingJob *sagemaker.HyperParameterTrainingJobSummary
+
 		// The kubernetes client to use in the test. This is different than the default
 		// test client as some tests use a special test client.
 		kubernetesClient k8sclient.Client
@@ -138,9 +141,13 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 		receivedRequests = List{}
 		mockSageMakerClientBuilder = NewMockSageMakerClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
 
+		bestTrainingJob = &sagemaker.HyperParameterTrainingJobSummary{
+			TrainingJobName: ToStringPtr("best-training-job"),
+		}
+
 		jobSpawner = &mockTrackingHPOTrainingJobSpawner{
-			spawnMissingTrainingJobsCalls:  ToIntPtr(0),
-			deleteSpawnedTrainingJobsCalls: ToIntPtr(0),
+			spawnMissingTrainingJobsCalls:  &List{},
+			deleteSpawnedTrainingJobsCalls: &List{},
 		}
 		tuningJob = createHyperParameterTuningJobWithGeneratedNames()
 	})
@@ -216,7 +223,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			BeforeEach(func() {
 				mockSageMakerClientBuilder.
 					AddCreateHyperParameterTuningJobResponse(sagemaker.CreateHyperParameterTuningJobOutput{}).
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.HyperParameterTuningJobStatusInProgress))
+					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.HyperParameterTuningJobStatusInProgress, bestTrainingJob))
 
 				shouldHaveDeletionTimestamp = false
 				shouldHaveFinalizer = true
@@ -267,7 +274,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusInProgress
 				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob))
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -280,7 +287,11 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1)
+					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+				})
+
+				It("Updates the BestTrainingJob in the status", func() {
+					ExceptBestTrainingJobToBe(tuningJob, bestTrainingJob)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -300,7 +311,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 					expectedStatus = sagemaker.HyperParameterTuningJobStatusStopping
 					mockSageMakerClientBuilder.
 						AddStopHyperParameterTuningJobResponse(sagemaker.StopHyperParameterTuningJobOutput{}).
-						AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+						AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob))
 				})
 
 				It("Stops the HyperParameterTuningJob", func() {
@@ -321,7 +332,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusStopping
 				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob))
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -334,7 +345,11 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1)
+					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+				})
+
+				It("Updates the BestTrainingJob in the status", func() {
+					ExceptBestTrainingJobToBe(tuningJob, bestTrainingJob)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -367,7 +382,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusFailed
 				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob))
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -380,7 +395,11 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1)
+					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+				})
+
+				It("Updates the BestTrainingJob in the status", func() {
+					ExceptBestTrainingJobToBe(tuningJob, bestTrainingJob)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -415,8 +434,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 					BeforeEach(func() {
 						jobSpawner = &mockTrackingHPOTrainingJobSpawner{
 							deleteShouldFail:               true,
-							spawnMissingTrainingJobsCalls:  ToIntPtr(0),
-							deleteSpawnedTrainingJobsCalls: ToIntPtr(0),
+							spawnMissingTrainingJobsCalls:  &List{},
+							deleteSpawnedTrainingJobsCalls: &List{},
 						}
 					})
 
@@ -431,7 +450,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusStopped
 				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
+					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob))
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -444,7 +463,11 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1)
+					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+				})
+
+				It("Updates the BestTrainingJob in the status", func() {
+					ExceptBestTrainingJobToBe(tuningJob, bestTrainingJob)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -481,10 +504,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusCompleted
 
-				describeOutput := CreateDescribeOutputWithOnlyStatus(expectedStatus)
-				describeOutput.BestTrainingJob = &sagemaker.HyperParameterTrainingJobSummary{}
 				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(describeOutput)
+					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob))
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -497,7 +518,11 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1)
+					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+				})
+
+				It("Updates the BestTrainingJob in the status", func() {
+					ExceptBestTrainingJobToBe(tuningJob, bestTrainingJob)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -538,22 +563,22 @@ type mockTrackingHPOTrainingJobSpawner struct {
 	deleteShouldFail bool
 
 	// The number of times SpawnMissingTrainingJobs was called.
-	spawnMissingTrainingJobsCalls *int
+	spawnMissingTrainingJobsCalls *List
 
 	// The number of times DeleteSpawnedTrainingJobs was called.
-	deleteSpawnedTrainingJobsCalls *int
+	deleteSpawnedTrainingJobsCalls *List
 }
 
 var _ HPOTrainingJobSpawner = (*mockTrackingHPOTrainingJobSpawner)(nil)
 
 // SpawnMissingTrainingJobs increments the call count when called..
-func (s mockTrackingHPOTrainingJobSpawner) SpawnMissingTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) {
-	(*s.spawnMissingTrainingJobsCalls)++
+func (s mockTrackingHPOTrainingJobSpawner) SpawnMissingTrainingJobs(_ context.Context, job hpojobv1.HyperparameterTuningJob) {
+	s.spawnMissingTrainingJobsCalls.PushBack(job)
 }
 
 // DeleteSpawnedTrainingJobs increments the call count when called.
-func (s mockTrackingHPOTrainingJobSpawner) DeleteSpawnedTrainingJobs(_ context.Context, _ hpojobv1.HyperparameterTuningJob) error {
-	(*s.deleteSpawnedTrainingJobsCalls)++
+func (s mockTrackingHPOTrainingJobSpawner) DeleteSpawnedTrainingJobs(_ context.Context, job hpojobv1.HyperparameterTuningJob) error {
+	s.deleteSpawnedTrainingJobsCalls.PushBack(job)
 	if s.deleteShouldFail {
 		return errors.New("failed delete spawned training jobs")
 	}
@@ -645,7 +670,7 @@ func SetDeletionTimestamp(tuningJob *hpojobv1.HyperparameterTuningJob) {
 	Expect(k8sClient.Delete(context.Background(), tuningJob)).To(Succeed())
 }
 
-// Expect trainingjob.Status and tuningJob.SecondaryStatus to have the given values.
+// Expect trainingjob.Status to have the given values.
 func ExpectAdditionalToContain(tuningJob *hpojobv1.HyperparameterTuningJob, substring string) {
 	var actual hpojobv1.HyperparameterTuningJob
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
@@ -692,10 +717,23 @@ func ExpectHyperParameterTuningJobToBeDeleted(tuningJob *hpojobv1.Hyperparameter
 	Expect(apierrs.IsNotFound(err)).To(Equal(true))
 }
 
+// Expect the BestTrainingJob to be set.
+func ExceptBestTrainingJobToBe(tuningJob *hpojobv1.HyperparameterTuningJob, job *sagemaker.HyperParameterTrainingJobSummary) {
+	var actual hpojobv1.HyperparameterTuningJob
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: tuningJob.ObjectMeta.Namespace,
+		Name:      tuningJob.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(*actual.Status.BestTrainingJob.TrainingJobName).To(Equal(*job.TrainingJobName))
+}
+
 // Helper function to create a DescribeHyperParameterTuningJobOutput.
-func CreateDescribeOutputWithOnlyStatus(status sagemaker.HyperParameterTuningJobStatus) sagemaker.DescribeHyperParameterTuningJobOutput {
+func CreateDescribeOutputWithOnlyStatus(status sagemaker.HyperParameterTuningJobStatus, bestTrainingJob *sagemaker.HyperParameterTrainingJobSummary) sagemaker.DescribeHyperParameterTuningJobOutput {
 	return sagemaker.DescribeHyperParameterTuningJobOutput{
 		HyperParameterTuningJobStatus: status,
+		BestTrainingJob:               bestTrainingJob,
 	}
 }
 
@@ -709,10 +747,15 @@ func ExpectRequestToStopHyperParameterTuningJob(req interface{}, tuningJob *hpoj
 
 // Helper function to verify that the controller attempted to delete the spawned training jobs.
 func ExpectDeletedSpawnedTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int) {
-	Expect(*spawner.deleteSpawnedTrainingJobsCalls).To(Equal(calls))
+	Expect(spawner.deleteSpawnedTrainingJobsCalls.Len()).To(Equal(calls))
 }
 
 // Helper function to verify that the controller attempted to spawn the missing child training jobs.
-func ExpectSpawnMissingTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int) {
-	Expect(*spawner.spawnMissingTrainingJobsCalls).To(Equal(calls))
+func ExpectSpawnMissingTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int, job hpojobv1.HyperparameterTuningJob) {
+	Expect(spawner.spawnMissingTrainingJobsCalls.Len()).To(Equal(calls))
+
+	calledJob := spawner.spawnMissingTrainingJobsCalls.Front().Value.(hpojobv1.HyperparameterTuningJob)
+	Expect(*calledJob.Spec.Region).To(Equal(*job.Spec.Region))
+	Expect(calledJob.ObjectMeta.GetName()).To(Equal(job.ObjectMeta.GetName()))
+	Expect(calledJob.ObjectMeta.GetNamespace()).To(Equal(job.ObjectMeta.GetNamespace()))
 }
