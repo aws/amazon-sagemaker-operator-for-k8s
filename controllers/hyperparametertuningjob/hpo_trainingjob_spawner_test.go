@@ -547,4 +547,19 @@ var _ = Describe("DeleteSpawnedTrainingJobs", func() {
 		// Verify expectations
 		Expect(err).To(HaveOccurred())
 	})
+
+	It("Gracefully handles a k8s Get failure", func() {
+		sageMakerClient := sageMakerClientBuilder.
+			AddListTrainingJobsForHyperParameterTuningJobResponse(listResponse).
+			Build()
+
+		// Create spawner
+		spawner = createHPOTrainingJobSpawner(FailToGetK8sClient{}, logf.Log, sageMakerClient)
+
+		// Run test
+		err = spawner.DeleteSpawnedTrainingJobs(context.Background(), *createHyperParameterTuningJobWithStatus("hpo-job", namespace))
+
+		// Verify expectations
+		Expect(err).To(HaveOccurred())
+	})
 })

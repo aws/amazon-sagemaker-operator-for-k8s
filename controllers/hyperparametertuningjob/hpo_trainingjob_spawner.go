@@ -187,7 +187,7 @@ func (s hpoTrainingJobSpawner) spawnTrainingJobInKubernetes(ctx context.Context,
 // This works by Describing the SageMaker TrainingJob, then using that description to create a Kubernetes spec.
 func (s hpoTrainingJobSpawner) getKubernetesTrainingJobSpec(ctx context.Context, trainingJobName string) (*trainingjobv1.TrainingJobSpec, error) {
 	response, err := s.SageMakerClient.DescribeTrainingJob(ctx, trainingJobName)
-	if err != nil {
+	if err != nil || response == nil {
 		return nil, errors.Wrap(err, "Unable to get TrainingJob description from SageMaker")
 	}
 
@@ -241,18 +241,7 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 					Name:      *trainingJobSummary.TrainingJobName,
 				}
 
-				var trainingJob trainingjobv1.TrainingJob
-				if err := s.K8sClient.Get(ctx, key, &trainingJob); err != nil {
-					// If the job has previously been deleted, we are done with it
-					if apierrs.IsNotFound(err) {
-						return
-					}
-
-					errorsChannel <- err
-					return
-				}
-
-				if err := s.reconcileSpawnedTrainingJobDeletion(ctx, &trainingJob); err != nil {
+				if err := s.reconcileSpawnedTrainingJobDeletion(ctx, key); err != nil {
 					errorsChannel <- err
 				}
 			}(trainingJobSummary)
@@ -289,22 +278,28 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 
 // Delete a single training job and remove its finalizer, if present.
 // Returns an error if any operation failed and needs to be retried.
-func (s hpoTrainingJobSpawner) reconcileSpawnedTrainingJobDeletion(ctx context.Context, trainingJob *trainingjobv1.TrainingJob) error {
+func (s hpoTrainingJobSpawner) reconcileSpawnedTrainingJobDeletion(ctx context.Context, trainingJobName types.NamespacedName) error {
+	var trainingJob trainingjobv1.TrainingJob
+	if err := s.K8sClient.Get(ctx, trainingJobName, &trainingJob); err != nil {
+		// Return nil for not found, if it was previously deleted
+		return controllers.IgnoreNotFound(err)
+	}
+
 	needsRemoveFinalizer := controllers.ContainsString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
 	needsDelete := trainingJob.ObjectMeta.GetDeletionTimestamp().IsZero()
 
 	if needsRemoveFinalizer {
 		s.Log.Info("Removing HPO ownership finalizer from TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
 		trainingJob.ObjectMeta.Finalizers = controllers.RemoveString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
-		if err := s.K8sClient.Update(ctx, trainingJob); err != nil && !apierrs.IsNotFound(err) {
-			return errors.Wrap(err, "Failed to remove finalizer")
+		if err := s.K8sClient.Update(ctx, &trainingJob); err != nil {
+			return controllers.IgnoreNotFound(errors.Wrap(err, "Failed to remove finalizer"))
 		}
 	}
 
 	if needsDelete {
 		s.Log.Info("Deleting TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
-		if err := s.K8sClient.Delete(ctx, trainingJob); err != nil && !apierrs.IsNotFound(err) {
-			return errors.Wrap(err, "Failed to delete training job")
+		if err := s.K8sClient.Delete(ctx, &trainingJob); err != nil {
+			return controllers.IgnoreNotFound(errors.Wrap(err, "Failed to delete training job"))
 		}
 	}
 
