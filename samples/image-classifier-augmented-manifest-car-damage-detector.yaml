@@ -1,12 +1,12 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: TrainingJob
 metadata:
-  name: image-classifier-car-example
+  name: car-damage-detector
 spec:
-  roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+  roleArn: arn:aws:iam::123456789098765:role/service-role/AmazonSageMaker-ExecutionRole
   region: us-east-1
   algorithmSpecification:
-    trainingImage: 11284229777.dkr.ecr.us-east-1.amazonaws.com/image-classification:latest
+    trainingImage: 811284229777.dkr.ecr.us-east-1.amazonaws.com/image-classification:1
     trainingInputMode: Pipe
   outputDataConfig:
     s3OutputPath: s3://my-bucket/models
@@ -17,32 +17,32 @@ spec:
           s3DataType: AugmentedManifestFile
           s3Uri: s3://my-bucket/train_lst/train_manifest.json
           s3DataDistributionType: FullyReplicated
-          attributeNames: [source-ref, class]
+          attributeNames: ["source-ref", "class"]
       contentType: application/x-image
       compressionType: None
-      recordWrapping: RecordIO
+      recordWrapperType: RecordIO
     - channelName: validation
       dataSource:
         s3DataSource:
           s3DataType: AugmentedManifestFile
           s3Uri: s3://my-bucket/val_lst/val_manifest.json
           s3DataDistributionType: FullyReplicated
-          attributeNames: [source-ref, class]
+          attributeNames: ["source-ref", "class"]
       contentType: application/x-image
       compressionType: None
-      recordWrapping: RecordIO
+      recordWrapperType: RecordIO
   resourceConfig:
-    instanceCount: 2
+    instanceCount: 4
     instanceType: ml.p3.16xlarge
     volumeSizeInGB: 5
   hyperParameters:
     - name: top_k
       value: "1"
     - name: num_training_samples
-      values: "1048"
+      value: "105434"
     - name: mini_batch_size
       value: "32"
-    - name: learning_ratee
+    - name: learning_rate
       value: "0.001"
     - name: image_shape
       value: "3,150,250"
@@ -58,3 +58,4 @@ spec:
       value: "100"
   stoppingCondition:
     maxRuntimeInSeconds: 360000
+
