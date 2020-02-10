@@ -241,12 +241,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			})
 
 			It("Creates a HyperParameterTuningJob", func() {
-
 				req := receivedRequests.Front().Next().Value
-				Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateHyperParameterTuningJobInput)(nil)))
-
-				createdRequest := req.(*sagemaker.CreateHyperParameterTuningJobInput)
-				Expect(*createdRequest.HyperParameterTuningJobName).To(Equal(controllers.GetGeneratedJobName(tuningJob.ObjectMeta.GetUID(), tuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)))
+				ExpectRequestToCreateHyperParameterTuningJob(req, controllers.GetGeneratedJobName(tuningJob.ObjectMeta.GetUID(), tuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength))
 			})
 
 			It("Requeues after interval", func() {
@@ -264,10 +260,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 
 				It("Creates a HyperParameterTuningJob", func() {
 					req := receivedRequests.Front().Next().Value
-					Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateHyperParameterTuningJobInput)(nil)))
-
-					createdRequest := req.(*sagemaker.CreateHyperParameterTuningJobInput)
-					Expect(*createdRequest.HyperParameterTuningJobName).To(Equal("tuning-job-name"))
+					ExpectRequestToCreateHyperParameterTuningJob(req, "tuning-job-name")
 				})
 			})
 		})
@@ -779,6 +772,14 @@ func CreateDescribeOutputWithOnlyStatus(status sagemaker.HyperParameterTuningJob
 		BestTrainingJob:               bestTrainingJob,
 		TrainingJobStatusCounters:     statusCounters,
 	}
+}
+
+// Helper function to verify that there was an attempt to create a HyperParameterTuningJob with a given name.
+func ExpectRequestToCreateHyperParameterTuningJob(req interface{}, tuningJobName string) {
+	Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateHyperParameterTuningJobInput)(nil)))
+
+	createdRequest := req.(*sagemaker.CreateHyperParameterTuningJobInput)
+	Expect(*createdRequest.HyperParameterTuningJobName).To(Equal(tuningJobName))
 }
 
 // Helper function to verify that the specified object is a StopHyperParameterTuningJobInput and that it requests to delete the HyperParameterTuningJob.

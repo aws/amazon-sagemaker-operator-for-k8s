@@ -167,7 +167,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 	// The resource does not exist within SageMaker yet.
 	if ctx.TuningJobDescription == nil {
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
-			// Don't attempt to clean up resources as none shouldp be
+			// Don't attempt to clean up resources as none should exist yet
 			return r.removeFinalizer(ctx)
 		}
 
