@@ -55,23 +55,26 @@ var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the
 
 		// The controller error result.
 		reconcileError error
+
+		// The kubernetes client to use in the test. This is different than the default
+		// test client as some tests use a special test client.
+		kubernetesClient k8sclient.Client
 	)
 
 	BeforeEach(func() {
 		sageMakerClient = NewMockSageMakerClientBuilder(GinkgoT()).Build()
+		kubernetesClient = k8sClient
 	})
 
 	JustBeforeEach(func() {
+		reconciler = createReconciler(kubernetesClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
+
 		request := CreateReconciliationRequest("non-existent-name", "namespace")
 
 		reconcileResult, reconcileError = reconciler.Reconcile(request)
 	})
 
 	Context("No error with the K8s client", func() {
-		BeforeEach(func() {
-			reconciler = createReconciler(k8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
-		})
-
 		It("should not requeue", func() {
 			ExpectNoRequeue(reconcileResult, reconcileError)
 		})
@@ -79,8 +82,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the
 
 	Context("An error occurred with the K8s client", func() {
 		BeforeEach(func() {
-			mockK8sClient := FailToGetK8sClient{}
-			reconciler = createReconciler(mockK8sClient, sageMakerClient, "1s", mockTrackingHPOTrainingJobSpawner{})
+			kubernetesClient = FailToGetK8sClient{}
 		})
 
 		It("should requeue immediately", func() {
