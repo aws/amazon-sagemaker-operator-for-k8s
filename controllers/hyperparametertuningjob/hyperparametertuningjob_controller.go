@@ -37,7 +37,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 )
 
-// All the status used by the controller during reconciliation.
+// Status used when no SageMaker status is available
 const (
 	ReconcilingTuningJobStatus = "ReconcilingTuningJob"
 )

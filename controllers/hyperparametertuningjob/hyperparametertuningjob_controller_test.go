@@ -443,7 +443,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1)
+					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1, *tuningJob)
 				})
 
 				Context("Failed to delete spawned training jobs", func() {
@@ -515,7 +515,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1)
+					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1, *tuningJob)
 				})
 			})
 		})
@@ -574,7 +574,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1)
+					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1, *tuningJob)
 				})
 			})
 		})
@@ -791,8 +791,13 @@ func ExpectRequestToStopHyperParameterTuningJob(req interface{}, tuningJob *hpoj
 }
 
 // Helper function to verify that the controller attempted to delete the spawned training jobs.
-func ExpectDeletedSpawnedTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int) {
+func ExpectDeletedSpawnedTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int, job hpojobv1.HyperparameterTuningJob) {
 	Expect(spawner.deleteSpawnedTrainingJobsCalls.Len()).To(Equal(calls))
+
+	calledJob := spawner.spawnMissingTrainingJobsCalls.Front().Value.(hpojobv1.HyperparameterTuningJob)
+	Expect(*calledJob.Spec.Region).To(Equal(*job.Spec.Region))
+	Expect(calledJob.ObjectMeta.GetName()).To(Equal(job.ObjectMeta.GetName()))
+	Expect(calledJob.ObjectMeta.GetNamespace()).To(Equal(job.ObjectMeta.GetNamespace()))
 }
 
 // Helper function to verify that the controller attempted to spawn the missing child training jobs.
