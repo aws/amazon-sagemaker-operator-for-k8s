@@ -9,7 +9,7 @@ spec:
     trainingImage: 11284229777.dkr.ecr.us-east-1.amazonaws.com/image-classification:latest
     trainingInputMode: Pipe
   outputDataConfig:
-    s3OutputPath: s3://dataset-cars-damage/models
+    s3OutputPath: s3://my-bucket/models
   inputDataConfig:
     - channelName: train
       dataSource:
@@ -32,7 +32,7 @@ spec:
       compressionType: None
       recordWrapping: RecordIO
   resourceConfig:
-    instanceCount: 4
+    instanceCount: 2
     instanceType: ml.p3.16xlarge
     volumeSizeInGB: 5
   hyperParameters:
@@ -42,7 +42,7 @@ spec:
       values: "1048"
     - name: mini_batch_size
       value: "32"
-    - name: mini_batch_size
+    - name: learning_ratee
       value: "0.001"
     - name: image_shape
       value: "3,150,250"
