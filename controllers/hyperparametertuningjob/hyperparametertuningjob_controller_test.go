@@ -293,7 +293,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfSpawnMissingTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstSpawnMissingTrainingJobsCallToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 
 				It("Updates the BestTrainingJob in the status", func() {
@@ -355,7 +356,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfSpawnMissingTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstSpawnMissingTrainingJobsCallToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 
 				It("Updates the BestTrainingJob in the status", func() {
@@ -409,7 +411,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfSpawnMissingTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstSpawnMissingTrainingJobsCallToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 
 				It("Updates the BestTrainingJob in the status", func() {
@@ -445,7 +448,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfDeleteSpawnedTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstDeleteSpawnedTrainingJobsToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 
 				Context("Failed to delete spawned training jobs", func() {
@@ -481,7 +485,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfSpawnMissingTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstSpawnMissingTrainingJobsCallToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 
 				It("Updates the BestTrainingJob in the status", func() {
@@ -517,7 +522,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfDeleteSpawnedTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstDeleteSpawnedTrainingJobsToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 			})
 		})
@@ -540,7 +546,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
-					ExpectSpawnMissingTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfSpawnMissingTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstSpawnMissingTrainingJobsCallToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 
 				It("Updates the BestTrainingJob in the status", func() {
@@ -576,7 +583,8 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Attempts to delete all spawned training jobs", func() {
-					ExpectDeletedSpawnedTrainingJobs(*jobSpawner, 1, *tuningJob)
+					ExpectNumberOfDeleteSpawnedTrainingJobsCallsToEqual(*jobSpawner, 1)
+					ExpectFirstDeleteSpawnedTrainingJobsToHaveHPOJob(*jobSpawner, *tuningJob)
 				})
 			})
 		})
@@ -792,20 +800,26 @@ func ExpectRequestToStopHyperParameterTuningJob(req interface{}, tuningJob *hpoj
 	Expect(*stopRequest.HyperParameterTuningJobName).To(Equal(controllers.GetGeneratedJobName(tuningJob.ObjectMeta.GetUID(), tuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)))
 }
 
-// Helper function to verify that the controller attempted to delete the spawned training jobs.
-func ExpectDeletedSpawnedTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int, job hpojobv1.HyperparameterTuningJob) {
+// Helper function to verify that the controller attempted to delete a spawned training job a given number of times.
+func ExpectNumberOfDeleteSpawnedTrainingJobsCallsToEqual(spawner mockTrackingHPOTrainingJobSpawner, calls int) {
 	Expect(spawner.deleteSpawnedTrainingJobsCalls.Len()).To(Equal(calls))
+}
 
+// Helper function to verify that the controller attempted to spawn missing training jobs a given number of times.
+func ExpectNumberOfSpawnMissingTrainingJobsCallsToEqual(spawner mockTrackingHPOTrainingJobSpawner, calls int) {
+	Expect(spawner.spawnMissingTrainingJobsCalls.Len()).To(Equal(calls))
+}
+
+// Helper function to verify that the controller attempted to delete the spawned training jobs for a given HPO job.
+func ExpectFirstDeleteSpawnedTrainingJobsToHaveHPOJob(spawner mockTrackingHPOTrainingJobSpawner, job hpojobv1.HyperparameterTuningJob) {
 	calledJob := spawner.spawnMissingTrainingJobsCalls.Front().Value.(hpojobv1.HyperparameterTuningJob)
 	Expect(*calledJob.Spec.Region).To(Equal(*job.Spec.Region))
 	Expect(calledJob.ObjectMeta.GetName()).To(Equal(job.ObjectMeta.GetName()))
 	Expect(calledJob.ObjectMeta.GetNamespace()).To(Equal(job.ObjectMeta.GetNamespace()))
 }
 
-// Helper function to verify that the controller attempted to spawn the missing child training jobs.
-func ExpectSpawnMissingTrainingJobs(spawner mockTrackingHPOTrainingJobSpawner, calls int, job hpojobv1.HyperparameterTuningJob) {
-	Expect(spawner.spawnMissingTrainingJobsCalls.Len()).To(Equal(calls))
-
+// Helper function to verify that the controller attempted to spawn the missing child training jobs for a given HPO job..
+func ExpectFirstSpawnMissingTrainingJobsCallToHaveHPOJob(spawner mockTrackingHPOTrainingJobSpawner, job hpojobv1.HyperparameterTuningJob) {
 	calledJob := spawner.spawnMissingTrainingJobsCalls.Front().Value.(hpojobv1.HyperparameterTuningJob)
 	Expect(*calledJob.Spec.Region).To(Equal(*job.Spec.Region))
 	Expect(calledJob.ObjectMeta.GetName()).To(Equal(job.ObjectMeta.GetName()))

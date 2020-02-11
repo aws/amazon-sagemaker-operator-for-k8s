@@ -208,8 +208,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		break
 
 	default:
-		unknownStateError := errors.New(fmt.Sprintf("Unknown Tuning Job Status: %s", ctx.TuningJobDescription.HyperParameterTuningJobStatus))
-		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, unknownStateError)
+		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", ctx.TuningJobDescription.HyperParameterTuningJobStatus))
 	}
 
 	if err = r.updateStatus(ctx, string(ctx.TuningJobDescription.HyperParameterTuningJobStatus)); err != nil {

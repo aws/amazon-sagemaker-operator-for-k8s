@@ -51,12 +51,11 @@ type HPOTrainingJobSpawner interface {
 
 // NewHPOTrainingJobSpawner constructs a new HPOTrainingJobSpawner.
 func NewHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient clientwrapper.SageMakerClientWrapper) HPOTrainingJobSpawner {
-	spawner := hpoTrainingJobSpawner{
+	return &hpoTrainingJobSpawner{
 		K8sClient:       k8sClient,
 		Log:             log.WithName("HPOTrainingJobSpawner"),
 		SageMakerClient: sageMakerClient,
 	}
-	return &spawner
 }
 
 // HPOTrainingJobSpawnerProvider constructs an HPO Training Job Spawner
@@ -187,7 +186,9 @@ func (s hpoTrainingJobSpawner) spawnTrainingJobInKubernetes(ctx context.Context,
 // This works by Describing the SageMaker TrainingJob, then using that description to create a Kubernetes spec.
 func (s hpoTrainingJobSpawner) getKubernetesTrainingJobSpec(ctx context.Context, trainingJobName string) (*trainingjobv1.TrainingJobSpec, error) {
 	response, err := s.SageMakerClient.DescribeTrainingJob(ctx, trainingJobName)
-	if err != nil || response == nil {
+	if err != nil {
+		return nil, errors.Wrap(err, "An error occured while describing the TrainingJob from SageMaker")
+	} else if response == nil {
 		return nil, errors.Wrap(err, "Unable to get TrainingJob description from SageMaker")
 	}
 
@@ -278,9 +279,9 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 
 // Delete a single training job and remove its finalizer, if present.
 // Returns an error if any operation failed and needs to be retried.
-func (s hpoTrainingJobSpawner) reconcileSpawnedTrainingJobDeletion(ctx context.Context, trainingJobName types.NamespacedName) error {
+func (s hpoTrainingJobSpawner) reconcileSpawnedTrainingJobDeletion(ctx context.Context, trainingJobNamespacedName types.NamespacedName) error {
 	var trainingJob trainingjobv1.TrainingJob
-	if err := s.K8sClient.Get(ctx, trainingJobName, &trainingJob); err != nil {
+	if err := s.K8sClient.Get(ctx, trainingJobNamespacedName, &trainingJob); err != nil {
 		// Return nil for not found, if it was previously deleted
 		return controllers.IgnoreNotFound(err)
 	}
