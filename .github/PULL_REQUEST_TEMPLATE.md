@@ -16,9 +16,4 @@ Fixes #
 * [ ] Have you well smoke tested each feature that is being added/modified?
 * [ ] Have you ensured you have not introduced linting errors?
 
-### Changes to Core Features:
-
-* [ ] Have you added an explanation of what your changes do and why you'd like us to include them?
-* [ ] Have you written new tests for your core changes, as applicable?
-
 By submitting this pull request, I confirm that my contribution is made under the terms of the Apache 2.0 license.
