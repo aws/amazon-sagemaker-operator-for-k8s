@@ -6,6 +6,8 @@ source create_tests.sh # TODO: Remove temporary import for "verify_test" method
 # Verify that k8s and SageMaker resources are deleted when the user uses the delete verb.
 function run_delete_canary_tests
 {
+  # Run verbose output for delete tests for simpler debugging
+  set -x
   echo "Running delete canary tests"
   verify_delete TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
 
@@ -17,6 +19,7 @@ function run_delete_canary_tests
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
 
   verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
+  set +x
 }
 
 function run_delete_integration_tests
