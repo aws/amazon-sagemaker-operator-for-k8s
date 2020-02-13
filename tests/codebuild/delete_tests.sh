@@ -6,6 +6,9 @@ source create_tests.sh # TODO: Remove temporary import for "verify_test" method
 # Verify that k8s and SageMaker resources are deleted when the user uses the delete verb.
 function run_delete_canary_tests
 {
+  # Run verbose output for delete tests for simpler debugging
+  set -x
+  echo "Running delete canary tests"
   verify_delete TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
 
   verify_delete HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
@@ -16,10 +19,12 @@ function run_delete_canary_tests
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
 
   verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
+  set +x
 }
 
 function run_delete_integration_tests
 {
+  echo "Running delete integration tests"
   run_delete_canary_tests
 }
 
@@ -39,8 +44,11 @@ function verify_delete()
   # Apply file and get name
   local k8s_resource_name="$(kubectl apply -f "${file_name}" -o json | jq -r ".metadata.name")"
 
-  # Wait until job has started
-  wait_for_crd_status_else_fail "$crd_type" "$k8s_resource_name" "$timeout" "InProgress"
+  # Wait until job has started.
+  if ! wait_for_crd_status "$crd_type" "$k8s_resource_name" "$timeout" "InProgress"; then
+      echo "[FAILED] Waiting for status InProgress failed"
+      exit 1
+  fi
 
   local jobNamePath 
   case $crd_type in
@@ -66,8 +74,12 @@ function verify_delete()
 
   # Actually delete the resource
   kubectl delete -f "${file_name}" &
-  # Check that it is stopped in k8s
-  wait_for_crd_status_else_fail "${crd_type}" "${k8s_resource_name}" "${timeout}" "Stopping"
+
+  # Wait for the status to be Stopping. If it does not happen, then check if the job still exists. If it doesn't, then the delete occurred. If it still exists, then the delete failed.
+  if ! wait_for_crd_status "${crd_type}" "${k8s_resource_name}" "${timeout}" "Stopping" && kubectl get "${crd_type}" "${k8s_resource_name}"; then
+      echo "[FAILED] Waiting for status Stopping failed"
+      exit 1
+  fi
   # Check that it has been stopped in SageMaker
   verify_sm_resource_stopping_else_fail "${crd_type}" "${job_name}"
 
