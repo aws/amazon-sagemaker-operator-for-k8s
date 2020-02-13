@@ -19,8 +19,9 @@ package hyperparametertuningjob
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
@@ -293,14 +294,14 @@ func (s hpoTrainingJobSpawner) reconcileSpawnedTrainingJobDeletion(ctx context.C
 		s.Log.Info("Removing HPO ownership finalizer from TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
 		trainingJob.ObjectMeta.Finalizers = controllers.RemoveString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
 		if err := s.K8sClient.Update(ctx, &trainingJob); err != nil {
-			return controllers.IgnoreNotFound(errors.Wrap(err, "Failed to remove finalizer"))
+			return controllers.IgnoreNotFound(err)
 		}
 	}
 
 	if needsDelete {
 		s.Log.Info("Deleting TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
 		if err := s.K8sClient.Delete(ctx, &trainingJob); err != nil {
-			return controllers.IgnoreNotFound(errors.Wrap(err, "Failed to delete training job"))
+			return controllers.IgnoreNotFound(err)
 		}
 	}
 
