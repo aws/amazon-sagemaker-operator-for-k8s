@@ -77,19 +77,9 @@ func createHyperParameterTuningJobSpecFromDescription(description sagemaker.Desc
 	return unmarshalled, nil
 }
 
-// Create a TrainingJobSpec from a DescribeTrainingJobOutput.
-// This panics if json libraries are unable to serialize the description and deserialize the serialization.
-func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) trainingjobv1.TrainingJobSpec {
-	if spec, err := createTrainingJobSpecFromDescription(description); err == nil {
-		return spec
-	} else {
-		panic("Unable to create TrainingJobSpec from description: " + err.Error())
-	}
-}
-
 // Create a TrainingJobSpec from a SageMaker description. This uses JSON to do the assignment. It also transforms the hyperparameter
 // list from map to list of key,value pairs.
-func createTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) (trainingjobv1.TrainingJobSpec, error) {
+func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) (trainingjobv1.TrainingJobSpec, error) {
 
 	transformedHyperParameters := ConvertMapToKeyValuePairSlice(description.HyperParameters)
 
@@ -152,18 +142,8 @@ func createCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) (s
 	return output, nil
 }
 
-// Create a CreateHyperParameterTuningJobInput from a HyperParameterTuningJobSpec.
-// This panics if json libraries are unable to serialize the spec or deserialize the serialization.
-func CreateCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.HyperparameterTuningJobSpec) sagemaker.CreateHyperParameterTuningJobInput {
-	if input, err := createCreateHyperParameterTuningJobInputFromSpec(spec); err == nil {
-		return input
-	} else {
-		panic("Unable to create CreateHyperParameterTuningJobInput from spec : " + err.Error())
-	}
-}
-
-// Create a CreateHPO request input from a Kubernetes HPO spec.
-func createCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.HyperparameterTuningJobSpec) (sagemaker.CreateHyperParameterTuningJobInput, error) {
+// CreateCreateHyperParameterTuningJobInputFromSpec creates a CreateHPO request input from a Kubernetes HPO spec.
+func CreateCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.HyperparameterTuningJobSpec) (sagemaker.CreateHyperParameterTuningJobInput, error) {
 	var target sagemaker.CreateHyperParameterTuningJobInput
 
 	// Kubebuilder does not support arbitrary maps, so we encode these as KeyValuePairs.
@@ -193,6 +173,56 @@ func createCreateHyperParameterTuningJobInputFromSpec(spec hpojobv1.Hyperparamet
 	}
 
 	return target, nil
+}
+
+// ConvertHyperParameterTrainingJobSummaryFromSageMaker converts a HyperParameterTrainingJobSummary to a Kubernetes SageMaker type, returning errors if there are any.
+func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.HyperParameterTrainingJobSummary) (*commonv1.HyperParameterTrainingJobSummary, error) {
+	var target commonv1.HyperParameterTrainingJobSummary
+
+	// Kubebuilder does not support arbitrary maps, so we encode these as KeyValuePairs.
+	// After the JSON conversion, we will re-set the KeyValuePairs as map elements.
+	var tunedHyperParameters []*commonv1.KeyValuePair = []*commonv1.KeyValuePair{}
+
+	for name, value := range source.TunedHyperParameters {
+		tunedHyperParameters = append(tunedHyperParameters, &commonv1.KeyValuePair{
+			Name:  name,
+			Value: value,
+		})
+	}
+
+	// TODO we should consider an alternative approach, see comments in TrainingController.
+	str, err := json.Marshal(source)
+	if err != nil {
+		return nil, err
+	}
+
+	json.Unmarshal(str, &target)
+
+	target.TunedHyperParameters = tunedHyperParameters
+	return &target, nil
+}
+
+// CreateTrainingJobStatusCountersFromDescription creates a set of TrainingJobStatusCounters from a DescribeHyperParameterTuningJobOutput
+func CreateTrainingJobStatusCountersFromDescription(sageMakerDescription *sagemaker.DescribeHyperParameterTuningJobOutput) *commonv1.TrainingJobStatusCounters {
+	if sageMakerDescription != nil && sageMakerDescription.TrainingJobStatusCounters != nil {
+		var totalError *int64 = nil
+
+		if sageMakerDescription.TrainingJobStatusCounters.NonRetryableError != nil && sageMakerDescription.TrainingJobStatusCounters.RetryableError != nil {
+			totalErrorVal := *sageMakerDescription.TrainingJobStatusCounters.NonRetryableError + *sageMakerDescription.TrainingJobStatusCounters.RetryableError
+			totalError = &totalErrorVal
+		}
+
+		return &commonv1.TrainingJobStatusCounters{
+			Completed:         sageMakerDescription.TrainingJobStatusCounters.Completed,
+			InProgress:        sageMakerDescription.TrainingJobStatusCounters.InProgress,
+			NonRetryableError: sageMakerDescription.TrainingJobStatusCounters.NonRetryableError,
+			RetryableError:    sageMakerDescription.TrainingJobStatusCounters.RetryableError,
+			TotalError:        totalError,
+			Stopped:           sageMakerDescription.TrainingJobStatusCounters.Stopped,
+		}
+	}
+
+	return &commonv1.TrainingJobStatusCounters{}
 }
 
 // Create a CreateModel request input from a Kubernetes Model spec.

@@ -5,8 +5,11 @@ go 1.12
 require (
 	github.com/aws/amazon-sagemaker-operator-for-k8s v0.0.0
 	github.com/aws/aws-sdk-go-v2 v0.11.0
+	github.com/kr/pty v1.1.5 // indirect
 	github.com/spf13/cobra v0.0.4
 	github.com/spf13/pflag v1.0.3
+	github.com/stretchr/objx v0.2.0 // indirect
+	golang.org/x/tools v0.0.0-20190614205625-5aca471b1d59 // indirect
 	k8s.io/api v0.0.0-20190711103429-37c3b8b1ca65
 	k8s.io/apimachinery v0.0.0-20190816221834-a9f1d8a9c101
 	k8s.io/cli-runtime v0.0.0-20190918224932-e56234cc6b3d

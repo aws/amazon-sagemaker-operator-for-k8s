@@ -26,7 +26,7 @@ import (
 	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
-	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	// trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 )
 
@@ -258,175 +258,176 @@ var _ = Describe("HyperParameterTuningJobMatchesDescription", func() {
 	})
 })
 
-var _ = Describe("TrainingJobSpecMatchesDescription", func() {
-	var (
-		spec        trainingjobv1.TrainingJobSpec
-		description sagemaker.DescribeTrainingJobOutput
-	)
+// TODO: Ensure there are no loose ends when deleting the TrainingJobSpecMatchesDescription method.
+// var _ = Describe("TrainingJobSpecMatchesDescription", func() {
+// 	var (
+// 		spec        trainingjobv1.TrainingJobSpec
+// 		description sagemaker.DescribeTrainingJobOutput
+// 	)
 
-	BeforeEach(func() {
-		spec = trainingjobv1.TrainingJobSpec{}
-		description = sagemaker.DescribeTrainingJobOutput{}
-	})
+// 	BeforeEach(func() {
+// 		spec = trainingjobv1.TrainingJobSpec{}
+// 		description = sagemaker.DescribeTrainingJobOutput{}
+// 	})
 
-	It("ignores spec.Region", func() {
-		spec.Region = ToStringPtr("xyz")
+// 	It("ignores spec.Region", func() {
+// 		spec.Region = ToStringPtr("xyz")
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("ignores spec.SageMakerEndpoint", func() {
-		spec.SageMakerEndpoint = ToStringPtr("https://some.endpoint.com")
+// 	It("ignores spec.SageMakerEndpoint", func() {
+// 		spec.SageMakerEndpoint = ToStringPtr("https://some.endpoint.com")
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("ignores tags", func() {
-		spec.Tags = []commonv1.Tag{
-			{
-				Key:   ToStringPtr("key"),
-				Value: ToStringPtr("value"),
-			},
-		}
+// 	It("ignores tags", func() {
+// 		spec.Tags = []commonv1.Tag{
+// 			{
+// 				Key:   ToStringPtr("key"),
+// 				Value: ToStringPtr("value"),
+// 			},
+// 		}
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("ignores metric definition differences", func() {
-		spec.AlgorithmSpecification = &commonv1.AlgorithmSpecification{
-			MetricDefinitions: []commonv1.MetricDefinition{
-				{
-					Name:  ToStringPtr("name"),
-					Regex: ToStringPtr(".*"),
-				},
-			},
-		}
+// 	It("ignores metric definition differences", func() {
+// 		spec.AlgorithmSpecification = &commonv1.AlgorithmSpecification{
+// 			MetricDefinitions: []commonv1.MetricDefinition{
+// 				{
+// 					Name:  ToStringPtr("name"),
+// 					Regex: ToStringPtr(".*"),
+// 				},
+// 			},
+// 		}
 
-		description.AlgorithmSpecification = &sagemaker.AlgorithmSpecification{
-			MetricDefinitions: []sagemaker.MetricDefinition{
-				{
-					Name:  ToStringPtr("different name"),
-					Regex: ToStringPtr(".*"),
-				},
-			},
-		}
+// 		description.AlgorithmSpecification = &sagemaker.AlgorithmSpecification{
+// 			MetricDefinitions: []sagemaker.MetricDefinition{
+// 				{
+// 					Name:  ToStringPtr("different name"),
+// 					Regex: ToStringPtr(".*"),
+// 				},
+// 			},
+// 		}
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("considers nil *bool to equal false", func() {
-		spec.EnableInterContainerTrafficEncryption = nil
-		description.EnableInterContainerTrafficEncryption = ToBoolPtr(false)
+// 	It("considers nil *bool to equal false", func() {
+// 		spec.EnableInterContainerTrafficEncryption = nil
+// 		description.EnableInterContainerTrafficEncryption = ToBoolPtr(false)
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("considers nil *bool to not equal true", func() {
-		spec.EnableInterContainerTrafficEncryption = nil
-		description.EnableInterContainerTrafficEncryption = ToBoolPtr(true)
+// 	It("considers nil *bool to not equal true", func() {
+// 		spec.EnableInterContainerTrafficEncryption = nil
+// 		description.EnableInterContainerTrafficEncryption = ToBoolPtr(true)
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(false))
-		Expect(comparison.Differences).ToNot(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(false))
+// 		Expect(comparison.Differences).ToNot(Equal(""))
+// 	})
 
-	It("considers nil *string to equal \"\"", func() {
-		spec.OutputDataConfig = &commonv1.OutputDataConfig{
-			KmsKeyId: nil,
-		}
+// 	It("considers nil *string to equal \"\"", func() {
+// 		spec.OutputDataConfig = &commonv1.OutputDataConfig{
+// 			KmsKeyId: nil,
+// 		}
 
-		description.OutputDataConfig = &sagemaker.OutputDataConfig{
-			KmsKeyId: ToStringPtr(""),
-		}
+// 		description.OutputDataConfig = &sagemaker.OutputDataConfig{
+// 			KmsKeyId: ToStringPtr(""),
+// 		}
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("considers empty Channel.RecordWrapperType to equal \"None\"", func() {
-		spec.InputDataConfig = []commonv1.Channel{
-			{
-				RecordWrapperType: "",
-			},
-		}
+// 	It("considers empty Channel.RecordWrapperType to equal \"None\"", func() {
+// 		spec.InputDataConfig = []commonv1.Channel{
+// 			{
+// 				RecordWrapperType: "",
+// 			},
+// 		}
 
-		description.InputDataConfig = []sagemaker.Channel{
-			{
-				RecordWrapperType: "None",
-			},
-		}
+// 		description.InputDataConfig = []sagemaker.Channel{
+// 			{
+// 				RecordWrapperType: "None",
+// 			},
+// 		}
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("considers empty Channel.CompressionType to equal \"None\"", func() {
-		spec.InputDataConfig = []commonv1.Channel{
-			{
-				CompressionType: "",
-			},
-		}
+// 	It("considers empty Channel.CompressionType to equal \"None\"", func() {
+// 		spec.InputDataConfig = []commonv1.Channel{
+// 			{
+// 				CompressionType: "",
+// 			},
+// 		}
 
-		description.InputDataConfig = []sagemaker.Channel{
-			{
-				CompressionType: "None",
-			},
-		}
+// 		description.InputDataConfig = []sagemaker.Channel{
+// 			{
+// 				CompressionType: "None",
+// 			},
+// 		}
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
 
-	It("correctly handles map to key value pair slice conversion", func() {
-		name1 := "name1"
-		value1 := "value1"
-		name2 := "name2"
-		value2 := "value2"
+// 	It("correctly handles map to key value pair slice conversion", func() {
+// 		name1 := "name1"
+// 		value1 := "value1"
+// 		name2 := "name2"
+// 		value2 := "value2"
 
-		spec.HyperParameters = []*commonv1.KeyValuePair{
-			{
-				Name:  name1,
-				Value: value1,
-			},
-			{
-				Name:  name2,
-				Value: value2,
-			},
-		}
+// 		spec.HyperParameters = []*commonv1.KeyValuePair{
+// 			{
+// 				Name:  name1,
+// 				Value: value1,
+// 			},
+// 			{
+// 				Name:  name2,
+// 				Value: value2,
+// 			},
+// 		}
 
-		description.HyperParameters = map[string]string{
-			name1: value1,
-			name2: value2,
-		}
+// 		description.HyperParameters = map[string]string{
+// 			name1: value1,
+// 			name2: value2,
+// 		}
 
-		comparison := TrainingJobSpecMatchesDescription(description, spec)
+// 		comparison := TrainingJobSpecMatchesDescription(description, spec)
 
-		Expect(comparison.Equal).To(Equal(true))
-		Expect(comparison.Differences).To(Equal(""))
-	})
-})
+// 		Expect(comparison.Equal).To(Equal(true))
+// 		Expect(comparison.Differences).To(Equal(""))
+// 	})
+// })
 
 var _ = Describe("BatchTransformJobSpecMatchesDescription", func() {
 	var (
