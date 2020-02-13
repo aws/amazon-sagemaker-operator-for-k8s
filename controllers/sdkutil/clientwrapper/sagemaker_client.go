@@ -35,6 +35,11 @@ const (
 	StopTrainingJob404Code              = "ValidationException"
 	StopTrainingJob404MessagePrefix     = "Requested resource not found"
 
+	DescribeHyperParameterTuningJob404Code          = "ResourceNotFound"
+	DescribeHyperParameterTuningJob404MessagePrefix = "Amazon SageMaker can't find a tuning job"
+	StopHyperParameterTuningJob404Code              = "ResourceNotFound"
+	StopHyperParameterTuningJob404MessagePrefix     = "Amazon SageMaker can't find a tuning job"
+
 	DeleteEndpoint404MessagePrefix                        = "Could not find endpoint"
 	DeleteEndpoint404Code                                 = "ValidationException"
 	DeleteEndpointInProgressMessagePrefix                 = "Cannot update in-progress endpoint"
@@ -66,6 +71,12 @@ type SageMakerClientWrapper interface {
 	CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error)
 	StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error)
 
+	DescribeHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.DescribeHyperParameterTuningJobOutput, error)
+	CreateHyperParameterTuningJob(ctx context.Context, tuningJob *sagemaker.CreateHyperParameterTuningJobInput) (*sagemaker.CreateHyperParameterTuningJobOutput, error)
+	StopHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.StopHyperParameterTuningJobOutput, error)
+
+	ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) HyperParameterTuningJobPaginator
+
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
 	CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error)
 	DeleteEndpoint(ctx context.Context, endpointName *string) (*sagemaker.DeleteEndpointOutput, error)
@@ -87,7 +98,7 @@ func NewSageMakerClientWrapper(innerClient sagemakeriface.ClientAPI) SageMakerCl
 	}
 }
 
-// Type for function that returns a SageMaker client. Used for mocking.
+// SageMakerClientWrapperProvider defines a function that returns a SageMaker client. Used for mocking.
 type SageMakerClientWrapperProvider func(aws.Config) SageMakerClientWrapper
 
 // Implementation of SageMaker client wrapper.
@@ -153,6 +164,80 @@ func (c *sageMakerClientWrapper) StopTrainingJob(ctx context.Context, trainingJo
 func (c *sageMakerClientWrapper) isDescribeTrainingJob404Error(err error) bool {
 	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DescribeTrainingJob404Code && strings.HasPrefix(requestFailure.Message(), DescribeTrainingJob404MessagePrefix)
+	}
+
+	return false
+}
+
+// Return a hyperparameter tuning job description or nil if error or does not exist.
+func (c *sageMakerClientWrapper) DescribeHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.DescribeHyperParameterTuningJobOutput, error) {
+
+	describeRequest := c.innerClient.DescribeHyperParameterTuningJobRequest(&sagemaker.DescribeHyperParameterTuningJobInput{
+		HyperParameterTuningJobName: &tuningJobName,
+	})
+
+	describeResponse, describeError := describeRequest.Send(ctx)
+
+	if describeError != nil {
+		if c.isDescribeHyperParameterTuningJob404Error(describeError) {
+			return nil, nil
+		}
+		return nil, describeError
+	}
+
+	return describeResponse.DescribeHyperParameterTuningJobOutput, describeError
+}
+
+// Create a hyperparameter tuning job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) CreateHyperParameterTuningJob(ctx context.Context, tuningJob *sagemaker.CreateHyperParameterTuningJobInput) (*sagemaker.CreateHyperParameterTuningJobOutput, error) {
+
+	createRequest := c.innerClient.CreateHyperParameterTuningJobRequest(tuningJob)
+
+	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+
+	response, err := createRequest.Send(ctx)
+
+	if response != nil {
+		return response.CreateHyperParameterTuningJobOutput, nil
+	}
+
+	return nil, err
+}
+
+// Stops a hyperparameter tuning job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) StopHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.StopHyperParameterTuningJobOutput, error) {
+	stopRequest := c.innerClient.StopHyperParameterTuningJobRequest(&sagemaker.StopHyperParameterTuningJobInput{
+		HyperParameterTuningJobName: &tuningJobName,
+	})
+
+	stopResponse, stopError := stopRequest.Send(ctx)
+
+	if stopError != nil {
+		return nil, stopError
+	}
+
+	return stopResponse.StopHyperParameterTuningJobOutput, nil
+}
+
+// Returns a paginator for iterating through the training jobs associated with a given hyperparameter tuning job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) HyperParameterTuningJobPaginator {
+	listRequest := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
+		HyperParameterTuningJobName: &tuningJobName,
+	})
+
+	paginator := sagemaker.NewListTrainingJobsForHyperParameterTuningJobPaginator(listRequest)
+
+	return &hyperParameterTuningJobPaginator{
+		paginator: &paginator,
+	}
+}
+
+// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
+// to an HTTP 404 not found.
+func (c *sageMakerClientWrapper) isDescribeHyperParameterTuningJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DescribeHyperParameterTuningJob404Code && strings.HasPrefix(requestFailure.Message(), DescribeHyperParameterTuningJob404MessagePrefix)
 	}
 
 	return false
@@ -413,4 +498,43 @@ func IsStopTrainingJob404Error(err error) bool {
 	}
 
 	return false
+}
+
+// IsStopHyperParameterTuningJob404Error determines whether the given error is equivalent to an HTTP 404 status code.
+func IsStopHyperParameterTuningJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == StopHyperParameterTuningJob404Code && strings.HasPrefix(requestFailure.Message(), StopHyperParameterTuningJob404MessagePrefix)
+	}
+
+	return false
+}
+
+// HyperParameterTuningJobPaginator wraps the SageMaker ListTrainingJobsForHyperParameterTuningJobPaginator.
+type HyperParameterTuningJobPaginator interface {
+	Next(context.Context) bool
+	CurrentPage() []sagemaker.HyperParameterTrainingJobSummary
+	Err() error
+}
+
+type hyperParameterTuningJobPaginator struct {
+	paginator *sagemaker.ListTrainingJobsForHyperParameterTuningJobPaginator
+}
+
+var _ HyperParameterTuningJobPaginator = (*hyperParameterTuningJobPaginator)(nil)
+
+// Next will attempt to retrieve the next page of training jobs.
+func (p *hyperParameterTuningJobPaginator) Next(ctx context.Context) bool {
+	return p.paginator.Next(ctx)
+}
+
+// CurrentPage returns the list of training job summaries provided by the current page.
+func (p *hyperParameterTuningJobPaginator) CurrentPage() []sagemaker.HyperParameterTrainingJobSummary {
+	page := p.paginator.CurrentPage()
+
+	return page.TrainingJobSummaries
+}
+
+// Err returns the error the paginator encountered when retrieving the next page.
+func (p *hyperParameterTuningJobPaginator) Err() error {
+	return p.paginator.Err()
 }

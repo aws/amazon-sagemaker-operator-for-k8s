@@ -19,16 +19,17 @@ package hyperparametertuningjob
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
-	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
-	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 	"github.com/go-logr/logr"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,9 +40,9 @@ import (
 // This finalizer is added to TrainingJobs that are spawned by the HPO TrainingJob Spawner.
 const hpoTrainingJobOwnershipFinalizer = "sagemaker-operator-hpo-trainingjob"
 
-// HpoTrainingJobSpawner is a simple utility for creating and deleting Kubernetes TrainingJobs
+// HPOTrainingJobSpawner is a simple utility for creating and deleting Kubernetes TrainingJobs
 // that track SageMaker TrainingJobs that were started by a given HPO job.
-type HpoTrainingJobSpawner interface {
+type HPOTrainingJobSpawner interface {
 	// Spawn TrainingJobs associated with the given HPO job that do not already exist in Kubernetes.
 	SpawnMissingTrainingJobs(ctx context.Context, hpoJob hpojobv1.HyperparameterTuningJob)
 
@@ -49,24 +50,24 @@ type HpoTrainingJobSpawner interface {
 	DeleteSpawnedTrainingJobs(ctx context.Context, hpoJob hpojobv1.HyperparameterTuningJob) error
 }
 
-// Create a new HpoTrainingJobSpawner.
-func NewHpoTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) HpoTrainingJobSpawner {
-	return hpoTrainingJobSpawner{
+// NewHPOTrainingJobSpawner constructs a new HPOTrainingJobSpawner.
+func NewHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient clientwrapper.SageMakerClientWrapper) HPOTrainingJobSpawner {
+	return &hpoTrainingJobSpawner{
 		K8sClient:       k8sClient,
-		Log:             log.WithName("HpoTrainingJobSpawner"),
+		Log:             log.WithName("HPOTrainingJobSpawner"),
 		SageMakerClient: sageMakerClient,
 	}
 }
 
-// Provider that creates an HpoTrainingJobSpawner
-type HpoTrainingJobSpawnerProvider func(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) HpoTrainingJobSpawner
+// HPOTrainingJobSpawnerProvider constructs an HPO Training Job Spawner
+type HPOTrainingJobSpawnerProvider func(k8sClient client.Client, log logr.Logger, sageMakerClient clientwrapper.SageMakerClientWrapper) HPOTrainingJobSpawner
 
 type hpoTrainingJobSpawner struct {
-	HpoTrainingJobSpawner
+	HPOTrainingJobSpawner
 
 	K8sClient       client.Client
 	Log             logr.Logger
-	SageMakerClient sagemakeriface.ClientAPI
+	SageMakerClient clientwrapper.SageMakerClientWrapper
 }
 
 // For a given region and HPO job name, get the list of TrainingJobs that the HPO job created. Then, for every
@@ -80,18 +81,13 @@ func (s hpoTrainingJobSpawner) SpawnMissingTrainingJobs(ctx context.Context, hpo
 	awsRegion := *hpoJob.Spec.Region
 	sageMakerEndpoint := hpoJob.Spec.SageMakerEndpoint
 
-	request := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
-		HyperParameterTuningJobName: &hpoJobName,
-	})
-
-	paginator := sagemaker.NewListTrainingJobsForHyperParameterTuningJobPaginator(request)
+	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
 
 	// WaitGroup allowing us to do checks in parallel.
 	var wg sync.WaitGroup
 
 	for paginator.Next(ctx) {
-		page := paginator.CurrentPage()
-		list := page.TrainingJobSummaries
+		list := paginator.CurrentPage()
 		s.Log.Info("Got a page of TrainingJobs to spawn", "length", len(list))
 
 		// For every training job, check if it exists in Kubernetes. If not, create it.
@@ -190,22 +186,15 @@ func (s hpoTrainingJobSpawner) spawnTrainingJobInKubernetes(ctx context.Context,
 // Given a TrainingJob, create a Kubernetes spec for a TrainingJob.
 // This works by Describing the SageMaker TrainingJob, then using that description to create a Kubernetes spec.
 func (s hpoTrainingJobSpawner) getKubernetesTrainingJobSpec(ctx context.Context, trainingJobName string) (*trainingjobv1.TrainingJobSpec, error) {
-	request := s.SageMakerClient.DescribeTrainingJobRequest(&sagemaker.DescribeTrainingJobInput{
-		TrainingJobName: &trainingJobName,
-	})
-
-	response, err := request.Send(ctx)
-
+	response, err := s.SageMakerClient.DescribeTrainingJob(ctx, trainingJobName)
 	if err != nil {
+		return nil, errors.Wrap(err, "An error occured while describing the TrainingJob from SageMaker")
+	} else if response == nil {
 		return nil, errors.Wrap(err, "Unable to get TrainingJob description from SageMaker")
 	}
 
-	if response.DescribeTrainingJobOutput == nil {
-		return nil, fmt.Errorf("Unable to get TrainingJob description from SageMaker")
-	}
-
-	trainingJobSpec := CreateTrainingJobSpecFromDescription(*response.DescribeTrainingJobOutput)
-	return &trainingJobSpec, nil
+	spec, err := sdkutil.CreateTrainingJobSpecFromDescription(*response)
+	return &spec, err
 }
 
 // Delete TrainingJobs associated with the given HPO job.
@@ -239,22 +228,22 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 	errorsChannel := make(chan error)
 
 	// Create paginated request to get TrainingJobs associated with HPO job.
-	paginator := sagemaker.NewListTrainingJobsForHyperParameterTuningJobPaginator(
-		s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJobRequest(
-			&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
-				HyperParameterTuningJobName: &hpoJobName,
-			},
-		),
-	)
+	paginator := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName)
 
 	// For every TrainingJob, spawn a goroutine that deletes the k8s job if it exists.
 	for paginator.Next(ctx) {
-		page := paginator.CurrentPage()
-		for _, trainingJobSummary := range page.TrainingJobSummaries {
+		list := paginator.CurrentPage()
+		for _, trainingJobSummary := range list {
 			wg.Add(1)
 			go func(trainingJobSummary sagemaker.HyperParameterTrainingJobSummary) {
 				defer wg.Done()
-				if err := s.deleteSpawnedTrainingJob(ctx, *trainingJobSummary.TrainingJobName, k8sNamespace); err != nil {
+
+				key := types.NamespacedName{
+					Namespace: k8sNamespace,
+					Name:      *trainingJobSummary.TrainingJobName,
+				}
+
+				if err := s.reconcileSpawnedTrainingJobDeletion(ctx, key); err != nil {
 					errorsChannel <- err
 				}
 			}(trainingJobSummary)
@@ -291,33 +280,28 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 
 // Delete a single training job and remove its finalizer, if present.
 // Returns an error if any operation failed and needs to be retried.
-func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJob(ctx context.Context, trainingJobName, k8sNamespace string) error {
-
-	key := types.NamespacedName{
-		Namespace: k8sNamespace,
-		Name:      trainingJobName,
-	}
-
+func (s hpoTrainingJobSpawner) reconcileSpawnedTrainingJobDeletion(ctx context.Context, trainingJobNamespacedName types.NamespacedName) error {
 	var trainingJob trainingjobv1.TrainingJob
-	if err := s.K8sClient.Get(ctx, key, &trainingJob); err != nil {
-		return IgnoreNotFound(err)
+	if err := s.K8sClient.Get(ctx, trainingJobNamespacedName, &trainingJob); err != nil {
+		// Return nil for not found, if it was previously deleted
+		return controllers.IgnoreNotFound(err)
 	}
 
-	needsRemoveFinalizer := ContainsString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
+	needsRemoveFinalizer := controllers.ContainsString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
 	needsDelete := trainingJob.ObjectMeta.GetDeletionTimestamp().IsZero()
 
 	if needsRemoveFinalizer {
-		s.Log.Info("Removing HPO ownership finalizer from TrainingJob", "trainingJobName", trainingJobName)
-		trainingJob.ObjectMeta.Finalizers = RemoveString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
+		s.Log.Info("Removing HPO ownership finalizer from TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
+		trainingJob.ObjectMeta.Finalizers = controllers.RemoveString(trainingJob.ObjectMeta.GetFinalizers(), hpoTrainingJobOwnershipFinalizer)
 		if err := s.K8sClient.Update(ctx, &trainingJob); err != nil {
-			return IgnoreNotFound(err)
+			return controllers.IgnoreNotFound(err)
 		}
 	}
 
 	if needsDelete {
-		s.Log.Info("Deleting TrainingJob", "trainingJobName", trainingJobName)
+		s.Log.Info("Deleting TrainingJob", "trainingJobName", trainingJob.Status.SageMakerTrainingJobName)
 		if err := s.K8sClient.Delete(ctx, &trainingJob); err != nil {
-			return IgnoreNotFound(err)
+			return controllers.IgnoreNotFound(err)
 		}
 	}
 
