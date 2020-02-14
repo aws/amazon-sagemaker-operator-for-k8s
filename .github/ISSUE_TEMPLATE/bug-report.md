@@ -21,7 +21,7 @@ If you would like to report a vulnerability or have a security concern regarding
 
 **Environment**:
 - Kubernetes version (use `kubectl version`):
-- Operator version (controller pod tag):
+- Operator version (controller image tag):
 - OS (e.g: `cat /etc/os-release`):
 - Kernel (e.g. `uname -a`):
 - Installation method:
