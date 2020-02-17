@@ -145,15 +145,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 	}
 
 	// Get SageMaker model description.
-<<<<<<< HEAD
 	if ctx.ModelDescription, err = ctx.SageMakerClient.DescribeModel(ctx, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
-=======
-<<<<<<< HEAD
-	if ctx.ModelDescription, err = ctx.SageMakerClient.DescribeModel(ctx, GetGeneratedJobName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
-=======
-	if ctx.ModelDescription, err = ctx.SageMakerClient.DescribeModel(ctx, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
->>>>>>> Refactor name generation
->>>>>>> Refactor name generation
 		return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to get SageMaker Model description"))
 	}
 
@@ -166,15 +158,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 
 	// If update or delete, delete the existing model.
 	if action == NeedsDelete || action == NeedsUpdate {
-<<<<<<< HEAD
 		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
-=======
-<<<<<<< HEAD
-		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, GetGeneratedJobName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
-=======
-		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
->>>>>>> Refactor name generation
->>>>>>> Refactor name generation
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to delete SageMaker model"))
 		}
 
@@ -184,15 +168,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 
 	// If update or create, create the desired model.
 	if action == NeedsCreate || action == NeedsUpdate {
-<<<<<<< HEAD
 		if ctx.ModelDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.Model.Spec, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
-=======
-<<<<<<< HEAD
-		if ctx.ModelDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.Model.Spec, GetGeneratedJobName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
-=======
-		if ctx.ModelDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.Model.Spec, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
->>>>>>> Refactor name generation
->>>>>>> Refactor name generation
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to create SageMaker model"))
 		}
 	}

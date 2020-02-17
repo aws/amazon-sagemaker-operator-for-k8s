@@ -103,7 +103,7 @@ func createHyperParameterTuningJobWithStatus(name, namespace string) *hpojobv1.H
 	// Create the base spec
 	original := createHyperParameterTuningJob(name, namespace)
 
-	jobName := GetGeneratedJobName("uid", name, MaxHyperParameterTuningJobNameLength)
+	jobName := GetGeneratedResourceName("uid", name, MaxHyperParameterTuningJobNameLength)
 
 	original.Spec.HyperParameterTuningJobName = &jobName
 

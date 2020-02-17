@@ -20,13 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-	"strings"
-=======
->>>>>>> Refactor name generation
->>>>>>> Refactor name generation
 	"time"
 
 	"github.com/go-logr/logr"
@@ -350,15 +343,7 @@ func (r *HostingDeploymentReconciler) cleanupAndRemoveFinalizer(ctx reconcileReq
 
 // Initialize fields on the context object which will be used later.
 func (r *HostingDeploymentReconciler) initializeContext(ctx *reconcileRequestContext) error {
-<<<<<<< HEAD
 	ctx.EndpointName = GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
-=======
-<<<<<<< HEAD
-	ctx.EndpointName = GetGeneratedJobName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
-=======
-	ctx.EndpointName = GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
->>>>>>> Refactor name generation
->>>>>>> Refactor name generation
 	r.Log.Info("SageMaker EndpointName", "name", ctx.EndpointName)
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
@@ -402,15 +387,7 @@ func (r *HostingDeploymentReconciler) createCreateEndpointInput(ctx reconcileReq
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	endpointName := GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
-=======
-<<<<<<< HEAD
-	endpointName := GetGeneratedJobName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
-=======
-	endpointName := GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
->>>>>>> Refactor name generation
->>>>>>> Refactor name generation
 
 	createInput := &sagemaker.CreateEndpointInput{
 		EndpointConfigName: &endpointConfigName,
@@ -506,32 +483,11 @@ func (r *HostingDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // The characters allowed in names are: digits (0-9), lower case letters (a-z), -, and .
 func GetKubernetesNamespacedName(objectName string, hostingDeployment hostingv1.HostingDeployment) types.NamespacedName {
 	k8sMaxLen := 253
-<<<<<<< HEAD
-	uid := hostingDeployment.ObjectMeta.GetUID()
-=======
-<<<<<<< HEAD
-	uid := strings.Replace(string(hostingDeployment.ObjectMeta.GetUID()), "-", "", -1)
->>>>>>> Refactor name generation
-	generation := strconv.FormatInt(hostingDeployment.ObjectMeta.GetGeneration(), 10)
-	generatedPostfix := generation + "-"
-
-<<<<<<< HEAD
-	name := GetGeneratedResourceName(uid, objectName, k8sMaxLen, generatedPostfix)
-=======
-	requiredPostfix := "-" + generation + "-" + uid
-	name := objectName + requiredPostfix
-
-	if len(name) > k8sMaxLen {
-		name = objectName[:k8sMaxLen-len(requiredPostfix)] + requiredPostfix
-	}
-=======
 	uid := hostingDeployment.ObjectMeta.GetUID()
 	generation := strconv.FormatInt(hostingDeployment.ObjectMeta.GetGeneration(), 10)
 	generatedPostfix := generation + "-"
 
 	name := GetGeneratedResourceName(uid, objectName, k8sMaxLen, generatedPostfix)
->>>>>>> Refactor name generation
->>>>>>> Refactor name generation
 
 	return types.NamespacedName{
 		Name:      name,
