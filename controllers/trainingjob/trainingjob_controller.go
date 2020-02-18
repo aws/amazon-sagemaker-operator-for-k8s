@@ -225,7 +225,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	if ctx.TrainingJob.Spec.TrainingJobName != nil && len(*ctx.TrainingJob.Spec.TrainingJobName) > 0 {
 		ctx.TrainingJobName = *ctx.TrainingJob.Spec.TrainingJobName
 	} else {
-		ctx.TrainingJobName = controllers.GetGeneratedResourceName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)
+		ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)
 		ctx.TrainingJob.Spec.TrainingJobName = &ctx.TrainingJobName
 
 		if err := r.Update(ctx, ctx.TrainingJob); err != nil {

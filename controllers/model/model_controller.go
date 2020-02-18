@@ -46,6 +46,9 @@ const (
 
 	// Status to indicate that an error occurred during reconciliation.
 	ErrorStatus = "Error"
+
+	// Defines the maximum number of characters in a SageMaker Model SubResource name
+	MaxModelNameLength = 63
 )
 
 // ModelReconciler reconciles a Model object
@@ -145,7 +148,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 	}
 
 	// Get SageMaker model description.
-	if ctx.ModelDescription, err = ctx.SageMakerClient.DescribeModel(ctx, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
+	if ctx.ModelDescription, err = ctx.SageMakerClient.DescribeModel(ctx, generateModelName(ctx.Model)); err != nil {
 		return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to get SageMaker Model description"))
 	}
 
@@ -158,7 +161,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 
 	// If update or delete, delete the existing model.
 	if action == NeedsDelete || action == NeedsUpdate {
-		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
+		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, generateModelName(ctx.Model)); err != nil {
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to delete SageMaker model"))
 		}
 
@@ -168,7 +171,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 
 	// If update or create, create the desired model.
 	if action == NeedsCreate || action == NeedsUpdate {
-		if ctx.ModelDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.Model.Spec, GetGeneratedResourceName(ctx.Model.ObjectMeta.GetUID(), ctx.Model.ObjectMeta.GetName(), 63)); err != nil {
+		if ctx.ModelDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.Model.Spec, generateModelName(ctx.Model)); err != nil {
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to create SageMaker model"))
 		}
 	}
@@ -330,4 +333,8 @@ func (r *ModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Ignore status-only and metadata-only updates
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
+}
+
+func generateModelName(model *modelv1.Model) string {
+	return GetGeneratedJobName(model.ObjectMeta.GetUID(), model.ObjectMeta.GetName(), MaxModelNameLength)
 }

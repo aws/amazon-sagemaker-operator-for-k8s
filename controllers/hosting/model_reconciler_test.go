@@ -313,7 +313,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				},
 			}
 
-			expectedModelName = GetKubernetesNamespacedName("model-name", *desired).Name
+			expectedModelName = GetSubresourceNamespacedName("model-name", *desired).Name
 
 			reconciler.Reconcile(context.Background(), desired, true)
 		})
@@ -446,7 +446,7 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		expectedModelName = GetKubernetesNamespacedName("model-name", *desired).Name
+		expectedModelName = GetSubresourceNamespacedName("model-name", *desired).Name
 
 		var model modelv1.Model
 
@@ -528,7 +528,7 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 			},
 		}
 
-		modelNamespacedName = GetKubernetesNamespacedName(modelName, *desired)
+		modelNamespacedName = GetSubresourceNamespacedName(modelName, *desired)
 	})
 
 	AfterEach(func() {
@@ -616,7 +616,7 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 			},
 		}
 
-		modelNamespacedName = GetKubernetesNamespacedName(modelName, *desired)
+		modelNamespacedName = GetSubresourceNamespacedName(modelName, *desired)
 		err := createCreatedModelWithSageMakerName(modelNamespacedName, *desired, "")
 		Expect(err).ToNot(HaveOccurred())
 	})

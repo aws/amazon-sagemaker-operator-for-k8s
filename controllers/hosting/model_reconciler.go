@@ -293,7 +293,7 @@ func (r *modelReconciler) extractDesiredModelsFromHostingDeployment(deployment *
 		if modelContainers, err = r.getContainerDefinitions(model, containers, *primaryContainer.ContainerHostname); err != nil {
 			return nil, nil, err
 		}
-		namespacedName := GetKubernetesNamespacedName(name, *deployment)
+		namespacedName := GetSubresourceNamespacedName(name, *deployment)
 
 		// Add labels to model that indicate which particular HostingDeployment
 		// owns it.

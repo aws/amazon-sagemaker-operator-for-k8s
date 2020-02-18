@@ -222,7 +222,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	// Ensure we generate a new name and populate the spec if none was specified
 	if ctx.TuningJob.Spec.HyperParameterTuningJobName == nil || len(*ctx.TuningJob.Spec.HyperParameterTuningJobName) == 0 {
-		generatedName := controllers.GetGeneratedResourceName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)
+		generatedName := controllers.GetGeneratedJobName(ctx.TuningJob.ObjectMeta.GetUID(), ctx.TuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)
 		ctx.TuningJob.Spec.HyperParameterTuningJobName = &generatedName
 
 		if err := r.Update(ctx, ctx.TuningJob); err != nil {

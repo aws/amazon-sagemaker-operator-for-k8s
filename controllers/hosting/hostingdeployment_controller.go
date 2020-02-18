@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -43,6 +44,9 @@ import (
 
 const (
 	ReconcilingEndpointStatus = "ReconcilingEndpoint"
+
+	// Defines the maximum number of characters in a SageMaker Hosting Deployment Resource name
+	MaxResourceNameLength = 63
 )
 
 // HostingDeploymentReconciler reconciles a HostingDeployment object
@@ -343,7 +347,7 @@ func (r *HostingDeploymentReconciler) cleanupAndRemoveFinalizer(ctx reconcileReq
 
 // Initialize fields on the context object which will be used later.
 func (r *HostingDeploymentReconciler) initializeContext(ctx *reconcileRequestContext) error {
-	ctx.EndpointName = GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
+	ctx.EndpointName = GetGeneratedJobName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), MaxResourceNameLength)
 	r.Log.Info("SageMaker EndpointName", "name", ctx.EndpointName)
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
@@ -387,7 +391,7 @@ func (r *HostingDeploymentReconciler) createCreateEndpointInput(ctx reconcileReq
 		return nil, err
 	}
 
-	endpointName := GetGeneratedResourceName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), 63)
+	endpointName := GetGeneratedJobName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), MaxResourceNameLength)
 
 	createInput := &sagemaker.CreateEndpointInput{
 		EndpointConfigName: &endpointConfigName,
@@ -481,13 +485,13 @@ func (r *HostingDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // are able to find the object.
 // Kubernetes resources can have names up to 253 characters long.
 // The characters allowed in names are: digits (0-9), lower case letters (a-z), -, and .
-func GetKubernetesNamespacedName(objectName string, hostingDeployment hostingv1.HostingDeployment) types.NamespacedName {
+func GetSubresourceNamespacedName(objectName string, hostingDeployment hostingv1.HostingDeployment) types.NamespacedName {
 	k8sMaxLen := 253
-	uid := hostingDeployment.ObjectMeta.GetUID()
+	uid := strings.Replace(string(hostingDeployment.ObjectMeta.GetUID()), "-", "", -1)
 	generation := strconv.FormatInt(hostingDeployment.ObjectMeta.GetGeneration(), 10)
-	generatedPostfix := generation + "-"
+	requiredPostfix := generation + "-" + uid
 
-	name := GetGeneratedResourceName(uid, objectName, k8sMaxLen, generatedPostfix)
+	name := GetGeneratedResourceName(requiredPostfix, objectName, k8sMaxLen)
 
 	return types.NamespacedName{
 		Name:      name,

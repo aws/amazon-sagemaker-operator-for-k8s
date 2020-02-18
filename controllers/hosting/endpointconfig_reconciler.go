@@ -176,7 +176,7 @@ func (r *endpointConfigReconciler) extractDesiredEndpointConfigFromHostingDeploy
 
 	// TODO need to rename production variant names to remove "initial"
 
-	namespacedName := GetKubernetesNamespacedName(desiredDeployment.ObjectMeta.GetName(), *desiredDeployment)
+	namespacedName := GetSubresourceNamespacedName(desiredDeployment.ObjectMeta.GetName(), *desiredDeployment)
 
 	// Add labels to endpointconfig that indicate which particular HostingDeployment
 	// owns it.
@@ -208,7 +208,7 @@ func (r *endpointConfigReconciler) resolveSageMakerModelName(ctx context.Context
 		return nil, fmt.Errorf("Unable to resolve SageMaker model name for nil deployment")
 	}
 
-	namespacedName := GetKubernetesNamespacedName(k8sModelName, *desiredDeployment)
+	namespacedName := GetSubresourceNamespacedName(k8sModelName, *desiredDeployment)
 
 	var model modelv1.Model
 	if err := r.k8sClient.Get(ctx, namespacedName, &model); err != nil {

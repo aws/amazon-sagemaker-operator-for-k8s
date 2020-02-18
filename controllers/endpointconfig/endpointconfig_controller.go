@@ -50,6 +50,9 @@ const (
 
 	// Status to indicate that an error occurred during reconciliation.
 	ErrorStatus = "Error"
+
+	// Defines the maximum number of characters in a SageMaker Endpoint Config Resource name
+	MaxEndpointConfigNameLength = 63
 )
 
 // EndpointConfigReconciler reconciles a EndpointConfig object
@@ -149,7 +152,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 	}
 
 	// Get SageMaker endpointConfig description.
-	if ctx.EndpointConfigDescription, err = ctx.SageMakerClient.DescribeEndpointConfig(ctx, GetGeneratedResourceName(ctx.EndpointConfig.ObjectMeta.GetUID(), ctx.EndpointConfig.ObjectMeta.GetName(), 63)); err != nil {
+	if ctx.EndpointConfigDescription, err = ctx.SageMakerClient.DescribeEndpointConfig(ctx, generateEndpointConfigName(ctx.EndpointConfig)); err != nil {
 		return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to get SageMaker EndpointConfig description"))
 	}
 
@@ -162,7 +165,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 
 	// If update or delete, delete the existing endpointConfig.
 	if action == NeedsDelete || action == NeedsUpdate {
-		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, GetGeneratedResourceName(ctx.EndpointConfig.ObjectMeta.GetUID(), ctx.EndpointConfig.ObjectMeta.GetName(), 63)); err != nil {
+		if err = r.reconcileDeletion(ctx, ctx.SageMakerClient, generateEndpointConfigName(ctx.EndpointConfig)); err != nil {
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to delete SageMaker endpointConfig"))
 		}
 
@@ -172,7 +175,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 
 	// If update or create, create the desired endpointConfig.
 	if action == NeedsCreate || action == NeedsUpdate {
-		if ctx.EndpointConfigDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.EndpointConfig.Spec, GetGeneratedResourceName(ctx.EndpointConfig.ObjectMeta.GetUID(), ctx.EndpointConfig.ObjectMeta.GetName(), 63)); err != nil {
+		if ctx.EndpointConfigDescription, err = r.reconcileCreation(ctx, ctx.SageMakerClient, ctx.EndpointConfig.Spec, generateEndpointConfigName(ctx.EndpointConfig)); err != nil {
 			return r.updateStatusAndReturnError(ctx, ErrorStatus, errors.Wrap(err, "Unable to create SageMaker endpointConfig"))
 		}
 	}
@@ -334,4 +337,8 @@ func (r *EndpointConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Ignore status-only and metadata-only updates
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
+}
+
+func generateEndpointConfigName(endpointConfig *endpointconfigv1.EndpointConfig) string {
+	return GetGeneratedJobName(endpointConfig.ObjectMeta.GetUID(), endpointConfig.ObjectMeta.GetName(), MaxEndpointConfigNameLength)
 }

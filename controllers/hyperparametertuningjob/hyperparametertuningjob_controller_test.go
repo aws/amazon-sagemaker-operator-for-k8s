@@ -244,7 +244,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 
 			It("Creates a HyperParameterTuningJob", func() {
 				req := receivedRequests.Front().Next().Value
-				ExpectRequestToCreateHyperParameterTuningJob(req, controllers.GetGeneratedResourceName(tuningJob.ObjectMeta.GetUID(), tuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength))
+				ExpectRequestToCreateHyperParameterTuningJob(req, controllers.GetGeneratedJobName(tuningJob.ObjectMeta.GetUID(), tuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength))
 			})
 
 			It("Requeues after interval", func() {
@@ -797,7 +797,7 @@ func ExpectRequestToStopHyperParameterTuningJob(req interface{}, tuningJob *hpoj
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.StopHyperParameterTuningJobInput)(nil)))
 
 	stopRequest := req.(*sagemaker.StopHyperParameterTuningJobInput)
-	Expect(*stopRequest.HyperParameterTuningJobName).To(Equal(controllers.GetGeneratedResourceName(tuningJob.ObjectMeta.GetUID(), tuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)))
+	Expect(*stopRequest.HyperParameterTuningJobName).To(Equal(controllers.GetGeneratedJobName(tuningJob.ObjectMeta.GetUID(), tuningJob.ObjectMeta.GetName(), MaxHyperParameterTuningJobNameLength)))
 }
 
 // Helper function to verify that the controller attempted to delete a spawned training job a given number of times.
