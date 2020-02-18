@@ -222,7 +222,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 // Initialize fields on the context object which will be used later.
 func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	// Ensure we are using the job name specified in the spec
-	if ctx.TrainingJob.Spec.TrainingJobName != nil {
+	if ctx.TrainingJob.Spec.TrainingJobName != nil && len(*ctx.TrainingJob.Spec.TrainingJobName) > 0 {
 		ctx.TrainingJobName = *ctx.TrainingJob.Spec.TrainingJobName
 	} else {
 		ctx.TrainingJobName = controllers.GetGeneratedJobName(ctx.TrainingJob.ObjectMeta.GetUID(), ctx.TrainingJob.ObjectMeta.GetName(), MaxTrainingJobNameLength)
