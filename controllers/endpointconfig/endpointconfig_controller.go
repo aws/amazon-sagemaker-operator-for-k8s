@@ -19,7 +19,6 @@ package endpointconfig
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -51,6 +50,9 @@ const (
 
 	// Status to indicate that an error occurred during reconciliation.
 	ErrorStatus = "Error"
+
+	// Defines the maximum number of characters in a SageMaker Endpoint Config Resource name
+	MaxEndpointConfigNameLength = 63
 )
 
 // EndpointConfigReconciler reconciles a EndpointConfig object
@@ -328,19 +330,6 @@ func (r *EndpointConfigReconciler) updateStatusWithAdditional(ctx reconcileReque
 	return nil
 }
 
-func generateEndpointConfigName(endpointConfig *endpointconfigv1.EndpointConfig) string {
-	sageMakerMaxNameLen := 63
-	name := endpointConfig.ObjectMeta.GetName()
-	requiredPostfix := "-" + strings.Replace(string(endpointConfig.ObjectMeta.GetUID()), "-", "", -1)
-
-	sageMakerEndpointConfigName := name + requiredPostfix
-	if len(sageMakerEndpointConfigName) > sageMakerMaxNameLen {
-		sageMakerEndpointConfigName = name[:sageMakerMaxNameLen-len(requiredPostfix)] + requiredPostfix
-	}
-
-	return sageMakerEndpointConfigName
-}
-
 // TODO add code that ignores status, metadata updates.
 func (r *EndpointConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -348,4 +337,8 @@ func (r *EndpointConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Ignore status-only and metadata-only updates
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
+}
+
+func generateEndpointConfigName(endpointConfig *endpointconfigv1.EndpointConfig) string {
+	return GetGeneratedJobName(endpointConfig.ObjectMeta.GetUID(), endpointConfig.ObjectMeta.GetName(), MaxEndpointConfigNameLength)
 }

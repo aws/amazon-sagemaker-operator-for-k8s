@@ -142,8 +142,8 @@ func Now() *metav1.Time {
 	return &now
 }
 
-// Generate a SageMaker name for a corresponding Kubernetes object.
-// We need an deterministic way to identiy SageMaker resources given a Kubernetes object. This generates
+// Generates a Sagemaker name for various Kubernetes objects and subresources.
+// We need a deterministic way to identify SageMaker resources given a Kubernetes object. This generates
 // a name based off of the UID and object meta name.
 // SageMaker requires that names be less than a certain length. For Training and BatchTransform, the
 // maximum name length is 63. For HPO, the maximum name length is 32.
@@ -152,32 +152,36 @@ func Now() *metav1.Time {
 // * [CreateTrainingJob#TrainingJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateTrainingJob.html#SageMaker-CreateTrainingJob-request-TrainingJobName)
 // * [CreateTransformJob#TransformJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateTransformJob.html#SageMaker-CreateTransformJob-request-TransformJobName)
 // * [CreateHyperParameterTuningJob#HyperParameterTuningJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateHyperParameterTuningJob.html#SageMaker-CreateHyperParameterTuningJob-request-HyperParameterTuningJobName)
-func GetGeneratedJobName(objectMetaUID types.UID, objectMetaName string, maxNameLen int) string {
-	requiredPostfix := strings.Replace(string(objectMetaUID), "-", "", -1)
-
+func GetGeneratedResourceName(required, optional string, maxLen int) string {
+	// create name: `required + '-' + optional`
 	delimiter := "-"
-	prefix := objectMetaName
-	jobName := prefix + delimiter + requiredPostfix
+	name := optional + delimiter + required
+
+	// truncate if necessary, removing all of optional before any of required
 
 	// If no excess characters, return the job name.
-	if len(jobName) <= maxNameLen {
-		return jobName
+	if len(name) <= maxLen {
+		return name
 	}
 
 	// If can remove excess characters by truncating (and keeping part of) the prefix, do so.
-	excessCharacterCount := len(jobName) - maxNameLen
-	if excessCharacterCount < len(prefix) {
-		return prefix[:len(prefix)-excessCharacterCount] + delimiter + requiredPostfix
+	excessCharacterCount := len(name) - maxLen
+	if excessCharacterCount < len(optional) {
+		return optional[:len(optional)-excessCharacterCount] + delimiter + required
 	}
 
 	// The excess character count is larger than the entire prefix.
-	// We should return the entire requiredPostfix if possible.
-	if len(requiredPostfix) <= maxNameLen {
-		return requiredPostfix
+	// We should return the entire required if possible.
+	if len(required) <= maxLen {
+		return required
 	}
 
 	// If the maxNameLen is smaller than the required postfix, truncate the required postfix.
-	return requiredPostfix[:maxNameLen]
+	return required[:maxLen]
+}
+
+func GetGeneratedJobName(objectMetaUID types.UID, objectMetaName string, maxNameLen int) string {
+	return GetGeneratedResourceName(strings.Replace(string(objectMetaUID), "-", "", -1), objectMetaName, maxNameLen)
 }
 
 // Helper method that makes logic easier to read.
