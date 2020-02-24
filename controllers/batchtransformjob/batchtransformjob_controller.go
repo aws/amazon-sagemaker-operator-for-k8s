@@ -42,7 +42,7 @@ import (
 const (
 	transformResourceNotFoundApiCode string = "ValidationException"
 
-	// Defines the maximum number of characters in a SageMaker Endpoint Config Resource name
+	// Defines the maximum number of characters in a SageMaker Batch Transform Resource name
 	MaxBatchTransformNameLength = 63
 )
 

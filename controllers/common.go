@@ -142,16 +142,11 @@ func Now() *metav1.Time {
 	return &now
 }
 
-// Generates a Sagemaker name for various Kubernetes objects and subresources.
-// We need a deterministic way to identify SageMaker resources given a Kubernetes object. This generates
-// a name based off of the UID and object meta name.
-// SageMaker requires that names be less than a certain length. For Training and BatchTransform, the
-// maximum name length is 63. For HPO, the maximum name length is 32.
-//
-// See also:
-// * [CreateTrainingJob#TrainingJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateTrainingJob.html#SageMaker-CreateTrainingJob-request-TrainingJobName)
-// * [CreateTransformJob#TransformJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateTransformJob.html#SageMaker-CreateTransformJob-request-TransformJobName)
-// * [CreateHyperParameterTuningJob#HyperParameterTuningJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateHyperParameterTuningJob.html#SageMaker-CreateHyperParameterTuningJob-request-HyperParameterTuningJobName)
+// GetGeneratedResourceName creates a resource name from optional and
+// required substrings given a maximum length constraint.
+// If the resource name length is larger than the maximum length, this
+// will truncate first the optional substring, then, if necessary, it will truncate
+// the required substring.
 func GetGeneratedResourceName(required, optional string, maxLen int) string {
 	// create name: `required + '-' + optional`
 	delimiter := "-"
@@ -170,16 +165,21 @@ func GetGeneratedResourceName(required, optional string, maxLen int) string {
 		return optional[:len(optional)-excessCharacterCount] + delimiter + required
 	}
 
-	// The excess character count is larger than the entire prefix.
-	// We should return the entire required if possible.
-	if len(required) <= maxLen {
-		return required
-	}
-
 	// If the maxNameLen is smaller than the required postfix, truncate the required postfix.
+	// This will also take care of the case when the length of required is equal to the maxLen
 	return required[:maxLen]
 }
 
+// Generates a Sagemaker name for various Kubernetes objects and subresources.
+// We need a deterministic way to identify SageMaker resources given a Kubernetes object. This generates
+// a name based off of the UID and object meta name.
+// SageMaker requires that names be less than a certain length. For Training and BatchTransform, the
+// maximum name length is 63. For HPO, the maximum name length is 32.
+//
+// See also:
+// * [CreateTrainingJob#TrainingJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateTrainingJob.html#SageMaker-CreateTrainingJob-request-TrainingJobName)
+// * [CreateTransformJob#TransformJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateTransformJob.html#SageMaker-CreateTransformJob-request-TransformJobName)
+// * [CreateHyperParameterTuningJob#HyperParameterTuningJobName](https://docs.aws.amazon.com/sagemaker/latest/dg/API_CreateHyperParameterTuningJob.html#SageMaker-CreateHyperParameterTuningJob-request-HyperParameterTuningJobName)
 func GetGeneratedJobName(objectMetaUID types.UID, objectMetaName string, maxNameLen int) string {
 	return GetGeneratedResourceName(strings.Replace(string(objectMetaUID), "-", "", -1), objectMetaName, maxNameLen)
 }

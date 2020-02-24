@@ -339,6 +339,7 @@ func (r *EndpointConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// Given a endpointConfig object, generate a Sagemaker name of valid length
 func generateEndpointConfigName(endpointConfig *endpointconfigv1.EndpointConfig) string {
 	return GetGeneratedJobName(endpointConfig.ObjectMeta.GetUID(), endpointConfig.ObjectMeta.GetName(), MaxEndpointConfigNameLength)
 }
