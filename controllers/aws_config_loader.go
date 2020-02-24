@@ -28,29 +28,29 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Simple struct to facilitate loading AWS config with region- and endpoint-overrides.
+// AwsConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
 // This uses venv.Env for mocking in tests.
 type AwsConfigLoader struct {
 	Env venv.Env
 }
 
-// Create an AwsConfigLoader with the default OS environment.
+// NewAwsConfigLoader creates an AwsConfigLoader with the default OS environment.
 func NewAwsConfigLoader() AwsConfigLoader {
 	return NewAwsConfigLoaderForEnv(venv.OS())
 }
 
+// NewAwsConfigLoaderForEnv returns a AwsConfigLoader for the specified environment.
 func NewAwsConfigLoaderForEnv(env venv.Env) AwsConfigLoader {
 	return AwsConfigLoader{
 		Env: env,
 	}
 }
 
-/*
-   As of 11/16/2019 aws-sdk-go-v2 does not supports AWS_WEB_IDENTITY_TOKEN_FILE
-   based credentials. This is a work around to retrieve the credentials from v1
-   and pass to v2.
-   TODO: Remove this function once aws-sdk-go-v2 is fixed.
-*/
+// InstallCredsUsingSDKV1 is required because as of 11/16/2019 aws-sdk-go-v2 does not
+// supports AWS_WEB_IDENTITY_TOKEN_FILE based credentials. This is a work around to
+// retrieve the credentials from v1 and pass to v2.
+// TODO: Remove this function once aws-sdk-go-v2 is fixed.
+// TODO: Change var awsAccessKeyId to awsAccessKeyID
 func (l *AwsConfigLoader) InstallCredsUsingSDKV1(config *aws.Config, regionOverride string) {
 	var err error
 	awsAccessKeyId := l.Env.Getenv("AWS_ACCESS_KEY_ID")
@@ -90,7 +90,7 @@ func (l *AwsConfigLoader) InstallCredsUsingSDKV1(config *aws.Config, regionOverr
 	}
 }
 
-// Load default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.
+// LoadAwsConfigWithOverrides loads default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.
 // If specified, jobSpecificEndpointOverride always overrides the endpoint. Otherwise, the environment
 // variable specified by DefaultSageMakerEndpointEnvKey overrides the endpoint if it is set.
 func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSpecificEndpointOverride *string) (aws.Config, error) {

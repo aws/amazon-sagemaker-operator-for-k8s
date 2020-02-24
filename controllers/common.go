@@ -31,32 +31,33 @@ import (
 )
 
 const (
-	// The name of the finalizer that is installed onto managed etcd resources.
+	// SageMakerResourceFinalizerName is the name of the finalizer that is installed onto managed etcd resources.
 	SageMakerResourceFinalizerName = "sagemaker-operator-finalizer"
 
-	// The environment variable key of the default SageMaker endpoint to use.
+	// DefaultSageMakerEndpointEnvKey is the environment variable key of the default SageMaker endpoint to use.
 	// If this is set to anything other than the empty string, the controllers
 	// will use its value as the endpoint with which to communicate with SageMaker.
 	DefaultSageMakerEndpointEnvKey = "AWS_DEFAULT_SAGEMAKER_ENDPOINT"
 
-	// Status stored on first touch of a job by a controller.
+	// InitializingJobStatus is the status stored on first touch of a job by a controller.
 	// This status is kept until the job has a real status.
 	InitializingJobStatus = "SynchronizingK8sJobWithSageMaker"
 )
 
-// The error message to use when a spec differs from its SageMaker description.
+// CreateSpecDiffersFromDescriptionErrorMessage returns the error message to use when a spec differs from its SageMaker description.
 func CreateSpecDiffersFromDescriptionErrorMessage(job interface{}, status, differences string) string {
 	const specDiffersFromDescriptionErrorMessage = "Updates to %s are not supported; the resource no longer matches the SageMaker resource. The job will be marked as \"%s\" and no modifications to the existing SageMaker job will be made until the update is reverted. The differences that prevent tracking of the SageMaker resource are:\n%s"
 	return fmt.Sprintf(specDiffersFromDescriptionErrorMessage, reflect.TypeOf(job).String(), status, differences)
 }
 
-// This string will be added to user agent. This helps to distinguish
+// SagemakerOnKubernetesUserAgentAddition is the string that will be added to user agent. This helps to distinguish
 // sagemaker job which has been created from kubernetes.
 const SagemakerOnKubernetesUserAgentAddition = "sagemaker-on-kubernetes"
 
-// Helper type that describes the action to perform on a resource.
+// ReconcileAction is a helper type that describes the action to perform on a resource.
 type ReconcileAction string
 
+// Constants for the various reconcile actions.
 const (
 	NeedsCreate ReconcileAction = "NeedsCreate"
 	NeedsDelete ReconcileAction = "NeedsDelete"
@@ -64,23 +65,23 @@ const (
 	NeedsUpdate ReconcileAction = "NeedsUpdate"
 )
 
-// Type for function that returns a SageMaker client. Used for mocking.
+// SageMakerClientProvider is a Type for function that returns a SageMaker client. Used for mocking.
 type SageMakerClientProvider func(aws.Config) sagemakeriface.ClientAPI
 
+// RequeueIfError requeues if an error is found.
 func RequeueIfError(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
-// Helper function which requeues immediately if the object generation has not changed.
+// RequeueImmediatelyUnlessGenerationChanged is a helper function which requeues immediately if the object generation has not changed.
 // Otherwise, since the generation change will trigger an immediate update anyways, this
 // will not requeue.
 // This prevents some cases where two reconciliation loops will occur.
 func RequeueImmediatelyUnlessGenerationChanged(prevGeneration, curGeneration int64) (ctrl.Result, error) {
 	if prevGeneration == curGeneration {
 		return RequeueImmediately()
-	} else {
-		return NoRequeue()
 	}
+	return NoRequeue()
 }
 
 // Note: In unit test we use Result from controller-runtime package from https://github.com/kubernetes-sigs/controller-runtime/blob/2027a413747f2a8cada813dd98b3b1473c253913/pkg/reconcile/reconcile.go#L26
@@ -89,19 +90,22 @@ func RequeueImmediatelyUnlessGenerationChanged(prevGeneration, curGeneration int
 //       if Requeue is False and if duration is 0 then NO requeue, but if duration is > 0 then requeue after duration. Its a bit  confusing hence this note.
 //       Full implementation is available at https://github.com/kubernetes-sigs/controller-runtime/blob/0fdf465bc21be27b20c5b480a1aced84a3347d43/pkg/internal/controller/controller.go#L235-L287
 
+// NoRequeue does not requeue when Requeue is False and duration is 0.
 func NoRequeue() (ctrl.Result, error) {
 	return RequeueIfError(nil)
 }
 
+// RequeueAfterInterval requeues after a duration when duration > 0 is specified.
 func RequeueAfterInterval(interval time.Duration, err error) (ctrl.Result, error) {
 	return ctrl.Result{RequeueAfter: interval}, err
 }
 
+// RequeueImmediately requeues immediately when Requeue is True and no duration is specified.
 func RequeueImmediately() (ctrl.Result, error) {
 	return ctrl.Result{Requeue: true}, nil
 }
 
-// Ignore NotFound errors to prevent reconcile loops.
+// IgnoreNotFound ignores NotFound errors to prevent reconcile loops.
 func IgnoreNotFound(err error) error {
 	if apierrs.IsNotFound(err) {
 		return nil
@@ -109,7 +113,7 @@ func IgnoreNotFound(err error) error {
 	return err
 }
 
-// Helper functions to check and remove string from a slice of strings.
+// ContainsString is a helper functions to check and remove string from a slice of strings.
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
@@ -119,6 +123,7 @@ func ContainsString(slice []string, s string) bool {
 	return false
 }
 
+// RemoveString removes a specific string from a splice and returns the rest.
 func RemoveString(slice []string, s string) (result []string) {
 	for _, item := range slice {
 		if item == s {
@@ -129,14 +134,15 @@ func RemoveString(slice []string, s string) (result []string) {
 	return
 }
 
+// GetOrDefault is a helper function to return a default value
 func GetOrDefault(str *string, defaultStr string) string {
 	if str == nil {
 		return defaultStr
-	} else {
-		return *str
 	}
+	return *str
 }
 
+// Now returns timestamp
 func Now() *metav1.Time {
 	now := metav1.Now()
 	return &now
@@ -170,7 +176,7 @@ func GetGeneratedResourceName(required, optional string, maxLen int) string {
 	return required[:maxLen]
 }
 
-// Generates a Sagemaker name for various Kubernetes objects and subresources.
+// GetGeneratedJobName generates a Sagemaker name for various Kubernetes objects and subresources.
 // We need a deterministic way to identify SageMaker resources given a Kubernetes object. This generates
 // a name based off of the UID and object meta name.
 // SageMaker requires that names be less than a certain length. For Training and BatchTransform, the
@@ -184,7 +190,7 @@ func GetGeneratedJobName(objectMetaUID types.UID, objectMetaName string, maxName
 	return GetGeneratedResourceName(strings.Replace(string(objectMetaUID), "-", "", -1), objectMetaName, maxNameLen)
 }
 
-// Helper method that makes logic easier to read.
+// HasDeletionTimestamp is a helper method that makes logic easier to read.
 func HasDeletionTimestamp(obj metav1.ObjectMeta) bool {
 	return !obj.GetDeletionTimestamp().IsZero()
 }
