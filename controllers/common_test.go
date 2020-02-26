@@ -29,21 +29,16 @@ import (
 var _ = Describe("GetGeneratedResourceName", func() {
 
 	var (
-		uid                   types.UID
 		optional              string
 		maxNameLen            int
-		uidWithoutHyphens     string
 		generatedResourceName string
 		required              string
+		requiredPostfix       string
 	)
 
-	BeforeEach(func() {
-		uid = types.UID(uuid.New().String())
-	})
-
 	JustBeforeEach(func() {
-		uidWithoutHyphens = strings.Replace(string(uid), "-", "", -1)
-		required = "generated.postfix" + uidWithoutHyphens
+		requiredPostfix = "bced7caf409947faa7d2161963a1bff7"
+		required = "generated.postfix" + requiredPostfix
 		generatedResourceName = GetGeneratedResourceName(required, optional, maxNameLen)
 	})
 
@@ -92,7 +87,7 @@ var _ = Describe("GetGeneratedResourceName", func() {
 			})
 
 			It("Contains the full UID", func() {
-				Expect(generatedResourceName).To(ContainSubstring(uidWithoutHyphens))
+				Expect(generatedResourceName).To(ContainSubstring(requiredPostfix))
 			})
 
 			It("Length does not exceed maxNameLen", func() {
@@ -144,7 +139,7 @@ var _ = Describe("GetGeneratedResourceName", func() {
 			Expect(len(generatedResourceName)).To(BeNumerically("<=", maxNameLen))
 		})
 
-		It("Is contained in the full hyphen-less UID", func() {
+		It("Is contained in the full required string", func() {
 			Expect(required).To(ContainSubstring(generatedResourceName))
 		})
 	})
@@ -170,7 +165,7 @@ var _ = Describe("GetGeneratedJobName", func() {
 	JustBeforeEach(func() {
 		uidWithoutHyphens = strings.Replace(string(uid), "-", "", -1)
 		generatedJobName = GetGeneratedJobName(uid, objectMetaName, maxNameLen)
-		generatedResourceName = GetGeneratedJobName(uid, objectMetaName, maxNameLen)
+		generatedResourceName = GetGeneratedResourceName(uidWithoutHyphens, objectMetaName, maxNameLen)
 	})
 
 	When("maxNameLen is sufficiently large", func() {

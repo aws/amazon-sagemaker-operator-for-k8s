@@ -335,7 +335,7 @@ func (r *ModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Given a Model object, generate a Sagemaker name of valid length
+// Given a Model object, generate a SageMaker name of valid length
 func generateModelName(model *modelv1.Model) string {
 	return GetGeneratedJobName(model.ObjectMeta.GetUID(), model.ObjectMeta.GetName(), MaxModelNameLength)
 }
