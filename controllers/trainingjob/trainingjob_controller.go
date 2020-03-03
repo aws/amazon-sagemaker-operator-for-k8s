@@ -210,6 +210,10 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		if err = r.updateStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), ""); err != nil {
 			return err
 		}
+	} else if ctx.TrainingJobDescription.FailureReason != nil {
+		if err = r.updateStatusWithAdditional(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus), *ctx.TrainingJobDescription.FailureReason); err != nil {
+			return err
+		}
 	} else {
 		if err = r.updateStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus)); err != nil {
 			return err
