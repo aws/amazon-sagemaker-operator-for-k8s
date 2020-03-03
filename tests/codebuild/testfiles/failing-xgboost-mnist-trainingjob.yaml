@@ -1,3 +1,7 @@
+# This TrainingJob was designed to fail during the "Training" phase.
+# The image specified refers to a plain Tensorflow DLC image that does not have
+# the correct entrypoint for a SageMaker training job. This will fail with a 
+# python exception that should be captured by the operator.
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: TrainingJob
 metadata:
