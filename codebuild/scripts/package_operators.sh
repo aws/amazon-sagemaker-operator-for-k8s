@@ -34,23 +34,18 @@ function deploy_from_alpha()
   # Login to the prod repository
   $(aws ecr get-login --no-include-email --region ${account_region} --registry-ids ${account_id})
 
-  # Clone the controller image to the repo and set as latest
+  # Clone the controller image to the repo
   docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION ${dest_ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
-  docker tag $alpha_ecr_image:$CODEBUILD_RESOLVED_SOURCE_VERSION ${dest_ecr_image}:latest
 
   # Push to the prod region
   docker push ${dest_ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
-  docker push ${dest_ecr_image}:latest
 
   printf -v bucket_name $RELEASE_BUCKET_NAME_FMT $RELEASE_TARBALL_BUCKET_PREFIX $account_region
   printf -v binary_prefix $RELEASE_BINARY_PREFIX_FMT $bucket_name
 
-  # Copy across the binaries and set as latest
+  # Copy across the binaries
   aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix $CODEBUILD_RESOLVED_SOURCE_VERSION)" $PUBLIC_CP_ARGS
-  aws s3 cp "$ALPHA_LINUX_BINARY_PATH" "$(printf $RELEASE_LINUX_BINARY_PATH_FMT $binary_prefix latest)" $PUBLIC_CP_ARGS
-
   aws s3 cp "$ALPHA_DARWIN_BINARY_PATH" "$(printf $RELEASE_DARWIN_BINARY_PATH_FMT $binary_prefix $CODEBUILD_RESOLVED_SOURCE_VERSION)" $PUBLIC_CP_ARGS
-  aws s3 cp "$ALPHA_DARWIN_BINARY_PATH" "$(printf $RELEASE_DARWIN_BINARY_PATH_FMT $binary_prefix latest)" $PUBLIC_CP_ARGS
 }
 
 # This function builds, packages and deploys a region-specific operator to an ECR repo and output bucket.
