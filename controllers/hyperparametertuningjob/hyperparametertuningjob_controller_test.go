@@ -21,6 +21,7 @@ import (
 	"errors"
 
 	. "container/list"
+
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -395,10 +396,18 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 		})
 
 		Context("HyperParameterTuningJob has status 'Failed'", func() {
+			var failureReason string
+
 			BeforeEach(func() {
 				expectedStatus = sagemaker.HyperParameterTuningJobStatusFailed
+				failureReason = "Failure within the hpo job"
+
+				// Add the failure reason to the describe output
+				describeOutput := CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob, statusCounters)
+				describeOutput.FailureReason = ToStringPtr(failureReason)
+
 				mockSageMakerClientBuilder.
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob, statusCounters))
+					AddDescribeHyperParameterTuningJobResponse(describeOutput)
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -408,6 +417,10 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 
 				It("Updates status", func() {
 					ExpectStatusToBe(tuningJob, string(expectedStatus))
+				})
+
+				It("Has the additional field set", func() {
+					ExpectAdditionalToContain(tuningJob, failureReason)
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {

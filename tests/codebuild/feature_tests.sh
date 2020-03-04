@@ -36,7 +36,7 @@ function verify_feature_integration_tests
     echo "[FAILED] Failing training job never reached status Failed"
     exit 1
   fi
-  if ! verify_trainingjob_has_additional failing-xgboost-mnist; then
+  if ! verify_resource_has_additional TrainingJob failing-xgboost-mnist; then
     echo "[FAILED] Failing training job does not have any additional status set" 
     exit 1
   fi
@@ -46,8 +46,12 @@ function verify_feature_integration_tests
     echo "[FAILED] Failing hyperparameter tuning job never reached status Failed"
     exit 1
   fi
+  if ! verify_resource_has_additional HyperParameterTuningJob failing-xgboost-mnist-hpo; then
+    echo "[FAILED] Failing hyperparameter tuning job does not have any additional status set"
+  fi
   if ! verify_failed_trainingjobs_from_hpo_have_additional failing-xgboost-mnist-hpo; then
     echo "[FAILED] Not all failed training jobs in failing HPO job contained the additional in their statuses"
+    exit 1
   fi
   echo "[SUCCESS] HyperParameterTuningJob with Failed status has additional set for all TrainingJobs"
 }
@@ -55,11 +59,13 @@ function verify_feature_integration_tests
 # This function verifies that a given training job has a failure reason in the 
 # additional part of the status.
 # Parameter:
-#    $1: Instance of TrainingJob
-function verify_trainingjob_has_additional
+#    $1: CRD type
+#    $2: Instance of CRD
+function verify_resource_has_additional
 {
-  local crd_instance="$1"
-  local additional="$(kubectl get trainingjob "$crd_instance" -o json | jq -r '.status.additional')"
+  local crd_type="$1"
+  local crd_instance="$2"
+  local additional="$(kubectl get "$crd_type" "$crd_instance" -o json | jq -r '.status.additional')"
 
   if [ -z "$additional" ]; then
     return 1
@@ -78,7 +84,7 @@ function verify_failed_trainingjobs_from_hpo_have_additional
 
   # Loop over every failed training job and get the k8s resource name
   for trainingJob in $(kubectl get trainingjob | grep Failed | grep "$sagemakerHPOJobName" | awk '{print $1}'); do
-    if ! verify_trainingjob_has_additional "$trainingJob"; then
+    if ! verify_resource_has_additional TrainingJob "$trainingJob"; then
       return 1
     fi
   done
