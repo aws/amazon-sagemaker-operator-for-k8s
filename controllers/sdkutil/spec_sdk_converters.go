@@ -123,10 +123,35 @@ func CreateCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) sa
 // This way can be acceptable if we have test coverage that assures breakage when sdk / trainingjobv1.structs diverage.
 // Alternatives: https://quip-amazon.com/3PVUAsbL9I69/how-do-we-convert-between-structs-coming-from-etcd-to-structs-going-to-sagemaker
 func createCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) (sagemaker.CreateTrainingJobInput, error) {
-
 	var output sagemaker.CreateTrainingJobInput
+
+	// Convert each of the KeyValuePairs manually
 	hyperParameters := spec.HyperParameters
 	spec.HyperParameters = []*commonv1.KeyValuePair{}
+
+	// debuger related structs
+	debugRuleConfigurationsRuleParameters := [][]*commonv1.KeyValuePair{}
+	debugHookConfigHookParameters := []*commonv1.KeyValuePair{}
+	debugHookConfigCollectionsConfigurationsCollectionParameters := [][]*commonv1.KeyValuePair{}
+
+	if spec.DebugHookConfig != nil {
+		debugHookConfigHookParameters = spec.DebugHookConfig.HookParameters
+		spec.DebugHookConfig.HookParameters = []*commonv1.KeyValuePair{}
+
+		for _, debugHookConfigCollectionConfiguration := range spec.DebugHookConfig.CollectionConfigurations {
+			debugHookConfigCollectionConfigurationCollectionParameters := debugHookConfigCollectionConfiguration.CollectionParameters
+			debugHookConfigCollectionsConfigurationsCollectionParameters = append(debugHookConfigCollectionsConfigurationsCollectionParameters, debugHookConfigCollectionConfigurationCollectionParameters)
+			debugHookConfigCollectionConfiguration.CollectionParameters = []*commonv1.KeyValuePair{}
+		}
+	}
+
+	if spec.DebugRuleConfigurations != nil {
+		for _, debugRuleConfiguration := range spec.DebugRuleConfigurations {
+			debugRuleConfigurationRuleParameters := debugRuleConfiguration.RuleParameters
+			debugRuleConfigurationsRuleParameters = append(debugRuleConfigurationsRuleParameters, debugRuleConfigurationRuleParameters)
+			debugRuleConfiguration.RuleParameters = []*commonv1.KeyValuePair{}
+		}
+	}
 
 	marshalledCreateTrainingJobInput, err := json.Marshal(spec)
 	if err != nil {
@@ -138,6 +163,19 @@ func createCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) (s
 	}
 
 	output.HyperParameters = ConvertKeyValuePairSliceToMap(hyperParameters)
+
+	if output.DebugHookConfig != nil {
+		output.DebugHookConfig.HookParameters = ConvertKeyValuePairSliceToMap(debugHookConfigHookParameters)
+		for i := range output.DebugHookConfig.CollectionConfigurations {
+			output.DebugHookConfig.CollectionConfigurations[i].CollectionParameters = ConvertKeyValuePairSliceToMap(debugHookConfigCollectionsConfigurationsCollectionParameters[i])
+		}
+	}
+
+	if output.DebugRuleConfigurations != nil {
+		for i := range output.DebugRuleConfigurations {
+			output.DebugRuleConfigurations[i].RuleParameters = ConvertKeyValuePairSliceToMap(debugRuleConfigurationsRuleParameters[i])
+		}
+	}
 
 	return output, nil
 }
@@ -200,6 +238,26 @@ func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.Hype
 
 	target.TunedHyperParameters = tunedHyperParameters
 	return &target, nil
+}
+
+// ConvertDebugRuleEvaluationStatusesFromSageMaker an array of SageMaker DebugRuleEvaluationStatus to a Kubernetes SageMaker type.
+func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []sagemaker.DebugRuleEvaluationStatus) ([]commonv1.DebugRuleEvaluationStatus, error) {
+	var allStatus []commonv1.DebugRuleEvaluationStatus
+
+	for _, status := range source {
+		var target commonv1.DebugRuleEvaluationStatus
+
+		str, err := json.Marshal(status)
+		if err != nil {
+			return nil, err
+		}
+
+		json.Unmarshal(str, &target)
+
+		allStatus = append(allStatus, target)
+	}
+
+	return allStatus, nil
 }
 
 // CreateTrainingJobStatusCountersFromDescription creates a set of TrainingJobStatusCounters from a DescribeHyperParameterTuningJobOutput
