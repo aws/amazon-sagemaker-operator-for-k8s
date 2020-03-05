@@ -78,6 +78,7 @@ else
     readonly cluster_region="$(echo "${cluster_info}" | awk '{print $2}')"
 fi
 
+
 # Download the CRD from the tarball artifact bucket
 aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-west-2-alpha.tar.gz sagemaker-k8s-operator.tar.gz 
 tar -xf sagemaker-k8s-operator.tar.gz
@@ -88,21 +89,26 @@ pushd sagemaker-k8s-operator
     # Setup the PATH for smlogs
     mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
 
-    # Goto directory that holds the CRD  
-    pushd sagemaker-k8s-operator-install-scripts
-        # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
-        ./setup_awscreds
+    # Allow for overriding the installation of the CRDs/controller image from the
+    # build scripts if we want to use our own installation
+    if [ "${SKIP_INSTALLATION}" == "true" ]; then
+        echo "Skipping installation of CRDs and operator"
+    else
+        # Goto directory that holds the CRD  
+        pushd sagemaker-k8s-operator-install-scripts
+            # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
+            ./setup_awscreds
 
-        echo "Deploying the operator"
-        kustomize build config/default | kubectl apply -f -
-    popd 
+            echo "Deploying the operator"
+            kustomize build config/default | kubectl apply -f -
+        popd
 
+        echo "Waiting for controller pod to be Ready"
+        # Wait to increase chance that pod is ready
+        # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
+        sleep 60
+    fi 
 popd
-
-echo "Waiting for controller pod to be Ready"
-# Wait to increase chance that pod is ready
-# TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
-sleep 60
 
 # Run the integration test file
 cd tests/codebuild/ && ./run_all_sample_test.sh

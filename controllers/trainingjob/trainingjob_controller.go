@@ -204,16 +204,18 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", unknownStateError)
 	}
 
+	primaryStatus := string(ctx.TrainingJobDescription.TrainingJobStatus)
+	secondaryStatus := string(ctx.TrainingJobDescription.SecondaryStatus)
+	additional := controllers.GetOrDefault(ctx.TrainingJobDescription.FailureReason, "")
+
 	if ctx.TrainingJobDescription.TrainingJobStatus == sagemaker.TrainingJobStatusStopping {
 		// Clear the secondary status if we detected stopping, since SageMaker has unclear secondary statuses during this phase
 		// Open ticket with the SageMaker team: https://t.corp.amazon.com/0411302791
-		if err = r.updateStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), ""); err != nil {
-			return err
-		}
-	} else {
-		if err = r.updateStatus(ctx, string(ctx.TrainingJobDescription.TrainingJobStatus), string(ctx.TrainingJobDescription.SecondaryStatus)); err != nil {
-			return err
-		}
+		secondaryStatus = ""
+	}
+
+	if err = r.updateStatusWithAdditional(ctx, primaryStatus, secondaryStatus, additional); err != nil {
+		return err
 	}
 
 	return nil

@@ -20,6 +20,7 @@ import (
 	"context"
 
 	. "container/list"
+
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -480,10 +481,18 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 		})
 
 		Context("TrainingJob has status 'Failed'", func() {
+			var failureReason string
+
 			BeforeEach(func() {
 				expectedStatus = sagemaker.TrainingJobStatusFailed
+				failureReason = "Failure within the training job"
+
+				// Add the failure reason to the describe output
+				describeOutput := CreateDescribeOutputWithOnlyStatus(expectedStatus, expectedSecondaryStatus)
+				describeOutput.FailureReason = ToStringPtr(failureReason)
+
 				mockSageMakerClientBuilder.
-					AddDescribeTrainingJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, expectedSecondaryStatus))
+					AddDescribeTrainingJobResponse(describeOutput)
 			})
 
 			When("!HasDeletionTimestamp", func() {
@@ -493,6 +502,10 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 
 				It("Updates status", func() {
 					ExpectStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+				})
+
+				It("Has the additional field set", func() {
+					ExpectAdditionalToContain(trainingJob, failureReason)
 				})
 
 				Context("Does not have a finalizer", func() {
