@@ -54,7 +54,7 @@ function verify_feature_integration_tests
     echo "[FAILED] Not all failed training jobs in failing HPO job contained the additional in their statuses"
     exit 1
   fi
-  echo "[SUCCESS] HyperParameterTuningJob with Failed status has it's additional status set and set for all TrainingJobs"
+  echo "[SUCCESS] HyperParameterTuningJob with Failed status has its additional status set and set for all TrainingJobs"
 }
 
 # This function verifies that a given training job has a failure reason in the 
