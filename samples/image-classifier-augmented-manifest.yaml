@@ -1,3 +1,7 @@
+# This example uses the AWS SageMaker first party Image Classification algorithm.
+# It also demonstrates the use of AugmentedManifestFiles as an input source from
+# S3. For more information regarding this algorithm, visit
+# https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html.
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: TrainingJob
 metadata:
