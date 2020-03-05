@@ -48,12 +48,13 @@ function verify_feature_integration_tests
   fi
   if ! verify_resource_has_additional HyperParameterTuningJob failing-xgboost-mnist-hpo; then
     echo "[FAILED] Failing hyperparameter tuning job does not have any additional status set"
+    exit 1
   fi
   if ! verify_failed_trainingjobs_from_hpo_have_additional failing-xgboost-mnist-hpo; then
     echo "[FAILED] Not all failed training jobs in failing HPO job contained the additional in their statuses"
     exit 1
   fi
-  echo "[SUCCESS] HyperParameterTuningJob with Failed status has additional set for all TrainingJobs"
+  echo "[SUCCESS] HyperParameterTuningJob with Failed status has it's additional status set and set for all TrainingJobs"
 }
 
 # This function verifies that a given training job has a failure reason in the 
@@ -80,11 +81,11 @@ function verify_failed_trainingjobs_from_hpo_have_additional
 {
   local crd_instance="$1"
 
-  local sagemakerHPOJobName="$(kubectl get hyperparametertuningjob "$crd_instance" -o json | jq -r '.status.sageMakerHyperParameterTuningJobName')"
+  local sagemaker_hpo_job_name="$(kubectl get hyperparametertuningjob "$crd_instance" -o json | jq -r '.status.sageMakerHyperParameterTuningJobName')"
 
   # Loop over every failed training job and get the k8s resource name
-  for trainingJob in $(kubectl get trainingjob | grep Failed | grep "$sagemakerHPOJobName" | awk '{print $1}'); do
-    if ! verify_resource_has_additional TrainingJob "$trainingJob"; then
+  for training_job in $(kubectl get trainingjob | grep Failed | grep "$sagemaker_hpo_job_name" | awk '{print $1}'); do
+    if ! verify_resource_has_additional TrainingJob "$training_job"; then
       return 1
     fi
   done

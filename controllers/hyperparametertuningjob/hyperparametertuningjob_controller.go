@@ -211,14 +211,11 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", ctx.TuningJobDescription.HyperParameterTuningJobStatus))
 	}
 
-	if ctx.TuningJobDescription.FailureReason != nil {
-		if err = r.updateStatusWithAdditional(ctx, string(ctx.TuningJobDescription.HyperParameterTuningJobStatus), *ctx.TuningJobDescription.FailureReason); err != nil {
-			return err
-		}
-	} else {
-		if err = r.updateStatus(ctx, string(ctx.TuningJobDescription.HyperParameterTuningJobStatus)); err != nil {
-			return err
-		}
+	status := string(ctx.TuningJobDescription.HyperParameterTuningJobStatus)
+	additional := controllers.GetOrDefault(ctx.TuningJobDescription.FailureReason, "")
+
+	if err = r.updateStatusWithAdditional(ctx, status, additional); err != nil {
+		return err
 	}
 
 	return nil
