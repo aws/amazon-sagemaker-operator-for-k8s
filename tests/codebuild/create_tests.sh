@@ -65,13 +65,6 @@ function verify_integration_tests
   verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
 }
 
-# Create a resource (run a test) given a specification yaml.
-# Parameter: $1 filename of test
-function run_test()
-{
-  kubectl apply -f "$1"
-}
-
 # This function verifies that job has started and not failed
 # Parameter:
 #    $1: Kind of CRD
