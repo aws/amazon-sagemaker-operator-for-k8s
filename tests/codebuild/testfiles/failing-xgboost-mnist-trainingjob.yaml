@@ -1,0 +1,59 @@
+# This TrainingJob was designed to fail during the "Training" phase.
+# The image specified refers to a plain Tensorflow DLC image that does not have
+# the correct entrypoint for a SageMaker training job. This will fail with a 
+# python exception that should be captured by the operator.
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: TrainingJob
+metadata:
+  name: failing-xgboost-mnist
+spec:
+  hyperParameters:
+    - name: max_depth
+      value: "5"
+    - name: eta
+      value: "0.2"
+    - name: gamma
+      value: "4"
+    - name: min_child_weight
+      value: "6"
+    - name: silent
+      value: "0"
+    - name: objective
+      value: multi:softmax
+    - name: num_class
+      value: "10"
+    - name: num_round
+      value: "10"
+  algorithmSpecification:
+    trainingImage: 763104351884.dkr.ecr.us-west-2.amazonaws.com/tensorflow-training:2.0.1-gpu-py36-cu100-ubuntu18.04
+    trainingInputMode: File
+  roleArn: {ROLE_ARN}
+  region: us-west-2
+  outputDataConfig:
+    s3OutputPath: s3://{DATA_BUCKET}/xgboost/
+  resourceConfig:
+    instanceCount: 1
+    instanceType: ml.m4.xlarge
+    volumeSizeInGB: 5
+  stoppingCondition:
+    maxRuntimeInSeconds: 86400
+  inputDataConfig:
+    - channelName: train
+      dataSource:
+        s3DataSource:
+          s3DataType: S3Prefix
+          s3Uri: s3://{DATA_BUCKET}/train/
+          s3DataDistributionType: FullyReplicated
+      contentType: text/csv
+      compressionType: None
+    - channelName: validation
+      dataSource:
+        s3DataSource:
+          s3DataType: S3Prefix
+          s3Uri: s3://{DATA_BUCKET}/validation/
+          s3DataDistributionType: FullyReplicated
+      contentType: text/csv
+      compressionType: None
+  tags:
+    - key: tagKey
+      value: tagValue
