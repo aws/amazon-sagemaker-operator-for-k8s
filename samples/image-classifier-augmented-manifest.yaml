@@ -1,0 +1,65 @@
+# This example uses the AWS SageMaker first party Image Classification algorithm.
+# It also demonstrates the use of AugmentedManifestFiles as an input source from
+# S3. For more information regarding this algorithm, visit
+# https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html.
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: TrainingJob
+metadata:
+  name: augmented-s3-manifest-image-classifier
+spec:
+  roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+  region: us-east-1
+  algorithmSpecification:
+    trainingImage: 811284229777.dkr.ecr.us-east-1.amazonaws.com/image-classification:1
+    trainingInputMode: Pipe
+  outputDataConfig:
+    s3OutputPath: s3://my-bucket/models
+  inputDataConfig:
+    - channelName: train
+      dataSource:
+        s3DataSource:
+          s3DataType: AugmentedManifestFile
+          s3Uri: s3://my-bucket/train_lst/train_manifest.json
+          s3DataDistributionType: FullyReplicated
+          attributeNames: ["source-ref", "class"]
+      contentType: application/x-image
+      compressionType: None
+      recordWrapperType: RecordIO
+    - channelName: validation
+      dataSource:
+        s3DataSource:
+          s3DataType: AugmentedManifestFile
+          s3Uri: s3://my-bucket/val_lst/val_manifest.json
+          s3DataDistributionType: FullyReplicated
+          attributeNames: ["source-ref", "class"]
+      contentType: application/x-image
+      compressionType: None
+      recordWrapperType: RecordIO
+  resourceConfig:
+    instanceCount: 4
+    instanceType: ml.p3.16xlarge
+    volumeSizeInGB: 5
+  hyperParameters:
+    - name: top_k
+      value: "1"
+    - name: num_training_samples
+      value: "105434"
+    - name: mini_batch_size
+      value: "32"
+    - name: learning_rate
+      value: "0.001"
+    - name: image_shape
+      value: "3,150,250"
+    - name: precision_dtype
+      value: "float32"
+    - name: num_layers
+      value: "50"
+    - name: use_pretrained_model
+      value: "1"
+    - name: num_classes
+      value: "2"
+    - name: epochs
+      value: "100"
+  stoppingCondition:
+    maxRuntimeInSeconds: 360000
+
