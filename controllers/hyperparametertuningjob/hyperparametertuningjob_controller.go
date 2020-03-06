@@ -211,7 +211,10 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", ctx.TuningJobDescription.HyperParameterTuningJobStatus))
 	}
 
-	if err = r.updateStatus(ctx, string(ctx.TuningJobDescription.HyperParameterTuningJobStatus)); err != nil {
+	status := string(ctx.TuningJobDescription.HyperParameterTuningJobStatus)
+	additional := controllers.GetOrDefault(ctx.TuningJobDescription.FailureReason, "")
+
+	if err = r.updateStatusWithAdditional(ctx, status, additional); err != nil {
 		return err
 	}
 
