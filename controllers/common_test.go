@@ -26,6 +26,125 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+var _ = Describe("GetGeneratedResourceName", func() {
+
+	var (
+		optional              string
+		maxNameLen            int
+		generatedResourceName string
+		required              string
+		requiredPostfix       string
+	)
+
+	JustBeforeEach(func() {
+		requiredPostfix = "bced7caf409947faa7d2161963a1bff7"
+		required = "generated.postfix" + requiredPostfix
+		generatedResourceName = GetGeneratedResourceName(required, optional, maxNameLen)
+	})
+
+	When("maxNameLen is sufficiently large", func() {
+
+		BeforeEach(func() {
+			maxNameLen = 128
+			optional = "optional.string"
+		})
+
+		It("Concatenates the optional and required strings", func() {
+			Expect(generatedResourceName).To(ContainSubstring(optional))
+			Expect(generatedResourceName).To(ContainSubstring(required))
+		})
+
+		It("Length does not exceed maxNameLen", func() {
+			Expect(len(generatedResourceName)).To(BeNumerically("<=", maxNameLen))
+		})
+	})
+
+	When("maxNameLen is exactly enough", func() {
+
+		BeforeEach(func() {
+			maxNameLen = 128
+			// the 1 accounts for the delimiter
+			requiredLength := len(required) + 1
+			optional = strings.Repeat("A", (maxNameLen - (requiredLength)))
+		})
+
+		It("Concatenates the optional and required strings", func() {
+			Expect(generatedResourceName).To(ContainSubstring(optional))
+			Expect(generatedResourceName).To(ContainSubstring(required))
+		})
+
+		It("Length equals maxNameLen", func() {
+			Expect(len(generatedResourceName)).To(BeNumerically("==", maxNameLen))
+		})
+	})
+
+	When("maxNameLen is not large enough for entire optional string", func() {
+
+		Context("Due to maxNameLen being smaller", func() {
+			BeforeEach(func() {
+				maxNameLen = 64
+				optional = "optional.string"
+			})
+
+			It("Contains the full UID", func() {
+				Expect(generatedResourceName).To(ContainSubstring(requiredPostfix))
+			})
+
+			It("Length does not exceed maxNameLen", func() {
+				Expect(len(generatedResourceName)).To(BeNumerically("<=", maxNameLen))
+			})
+
+			It("Does not start with a hyphen", func() {
+				Expect(generatedResourceName[0]).ToNot(Equal("-"))
+			})
+		})
+
+		Context("Due to objectMetaName being larger", func() {
+			BeforeEach(func() {
+				maxNameLen = 64
+
+				// Kubernetes max is 253.
+				// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+				optional = strings.Repeat("A", 253)
+			})
+
+			It("Contains the full required string", func() {
+				Expect(generatedResourceName).To(ContainSubstring(required))
+			})
+
+			It("Length does not exceed maxNameLen", func() {
+				Expect(len(generatedResourceName)).To(BeNumerically("<=", maxNameLen))
+			})
+
+			It("Does not start with a hypthen", func() {
+				Expect(generatedResourceName[0]).ToNot(Equal("-"))
+			})
+
+		})
+	})
+
+	When("maxNameLen is not large enough for objectMetaName or full UID", func() {
+
+		BeforeEach(func() {
+			// UID without hyphens is 32.
+			maxNameLen = 30
+			optional = "optional.string"
+		})
+
+		It("Equals the truncated required string", func() {
+			Expect(generatedResourceName).To(Equal(required[:maxNameLen]))
+		})
+
+		It("Length does not exceed maxNameLen", func() {
+			Expect(len(generatedResourceName)).To(BeNumerically("<=", maxNameLen))
+		})
+
+		It("Is contained in the full required string", func() {
+			Expect(required).To(ContainSubstring(generatedResourceName))
+		})
+	})
+})
+
 var _ = Describe("GetGeneratedJobName", func() {
 
 	var (
@@ -35,7 +154,8 @@ var _ = Describe("GetGeneratedJobName", func() {
 
 		uidWithoutHyphens string
 
-		generatedJobName string
+		generatedJobName      string
+		generatedResourceName string
 	)
 
 	BeforeEach(func() {
@@ -45,6 +165,7 @@ var _ = Describe("GetGeneratedJobName", func() {
 	JustBeforeEach(func() {
 		uidWithoutHyphens = strings.Replace(string(uid), "-", "", -1)
 		generatedJobName = GetGeneratedJobName(uid, objectMetaName, maxNameLen)
+		generatedResourceName = GetGeneratedResourceName(uidWithoutHyphens, objectMetaName, maxNameLen)
 	})
 
 	When("maxNameLen is sufficiently large", func() {
@@ -62,90 +183,9 @@ var _ = Describe("GetGeneratedJobName", func() {
 		It("Length does not exceed maxNameLen", func() {
 			Expect(len(generatedJobName)).To(BeNumerically("<=", maxNameLen))
 		})
-	})
 
-	When("maxNameLen is exactly enough", func() {
-
-		BeforeEach(func() {
-			maxNameLen = 64
-			uidWithoutHyphensLength := 32
-			delimiterLength := 1
-			objectMetaName = strings.Repeat("A", (maxNameLen - (uidWithoutHyphensLength + delimiterLength)))
-		})
-
-		It("Concatenates the name and shortened uid", func() {
-			Expect(generatedJobName).To(ContainSubstring(objectMetaName))
-			Expect(generatedJobName).To(ContainSubstring(uidWithoutHyphens))
-		})
-
-		It("Length equals maxNameLen", func() {
-			Expect(len(generatedJobName)).To(BeNumerically("==", maxNameLen))
-		})
-	})
-
-	When("maxNameLen is not large enough for entire objectMetaName", func() {
-
-		Context("Due to maxNameLen being smaller", func() {
-			BeforeEach(func() {
-				maxNameLen = 32
-				objectMetaName = "object.meta.name"
-			})
-
-			It("Contains the full UID", func() {
-				Expect(generatedJobName).To(ContainSubstring(uidWithoutHyphens))
-			})
-
-			It("Length does not exceed maxNameLen", func() {
-				Expect(len(generatedJobName)).To(BeNumerically("<=", maxNameLen))
-			})
-
-			It("Does not start with a hypthen", func() {
-				Expect(generatedJobName[0]).ToNot(Equal("-"))
-			})
-		})
-
-		Context("Due to objectMetaName being larger", func() {
-			BeforeEach(func() {
-				maxNameLen = 64
-
-				// Kubernetes max is 253.
-				// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-				objectMetaName = strings.Repeat("A", 253)
-			})
-
-			It("Contains the full UID", func() {
-				Expect(generatedJobName).To(ContainSubstring(uidWithoutHyphens))
-			})
-
-			It("Length does not exceed maxNameLen", func() {
-				Expect(len(generatedJobName)).To(BeNumerically("<=", maxNameLen))
-			})
-
-			It("Does not start with a hypthen", func() {
-				Expect(generatedJobName[0]).ToNot(Equal("-"))
-			})
-
-		})
-	})
-
-	When("maxNameLen is not large enough for objectMetaName or full UID", func() {
-
-		BeforeEach(func() {
-			// UID without hyphens is 32.
-			maxNameLen = 30
-			objectMetaName = "object.meta.name"
-		})
-
-		It("Equals the truncated UID", func() {
-			Expect(generatedJobName).To(Equal(uidWithoutHyphens[:maxNameLen]))
-		})
-
-		It("Length does not exceed maxNameLen", func() {
-			Expect(len(generatedJobName)).To(BeNumerically("<=", maxNameLen))
-		})
-
-		It("Is contained in the full hyphen-less UID", func() {
-			Expect(uidWithoutHyphens).To(ContainSubstring(generatedJobName))
+		It("returns the same name as GetGeneratedResourceName with uidWithoutHyphens as the required string", func() {
+			Expect(generatedJobName).To(BeEquivalentTo(generatedResourceName))
 		})
 	})
 })

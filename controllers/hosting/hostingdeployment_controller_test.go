@@ -268,7 +268,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 				createdRequest := req.(*sagemaker.CreateEndpointInput)
 				Expect(*createdRequest.EndpointConfigName).To(Equal(endpointConfigSageMakerName))
-				Expect(*createdRequest.EndpointName).To(Equal(GetSageMakerEndpointName(*deployment)))
+				Expect(*createdRequest.EndpointName).To(Equal(controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
 			})
 
 			It("Requeues after interval", func() {
@@ -1004,7 +1004,7 @@ func AddFinalizer(deployment *hostingv1.HostingDeployment) {
 
 // Create an EndpointConfig with a SageMaker name in the status.
 func CreateEndpointConfigWithSageMakerName(deployment *hostingv1.HostingDeployment, endpointConfigSageMakerName string) {
-	namespacedName := GetKubernetesEndpointConfigNamespacedName(*deployment)
+	namespacedName := GetSubresourceNamespacedName(deployment.ObjectMeta.GetName(), *deployment)
 
 	endpointConfig := endpointconfigv1.EndpointConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1056,7 +1056,7 @@ func ExpectRequestToDeleteHostingDeployment(req interface{}, deployment *hosting
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.DeleteEndpointInput)(nil)))
 
 	deleteRequest := req.(*sagemaker.DeleteEndpointInput)
-	Expect(*deleteRequest.EndpointName).To(Equal(GetSageMakerEndpointName(*deployment)))
+	Expect(*deleteRequest.EndpointName).To(Equal(controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
 }
 
 // Helper function to verify that the specified object is n UpdateEndpointInput and that it requests to update the HostingDeployment correctly.
@@ -1064,7 +1064,7 @@ func ExpectRequestToUpdateHostingDeployment(req interface{}, deployment *hosting
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.UpdateEndpointInput)(nil)))
 
 	updateRequest := req.(*sagemaker.UpdateEndpointInput)
-	Expect(*updateRequest.EndpointName).To(Equal(GetSageMakerEndpointName(*deployment)))
+	Expect(*updateRequest.EndpointName).To(Equal(controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
 	Expect(*updateRequest.EndpointConfigName).To(Equal(expectedEndpointConfigName))
 }
 

@@ -39,7 +39,12 @@ import (
 
 // The HTTP message returned with HTTP code 400 if a DescribeTransformJob request
 // cannot find the given transform job.
-const transformResourceNotFoundApiCode string = "ValidationException"
+const (
+	transformResourceNotFoundApiCode string = "ValidationException"
+
+	// Defines the maximum number of characters in a SageMaker Batch Transform Resource name
+	MaxBatchTransformNameLength = 63
+)
 
 // BatchTransformJobReconciler reconciles a BatchTransformJob object
 type BatchTransformJobReconciler struct {
@@ -262,7 +267,7 @@ func (r *BatchTransformJobReconciler) addFinalizerAndRequeue(ctx reconcileReques
 }
 
 func (r *BatchTransformJobReconciler) getTransformJobName(state batchtransformjobv1.BatchTransformJob) string {
-	return GetGeneratedJobName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), 63)
+	return GetGeneratedJobName(state.ObjectMeta.GetUID(), state.ObjectMeta.GetName(), MaxBatchTransformNameLength)
 }
 
 func (r *BatchTransformJobReconciler) reconcileSpecWithDescription(ctx reconcileRequestContext) (ctrl.Result, error) {
