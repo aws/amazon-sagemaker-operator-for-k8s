@@ -546,6 +546,7 @@ func (m mockedCloudWatchLogsClient) FilterLogEventsRequest(input *cwlogs.FilterL
 	mockRequest := &aws.Request{
 		HTTPRequest:  &http.Request{},
 		HTTPResponse: &http.Response{},
+		Retryer:      &aws.NoOpRetryer{},
 	}
 
 	if next.err != nil {
