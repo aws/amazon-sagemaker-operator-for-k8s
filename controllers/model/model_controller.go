@@ -19,7 +19,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -47,6 +46,9 @@ const (
 
 	// Status to indicate that an error occurred during reconciliation.
 	ErrorStatus = "Error"
+
+	// Defines the maximum number of characters in a SageMaker Model SubResource name
+	MaxModelNameLength = 63
 )
 
 // ModelReconciler reconciles a Model object
@@ -324,18 +326,6 @@ func (r *ModelReconciler) updateStatusWithAdditional(ctx reconcileRequestContext
 	return nil
 }
 
-func generateModelName(model *modelv1.Model) string {
-	sageMakerMaxNameLen := 63
-	name := model.ObjectMeta.GetName()
-	requiredPostfix := "-" + strings.Replace(string(model.ObjectMeta.GetUID()), "-", "", -1)
-
-	sageMakerModelName := name + requiredPostfix
-	if len(sageMakerModelName) > sageMakerMaxNameLen {
-		sageMakerModelName = name[:sageMakerMaxNameLen-len(requiredPostfix)] + requiredPostfix
-	}
-	return sageMakerModelName
-}
-
 // TODO add code that ignores status, metadata updates.
 func (r *ModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -343,4 +333,9 @@ func (r *ModelReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Ignore status-only and metadata-only updates
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
+}
+
+// Given a Model object, generate a SageMaker name of valid length
+func generateModelName(model *modelv1.Model) string {
+	return GetGeneratedJobName(model.ObjectMeta.GetUID(), model.ObjectMeta.GetName(), MaxModelNameLength)
 }

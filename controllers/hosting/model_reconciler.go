@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -295,7 +293,7 @@ func (r *modelReconciler) extractDesiredModelsFromHostingDeployment(deployment *
 		if modelContainers, err = r.getContainerDefinitions(model, containers, *primaryContainer.ContainerHostname); err != nil {
 			return nil, nil, err
 		}
-		namespacedName := GetKubernetesModelNamespacedName(name, *deployment)
+		namespacedName := GetSubresourceNamespacedName(name, *deployment)
 
 		// Add labels to model that indicate which particular HostingDeployment
 		// owns it.
@@ -413,28 +411,6 @@ func (r *modelReconciler) getPrimaryContainerDefinition(model *commonv1.Model, c
 	}
 
 	return primaryContainer, nil
-}
-
-// Get the Kubernetes name of the Model. This must be idempotent so that future reconciler invocations
-// are able to find the model.
-// Kubernetes resources can have names up to 253 characters long.
-// The characters allowed in names are: digits (0-9), lower case letters (a-z), -, and .
-func GetKubernetesModelNamespacedName(modelName string, hostingDeployment hostingv1.HostingDeployment) types.NamespacedName {
-	k8sMaxLen := 253
-	uid := strings.Replace(string(hostingDeployment.ObjectMeta.GetUID()), "-", "", -1)
-	generation := strconv.FormatInt(hostingDeployment.ObjectMeta.GetGeneration(), 10)
-
-	requiredPostfix := "-" + generation + "-" + uid
-	name := modelName + requiredPostfix
-
-	if len(name) > k8sMaxLen {
-		name = modelName[:k8sMaxLen-len(requiredPostfix)] + requiredPostfix
-	}
-
-	return types.NamespacedName{
-		Name:      name,
-		Namespace: hostingDeployment.ObjectMeta.GetNamespace(),
-	}
 }
 
 // Given a list of models to create, this creates each model in Kubernetes.
