@@ -125,11 +125,11 @@ func CreateCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) sa
 func createCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) (sagemaker.CreateTrainingJobInput, error) {
 	var output sagemaker.CreateTrainingJobInput
 
-	// Convert each of the KeyValuePairs manually
+	// clear out the old KVPs from spec.
 	hyperParameters := spec.HyperParameters
 	spec.HyperParameters = []*commonv1.KeyValuePair{}
 
-	// debuger related structs
+	// Debugger related structs
 	debugRuleConfigurationsRuleParameters := [][]*commonv1.KeyValuePair{}
 	debugHookConfigHookParameters := []*commonv1.KeyValuePair{}
 	debugHookConfigCollectionsConfigurationsCollectionParameters := [][]*commonv1.KeyValuePair{}
@@ -139,8 +139,7 @@ func createCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) (s
 		spec.DebugHookConfig.HookParameters = []*commonv1.KeyValuePair{}
 
 		for _, debugHookConfigCollectionConfiguration := range spec.DebugHookConfig.CollectionConfigurations {
-			debugHookConfigCollectionConfigurationCollectionParameters := debugHookConfigCollectionConfiguration.CollectionParameters
-			debugHookConfigCollectionsConfigurationsCollectionParameters = append(debugHookConfigCollectionsConfigurationsCollectionParameters, debugHookConfigCollectionConfigurationCollectionParameters)
+			debugHookConfigCollectionsConfigurationsCollectionParameters = append(debugHookConfigCollectionsConfigurationsCollectionParameters, debugHookConfigCollectionConfiguration.CollectionParameters)
 			debugHookConfigCollectionConfiguration.CollectionParameters = []*commonv1.KeyValuePair{}
 		}
 	}
@@ -240,9 +239,9 @@ func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.Hype
 	return &target, nil
 }
 
-// ConvertDebugRuleEvaluationStatusesFromSageMaker an array of SageMaker DebugRuleEvaluationStatus to a Kubernetes SageMaker type.
+// ConvertDebugRuleEvaluationStatusesFromSageMaker converts an array of SageMaker DebugRuleEvaluationStatus to a Kubernetes SageMaker type.
 func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []sagemaker.DebugRuleEvaluationStatus) ([]commonv1.DebugRuleEvaluationStatus, error) {
-	var allStatus []commonv1.DebugRuleEvaluationStatus
+	var convertedStatuses []commonv1.DebugRuleEvaluationStatus
 
 	for _, status := range source {
 		var target commonv1.DebugRuleEvaluationStatus
@@ -254,10 +253,14 @@ func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []sagemaker.DebugRul
 
 		json.Unmarshal(str, &target)
 
-		allStatus = append(allStatus, target)
+		if err = json.Unmarshal(str, &target); err != nil {
+			return nil, err
+		}
+
+		convertedStatuses = append(convertedStatuses, target)
 	}
 
-	return allStatus, nil
+	return convertedStatuses, nil
 }
 
 // CreateTrainingJobStatusCountersFromDescription creates a set of TrainingJobStatusCounters from a DescribeHyperParameterTuningJobOutput

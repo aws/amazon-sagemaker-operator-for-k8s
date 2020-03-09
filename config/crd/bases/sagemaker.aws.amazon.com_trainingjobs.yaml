@@ -716,6 +716,8 @@ spec:
               description: Cloud Watch url for training log
               type: string
             debugRuleEvaluationStatuses:
+              description: Status of rule evaluation job which runs on values saved
+                by debughookconfig
               items:
                 properties:
                   lastModifiedTime:

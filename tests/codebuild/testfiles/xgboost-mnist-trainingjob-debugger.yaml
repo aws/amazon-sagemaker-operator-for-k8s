@@ -23,10 +23,10 @@ spec:
     algorithmSpecification:
         trainingImage: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:0.90-2-cpu-py3
         trainingInputMode: File
-    roleArn: arn:aws:iam::578276202366:role/service-role/AmazonSageMaker-ExecutionRole-20190614T120659
+    roleArn: {ROLE_ARN}
     region: us-west-2
     outputDataConfig:
-        s3OutputPath: s3://sagemaker-us-west-2-578276202366/
+        s3OutputPath: s3://{DATA_BUCKET}/xgboost-debugger/output
     resourceConfig:
         instanceCount: 1
         instanceType: ml.m4.xlarge
@@ -38,7 +38,7 @@ spec:
           dataSource:
             s3DataSource:
                 s3DataType: S3Prefix
-                s3Uri: s3://sagemaker-us-west-2-578276202366/DEMO-smdebug-xgboost-abalone/train
+                s3Uri: s3://{DATA_BUCKET}/xgboost-debugger/train
                 s3DataDistributionType: FullyReplicated
           contentType: libsvm
           compressionType: None
@@ -46,12 +46,12 @@ spec:
           dataSource:
             s3DataSource:
                 s3DataType: S3Prefix
-                s3Uri: s3://sagemaker-us-west-2-578276202366/DEMO-smdebug-xgboost-abalone/validation
+                s3Uri: s3://{DATA_BUCKET}/xgboost-debugger/validation
                 s3DataDistributionType: FullyReplicated
           contentType: libsvm
           compressionType: None
     debugHookConfig:
-      s3OutputPath: s3://sagemaker-us-west-2-578276202366
+      s3OutputPath: s3://{DATA_BUCKET}/xgboost-debugger/hookconfig
       collectionConfigurations:
         - collectionName: feature_importance
           collectionParameters:

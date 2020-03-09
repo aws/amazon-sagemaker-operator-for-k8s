@@ -103,6 +103,7 @@ type TrainingJobStatus struct {
 	//Full path to the training artifact (model)
 	ModelPath string `json:"modelPath,omitempty"`
 
+	// Status of rule evaluation job which runs on values saved by debughookconfig
 	DebugRuleEvaluationStatuses []commonv1.DebugRuleEvaluationStatus `json:"debugRuleEvaluationStatuses,omitempty"`
 }
 
