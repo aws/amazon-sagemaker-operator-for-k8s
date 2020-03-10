@@ -251,8 +251,6 @@ func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []sagemaker.DebugRul
 			return nil, err
 		}
 
-		json.Unmarshal(str, &target)
-
 		if err = json.Unmarshal(str, &target); err != nil {
 			return nil, err
 		}
