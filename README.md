@@ -48,6 +48,12 @@ To make a YAML spec, follow one of the below examples as a guide. Replace values
 * [HyperParameterTuningJob](./samples/xgboost-mnist-hpo.yaml)
 * [TrainingJob](./samples/xgboost-mnist-trainingjob.yaml)
 
+## Releases
+
+Amazon SageMaker Operator for Kubernetes adheres to the [SemVer](https://semver.org/) specification. Each release updates both the major version tag (eg. `X`), a major/minor version tag (eg. `X.Y`) and a major/minor/patch version tag (eg. `X.Y.Z`), as well as new versions of the `smlogs` binary with URLs of the same versioning formats. To see a full list of all releases, refer to our [Github releases page](https://github.com/aws/amazon-sagemaker-operator-for-k8s/releases).
+
+We also maintain a `latest` tag, which is updated to stay in line with the `master` branch. We **do not** recommend installing this on any production cluster, as any new major versions updated on the `master` branch will introduce breaking changes.
+
 ## Contributing
 `amazon-sagemaker-operator-for-k8s` is an open source project. See [CONTRIBUTING](https://github.com/aws/amazon-sagemaker-operator-for-k8s/blob/master/CONTRIBUTING.md) for details.
 
