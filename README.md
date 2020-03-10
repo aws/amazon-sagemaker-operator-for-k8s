@@ -50,7 +50,7 @@ To make a YAML spec, follow one of the below examples as a guide. Replace values
 
 ## Releases
 
-Amazon SageMaker Operator for Kubernetes adheres to the [SemVer](https://semver.org/) specification. Each release updates both the major version tag (eg. `vX`), a major/minor version tag (eg. `vX.Y`) and a major/minor/patch version tag (eg. `vX.Y.Z`), as well as new versions of the `smlogs` binary with URLs of the same versioning formats. To see a full list of all releases, refer to our [Github releases page](https://github.com/aws/amazon-sagemaker-operator-for-k8s/releases).
+Amazon SageMaker Operator for Kubernetes adheres to the [SemVer](https://semver.org/) specification. Each release updates the major version tag (eg. `vX`), a major/minor version tag (eg. `vX.Y`) and a major/minor/patch version tag (eg. `vX.Y.Z`), as well as new versions of the `smlogs` binary with URLs of the same versioning formats. To see a full list of all releases, refer to our [Github releases page](https://github.com/aws/amazon-sagemaker-operator-for-k8s/releases).
 
 We also maintain a `latest` tag, which is updated to stay in line with the `master` branch. We **do not** recommend installing this on any production cluster, as any new major versions updated on the `master` branch will introduce breaking changes.
 
