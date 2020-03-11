@@ -6,13 +6,13 @@ This sample demonstrates the ability for customers to train using their own scri
 
 This sample assumes that you have already configured an EKS cluster with the operator. It also assumes that you have installed the necessary prerequisite [command line tools](https://sagemaker.readthedocs.io/en/stable/amazon_sagemaker_operators_for_kubernetes.html#prerequisites).
 
-In order to follow this script, you must first create a training script packaged in a Dockerfile that is [compatible with Amazon SageMaker](https://docs.aws.amazon.com/sagemaker/latest/dg/amazon-sagemaker-containers.html). This sample will reference the [Distributed Mask R-CNN example](https://github.com/awslabs/amazon-sagemaker-examples/tree/master/advanced_functionality/distributed_tensorflow_mask_rcnn) publish by the SageMaker team.
+In order to follow this script, you must first create a training script packaged in a Dockerfile that is [compatible with Amazon SageMaker](https://docs.aws.amazon.com/sagemaker/latest/dg/amazon-sagemaker-containers.html). The [Distributed Mask R-CNN sample](https://github.com/awslabs/amazon-sagemaker-examples/tree/master/advanced_functionality/distributed_tensorflow_mask_rcnn), published by the SageMaker team, contains a predefined training script and helper bash scripts for reference.
 
 ## Preparing the Training Script
 
 ### Preparing the Container
 
-All SageMaker training jobs must be packaged in a container with all necessary dependencies pre-installed. This container should be uploaded to a container repository accessible to your AWS account (for example [ECR](https://aws.amazon.com/ecr/)). When uploaded correctly, you should have a URL and tag associated with the container image - this will be needed for the next step.
+All SageMaker training jobs must be packaged in a container with all necessary dependencies pre-installed and with the training scripts referencing the acceptable input and output paths. This container should be uploaded to a container repository accessible from within your AWS account (for example [ECR](https://aws.amazon.com/ecr/)). When uploaded correctly, you should have a URL and tag associated with the container image - this will be needed for the next step.
 
 ### Updating the Training Specification
 
