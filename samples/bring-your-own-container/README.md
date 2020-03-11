@@ -10,7 +10,7 @@ In order to follow this script, you must first create a training script packaged
 
 ## Preparing the Training Script
 
-### Preparing the Container
+### Uploading your Script
 
 All SageMaker training jobs must be packaged in a container with all necessary dependencies pre-installed and with the training scripts referencing the acceptable input and output paths. This container should be uploaded to a container repository accessible from within your AWS account (for example [ECR](https://aws.amazon.com/ecr/)). When uploaded correctly, you should have a URL and tag associated with the container image - this will be needed for the next step.
 
