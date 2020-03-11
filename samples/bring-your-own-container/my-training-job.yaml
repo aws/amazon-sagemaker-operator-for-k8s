@@ -1,0 +1,36 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: TrainingJob
+metadata:
+  name: my-training-job
+spec:
+  hyperParameters: # Modify these parameters to meet your own script's needs
+    - name: mode_fpn
+      value: "True"
+    - name: mode_mask
+      value: "True"
+    - name: eval_period
+      value: "1"
+    - name: batch_norm
+      value: "FreezeBN"
+  algorithmSpecification:
+    trainingImage: <YOUR ECR IMAGE> # The URL and tag of your ECR container
+    trainingInputMode: File
+  roleArn: <YOUR SAGEMAKER ROLE ARN> # A role with SageMaker and S3 access
+  region: <YOUR REGION> # The region in which to run the training job
+  outputDataConfig:
+    s3OutputPath: s3://<YOUR BUCKET>/output # The output path of our model
+  resourceConfig:
+    instanceCount: 1
+    instanceType: ml.m4.xlarge
+    volumeSizeInGB: 5
+  stoppingCondition:
+    maxRuntimeInSeconds: 86400
+  inputDataConfig:
+    - channelName: train
+      dataSource:
+        s3DataSource:
+          s3DataType: S3Prefix
+          s3Uri: s3://<YOUR BUCKET>/mask-rcnn/sagemaker/input/train/ # The source of the training data
+          s3DataDistributionType: FullyReplicated
+      contentType: application/tfrecord
+      compressionType: None
