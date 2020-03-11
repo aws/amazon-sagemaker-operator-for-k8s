@@ -103,8 +103,8 @@ type TrainingJobStatus struct {
 	//Full path to the training artifact (model)
 	ModelPath string `json:"modelPath,omitempty"`
 
-        // Status of rule evaluation jobs, obtained from DebugRuleEvaluationStatuses.
-        // https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DescribeTrainingJob.html#sagemaker-DescribeTrainingJob-response-DebugRuleEvaluationStatuses
+	// Status of rule evaluation jobs, obtained from DebugRuleEvaluationStatuses.
+	// https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DescribeTrainingJob.html#sagemaker-DescribeTrainingJob-response-DebugRuleEvaluationStatuses
 	DebugRuleEvaluationStatuses []commonv1.DebugRuleEvaluationStatus `json:"debugRuleEvaluationStatuses,omitempty"`
 }
 

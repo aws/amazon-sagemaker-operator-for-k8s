@@ -617,6 +617,296 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 			})
 		})
+
+		Context("TrainingJob is 'Failed' and has debug status 'InProgress'", func() {
+			var failureReason string
+			var debugJobStatus sagemaker.RuleEvaluationStatus
+
+			BeforeEach(func() {
+				expectedStatus = sagemaker.TrainingJobStatusFailed
+				failureReason = "Failure within the training job"
+				debugJobStatus = sagemaker.RuleEvaluationStatusInProgress
+
+				// Add the failure reason to the describe output
+				describeOutput := CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus)
+				describeOutput.FailureReason = ToStringPtr(failureReason)
+
+				mockSageMakerClientBuilder.
+					AddDescribeTrainingJobResponse(describeOutput)
+			})
+
+			When("!HasDeletionTimestamp", func() {
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Updates status", func() {
+					ExpectJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), string(debugJobStatus))
+				})
+
+				It("Has the additional field set", func() {
+					ExpectAdditionalToContain(trainingJob, failureReason)
+				})
+
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
+
+					It("Adds a finalizer", func() {
+						ExpectToHaveFinalizer(trainingJob, controllers.SageMakerResourceFinalizerName)
+					})
+				})
+			})
+
+			When("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the training job", func() {
+					ExpectTrainingJobToBeDeleted(trainingJob)
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+			})
+		})
+
+		Context("TrainingJob is 'Failed' and has debug job with status 'Stopping'", func() {
+			var failureReason string
+			var debugJobStatus sagemaker.RuleEvaluationStatus
+
+			BeforeEach(func() {
+				expectedStatus = sagemaker.TrainingJobStatusFailed
+				failureReason = "Failure within the training job"
+				debugJobStatus = sagemaker.RuleEvaluationStatusStopping
+
+				// Add the failure reason to the describe output
+				describeOutput := CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus)
+				describeOutput.FailureReason = ToStringPtr(failureReason)
+
+				mockSageMakerClientBuilder.
+					AddDescribeTrainingJobResponse(describeOutput)
+			})
+
+			When("!HasDeletionTimestamp", func() {
+				It("Requeues after interval", func() {
+
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Updates status", func() {
+					ExpectJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), string(debugJobStatus))
+				})
+
+				It("Has the additional field set", func() {
+					ExpectAdditionalToContain(trainingJob, failureReason)
+				})
+
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
+
+					It("Adds a finalizer", func() {
+						ExpectToHaveFinalizer(trainingJob, controllers.SageMakerResourceFinalizerName)
+					})
+				})
+			})
+
+			When("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the training job", func() {
+					ExpectTrainingJobToBeDeleted(trainingJob)
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+			})
+		})
+
+		Context("TrainingJob is 'Stopped' and has debug job with status 'InProgress'.", func() {
+			var debugJobStatus sagemaker.RuleEvaluationStatus
+			BeforeEach(func() {
+				expectedStatus = sagemaker.TrainingJobStatusStopped
+				debugJobStatus = sagemaker.RuleEvaluationStatusInProgress
+				mockSageMakerClientBuilder.
+					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
+			})
+
+			When("!HasDeletionTimestamp", func() {
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Updates status", func() {
+					ExpectJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), string(debugJobStatus))
+
+				})
+
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
+
+					It("Adds a finalizer", func() {
+						ExpectToHaveFinalizer(trainingJob, controllers.SageMakerResourceFinalizerName)
+					})
+				})
+			})
+
+			When("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the training job", func() {
+					ExpectTrainingJobToBeDeleted(trainingJob)
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+			})
+		})
+
+		Context("TrainingJob is 'Stopped' and has debug job with status 'Stopping'", func() {
+			var debugJobStatus sagemaker.RuleEvaluationStatus
+			BeforeEach(func() {
+				expectedStatus = sagemaker.TrainingJobStatusStopped
+				debugJobStatus = sagemaker.RuleEvaluationStatusStopping
+				mockSageMakerClientBuilder.
+					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
+			})
+
+			When("!HasDeletionTimestamp", func() {
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Updates status", func() {
+					ExpectJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), string(debugJobStatus))
+				})
+
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
+
+					It("Adds a finalizer", func() {
+						ExpectToHaveFinalizer(trainingJob, controllers.SageMakerResourceFinalizerName)
+					})
+				})
+			})
+
+			When("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the training job", func() {
+					ExpectTrainingJobToBeDeleted(trainingJob)
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+			})
+		})
+
+		Context("TrainingJob is 'Completed' and has debug job with status 'InProgress'", func() {
+			var debugJobStatus sagemaker.RuleEvaluationStatus
+			BeforeEach(func() {
+				expectedStatus = sagemaker.TrainingJobStatusCompleted
+				debugJobStatus = sagemaker.RuleEvaluationStatusInProgress
+				mockSageMakerClientBuilder.
+					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
+			})
+
+			When("!HasDeletionTimestamp", func() {
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Updates status", func() {
+					ExpectJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), string(debugJobStatus))
+				})
+
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
+
+					It("Adds a finalizer", func() {
+						ExpectToHaveFinalizer(trainingJob, controllers.SageMakerResourceFinalizerName)
+					})
+				})
+			})
+
+			When("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the training job", func() {
+					ExpectTrainingJobToBeDeleted(trainingJob)
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+			})
+		})
+
+		Context("TrainingJob is 'Completed' and has debug job with status 'Stopping'", func() {
+			var debugJobStatus sagemaker.RuleEvaluationStatus
+			BeforeEach(func() {
+				expectedStatus = sagemaker.TrainingJobStatusCompleted
+				debugJobStatus = sagemaker.RuleEvaluationStatusStopping
+				mockSageMakerClientBuilder.
+					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
+			})
+
+			When("!HasDeletionTimestamp", func() {
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Updates status", func() {
+					ExpectJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), string(debugJobStatus))
+				})
+
+				Context("Does not have a finalizer", func() {
+					BeforeEach(func() {
+						shouldHaveFinalizer = false
+					})
+
+					It("Adds a finalizer", func() {
+						ExpectToHaveFinalizer(trainingJob, controllers.SageMakerResourceFinalizerName)
+					})
+				})
+			})
+
+			When("HasDeletionTimestamp", func() {
+				BeforeEach(func() {
+					shouldHaveDeletionTimestamp = true
+				})
+
+				It("Deletes the training job", func() {
+					ExpectTrainingJobToBeDeleted(trainingJob)
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+			})
+		})
 	})
 
 })
@@ -726,6 +1016,21 @@ func ExpectStatusToBe(trainingJob *trainingjobv1.TrainingJob, primaryStatus, sec
 	Expect(string(actual.Status.SecondaryStatus)).To(Equal(secondaryStatus))
 }
 
+// Expect trainingjob status and debug job status to be as specified
+func ExpectJobsStatusToBe(trainingJob *trainingjobv1.TrainingJob, primaryStatus, secondaryStatus string, debugJobStatus string) {
+	var actual trainingjobv1.TrainingJob
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: trainingJob.ObjectMeta.Namespace,
+		Name:      trainingJob.ObjectMeta.Name,
+	}, &actual)
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(string(actual.Status.TrainingJobStatus)).To(Equal(primaryStatus))
+	Expect(string(actual.Status.SecondaryStatus)).To(Equal(secondaryStatus))
+
+	Expect(string(*actual.Status.DebugRuleEvaluationStatuses[0].RuleEvaluationStatus)).To(Equal(debugJobStatus))
+}
+
 // Expect the training job to have the specified finalizer.
 func ExpectToHaveFinalizer(trainingJob *trainingjobv1.TrainingJob, finalizer string) {
 	var actual trainingjobv1.TrainingJob
@@ -754,7 +1059,24 @@ func CreateDescribeOutputWithOnlyStatus(status sagemaker.TrainingJobStatus, seco
 	return sagemaker.DescribeTrainingJobOutput{
 		TrainingJobStatus: status,
 		SecondaryStatus:   secondaryStatus,
+		// Added debug job completion status for cases when debug job has finished
+		DebugRuleEvaluationStatuses: []sagemaker.DebugRuleEvaluationStatus{
+			{
+				RuleEvaluationStatus: sagemaker.RuleEvaluationStatusIssuesFound,
+			},
+		},
 	}
+}
+
+// Helper function to create a DescribeTrainingJobOutput with debug job status
+func CreateDescribeOutputWithDebugJobStatus(status sagemaker.TrainingJobStatus, secondaryStatus sagemaker.SecondaryStatus, debugJobStatus sagemaker.RuleEvaluationStatus) sagemaker.DescribeTrainingJobOutput {
+	output := CreateDescribeOutputWithOnlyStatus(status, secondaryStatus)
+	output.DebugRuleEvaluationStatuses = []sagemaker.DebugRuleEvaluationStatus{
+		{
+			RuleEvaluationStatus: debugJobStatus,
+		},
+	}
+	return output
 }
 
 // Helper function to verify that the specified object is a StopTrainingJobInput and that it requests to delete the TrainingJob.

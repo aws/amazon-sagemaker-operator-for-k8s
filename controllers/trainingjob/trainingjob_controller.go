@@ -97,14 +97,14 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return controllers.RequeueImmediately()
 	}
 
+	// If there are any debug rule jobs still in progress, keep requeueing
+	for _, debugRuleJob := range ctx.TrainingJob.Status.DebugRuleEvaluationStatuses {
+		if controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusInProgress) || controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusStopping) {
+			return controllers.RequeueAfterInterval(r.PollInterval, nil)
+		}
+	}
 	switch ctx.TrainingJob.Status.TrainingJobStatus {
 	case string(sagemaker.TrainingJobStatusCompleted):
-		// If there are any debug rule jobs still in progress, keep requeueing
-		for _, debugRuleJob := range ctx.TrainingJob.Status.DebugRuleEvaluationStatuses {
-			if controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusInProgress) || controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusStopping) {
-				return controllers.RequeueAfterInterval(r.PollInterval, nil)
-			}
-		}
 		fallthrough
 	case string(sagemaker.TrainingJobStatusFailed):
 		fallthrough
@@ -176,6 +176,25 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	}
 
+	// Check  sagemaker describe output for each debug jobs and
+	// generates the update if k8s status for corresponding debug jobs differ.
+	// Initially status will be empty so we will generate update for all debug jobs
+	if len(ctx.TrainingJobDescription.DebugRuleEvaluationStatuses) != len(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses) {
+		for _, _ = range ctx.TrainingJobDescription.DebugRuleEvaluationStatuses {
+			if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
+				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
+			}
+		}
+	} else {
+		for i, debugJob := range ctx.TrainingJobDescription.DebugRuleEvaluationStatuses {
+			if string(debugJob.RuleEvaluationStatus) != controllers.GetOrDefault(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus, "") {
+				if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
+					return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
+				}
+			}
+		}
+	}
+
 	switch ctx.TrainingJobDescription.TrainingJobStatus {
 	case sagemaker.TrainingJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
@@ -191,26 +210,8 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		break
 
 	case sagemaker.TrainingJobStatusCompleted:
-		if len(ctx.TrainingJob.Status.ModelPath) == 0 {
-			if err = r.addModelPathToStatus(ctx); err != nil {
-				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add model path to status"))
-			}
-		}
-		// Debug rule runs asynchronously with trainingjob. In some cases debug rule
-		// lags behind the trainingjob. Hence Training has to keep reconciling until
-		// its debug rule has completed.
-		// This breaks a bit k8s experience, since describe output will change even
-		// if trainingjob has been completed.
-		// Its hard to populate the debug rules in `kubectl get` since not every trainingjob
-		// job will have debug rule and  column prints are not supported conditionally.
-		for _, debugRuleJob := range ctx.TrainingJob.Status.DebugRuleEvaluationStatuses {
-			if controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusInProgress) || controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusStopping) {
-				if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
-					return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
-				}
-				// As soon as we find first debug job, which is in progress, we can generate a single update.
-				break
-			}
+		if err = r.addModelPathToStatus(ctx); err != nil {
+			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add model path to status"))
 		}
 		fallthrough
 
@@ -336,7 +337,6 @@ func (r *Reconciler) addDebugRuleEvaluationStatusesToStatus(ctx reconcileRequest
 	if err = r.Status().Update(ctx, ctx.TrainingJob); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -363,12 +363,6 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, tra
 	jobStatus.TrainingJobStatus = trainingJobPrimaryStatus
 	jobStatus.SecondaryStatus = trainingJobSecondaryStatus
 	jobStatus.Additional = additional
-
-	// Check if we should update debugRuleEvaluationStatus
-	if ctx.TrainingJobDescription != nil && len(ctx.TrainingJobDescription.DebugRuleEvaluationStatuses) > 0 {
-		debugStatuses, _ := sdkutil.ConvertDebugRuleEvaluationStatusesFromSageMaker(ctx.TrainingJobDescription.DebugRuleEvaluationStatuses)
-		jobStatus.DebugRuleEvaluationStatuses = debugStatuses
-	}
 
 	jobStatus.SageMakerTrainingJobName = ctx.TrainingJobName
 	//TODO: Convert it to tinyurl or even better can we expose CW url via API server proxy UI?
