@@ -1,10 +1,10 @@
 # Bring Your Own Container Sample
 
-This sample demonstrates the ability for customers to train using their own scripts, packaged in a SageMaker-compatible container, using the Amazon SageMaker Operator for Kubernetes. 
+This sample demonstrates the ability for customers to start training jobs using their own training scripts, packaged in a SageMaker-compatible container, using the Amazon SageMaker Operator for Kubernetes. 
 
 ## Prerequisites
 
-This sample assumes that you have already configured an EKS cluster with the operator. It also assumes that you have installed the necessary prerequisite [command line tools](https://sagemaker.readthedocs.io/en/stable/amazon_sagemaker_operators_for_kubernetes.html#prerequisites).
+This sample assumes that you have already configured an EKS cluster with the operator. It also assumes that you have installed `kubectl` - you can find the links on our [installation page](https://sagemaker.readthedocs.io/en/stable/amazon_sagemaker_operators_for_kubernetes.html#prerequisites).
 
 In order to follow this script, you must first create a training script packaged in a Dockerfile that is [compatible with Amazon SageMaker](https://docs.aws.amazon.com/sagemaker/latest/dg/amazon-sagemaker-containers.html). The [Distributed Mask R-CNN sample](https://github.com/awslabs/amazon-sagemaker-examples/tree/master/advanced_functionality/distributed_tensorflow_mask_rcnn), published by the SageMaker team, contains a predefined training script and helper bash scripts for reference.
 
