@@ -9,16 +9,16 @@ function run_delete_canary_tests
   # Run verbose output for delete tests for simpler debugging
   set -x
   echo "Running delete canary tests"
-  verify_delete TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
+  verify_delete default TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
 
-  verify_delete HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
+  verify_delete default HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 
   # Create model before running batch delete test
-  run_test testfiles/xgboost-model.yaml
-  verify_test Model xgboost-model 1m Created
-  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
+  run_test default testfiles/xgboost-model.yaml
+  verify_test default Model xgboost-model 1m Created
+  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model default xgboost-model)"
 
-  verify_delete BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
+  verify_delete default BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
   set +x
 }
 
@@ -31,22 +31,24 @@ function run_delete_integration_tests
 # Applies a k8s resource, waits for it to start and then immediately deletes
 # and ensure the state of the resource in k8s is stopping.
 # Parameter:
-#    $1: CRD type
-#    $2: Filename of test
-#    $3: (Optional) Timeout
-# e.g. verify_delete TrainingJob xgboost-mnist.yaml 60s
+#    $1: CRD namespace
+#    $2: CRD type
+#    $3: Filename of test
+#    $4: (Optional) Timeout
+# e.g. verify_delete default TrainingJob xgboost-mnist.yaml 60s
 function verify_delete()
 {
-  local crd_type="$(echo "$1" | awk '{print tolower($0)}')"
-  local file_name="$2"
-  local timeout=${3:-"60s"}
+  local crd_namespace="$1"
+  local crd_type="$(echo "$2" | awk '{print tolower($0)}')"
+  local file_name="$3"
+  local timeout=${4:-"60s"}
 
   # Apply file and get name
-  local k8s_resource_name="$(kubectl apply -f "${file_name}" -o json | jq -r ".metadata.name")"
+  local k8s_resource_name="$(kubectl apply -n "${crd_namespace}" -f "${file_name}" -o json | jq -r ".metadata.name")"
 
   # Wait until job has started.
-  if ! wait_for_crd_status "$crd_type" "$k8s_resource_name" "$timeout" "InProgress"; then
-      echo "[FAILED] Waiting for status InProgress failed"
+  if ! wait_for_crd_status "$crd_namespace" "$crd_type" "$k8s_resource_name" "$timeout" "InProgress"; then
+      echo "[FAILED] Waiting for ${crd_type} ${crd_namespace}:${k8s_resource_name} job status InProgress failed"
       exit 1
   fi
 
@@ -70,20 +72,21 @@ function verify_delete()
       ;;
   esac
 
-  local job_name="$(kubectl get "${crd_type}" "${k8s_resource_name}" -o json | jq -r "${jobNamePath}")"
+  local job_name="$(kubectl get -n "${crd_namespace}" "${crd_type}" "${k8s_resource_name}" -o json | jq -r "${jobNamePath}")"
 
   # Actually delete the resource
-  kubectl delete -f "${file_name}" &
+  kubectl delete -n "${crd_namespace}" -f "${file_name}" &
 
   # Wait for the status to be Stopping. If it does not happen, then check if the job still exists. If it doesn't, then the delete occurred. If it still exists, then the delete failed.
-  if ! wait_for_crd_status "${crd_type}" "${k8s_resource_name}" "${timeout}" "Stopping" && kubectl get "${crd_type}" "${k8s_resource_name}"; then
-      echo "[FAILED] Waiting for status Stopping failed"
+  if ! wait_for_crd_status "$crd_namespace" "${crd_type}" "${k8s_resource_name}" "${timeout}" "Stopping" &&
+  kubectl get -n "${crd_namespace}" "${crd_type}" "${k8s_resource_name}"; then
+      echo "[FAILED] Waiting for ${crd_type} ${crd_namespace}:${k8s_resource_name} job status Stopping failed"
       exit 1
   fi
   # Check that it has been stopped in SageMaker
   verify_sm_resource_stopping_else_fail "${crd_type}" "${job_name}"
 
-  echo "[PASSED] Verified ${crd_type} ${k8s_resource_name} deleted from k8s successfully"
+  echo "[PASSED] Verified ${crd_type} ${crd_namespace}:${k8s_resource_name} deleted from k8s successfully"
 }
 
 # Queries AWS SageMaker to ensure that the job created by a k8s resource has

@@ -9,16 +9,16 @@ function run_canary_tests
   echo "Running canary tests"
   inject_all_variables
 
-  run_test testfiles/xgboost-mnist-trainingjob.yaml
-  run_test testfiles/xgboost-mnist-hpo.yaml
+  run_test default testfiles/xgboost-mnist-trainingjob.yaml
+  run_test default testfiles/xgboost-mnist-hpo.yaml
   # Special code for batch transform till we fix issue-59
-  run_test testfiles/xgboost-model.yaml
+  run_test default testfiles/xgboost-model.yaml
   # We need to get sagemaker model before running batch transform
-  verify_test Model xgboost-model 1m Created
-  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
-  run_test testfiles/xgboost-mnist-batchtransform.yaml 
-  run_test testfiles/xgboost-hosting-deployment.yaml
-  run_test testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  verify_test default Model xgboost-model 1m Created
+  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model default xgboost-model)"
+  run_test default testfiles/xgboost-mnist-batchtransform.yaml 
+  run_test default testfiles/xgboost-hosting-deployment.yaml
+  run_test default testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Applies each of the resources needed for the integration tests.
@@ -34,24 +34,24 @@ function run_integration_tests
     #build_fsx_from_s3
   fi
 
-  run_test testfiles/spot-xgboost-mnist-trainingjob.yaml
-  run_test testfiles/xgboost-mnist-custom-endpoint.yaml
-  # run_test testfiles/efs-xgboost-mnist-trainingjob.yaml
-  # run_test testfiles/fsx-kmeans-mnist-trainingjob.yaml
-  run_test testfiles/spot-xgboost-mnist-hpo.yaml
-  run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
-  run_test testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test default testfiles/spot-xgboost-mnist-trainingjob.yaml
+  run_test default testfiles/xgboost-mnist-custom-endpoint.yaml
+  # run_test default testfiles/efs-xgboost-mnist-trainingjob.yaml
+  # run_test default testfiles/fsx-kmeans-mnist-trainingjob.yaml
+  run_test default testfiles/spot-xgboost-mnist-hpo.yaml
+  run_test default testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+  run_test default testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
 function verify_canary_tests
 {
   echo "Verifying canary tests"
-  verify_test TrainingJob xgboost-mnist 20m Completed
-  verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
-  verify_test BatchTransformJob xgboost-batch 20m Completed 
-  verify_test HostingDeployment hosting 40m InService
-  verify_test TrainingJob xgboost-mnist-debugger 20m Completed
+  verify_test default TrainingJob xgboost-mnist 20m Completed
+  verify_test default HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
+  verify_test default BatchTransformJob xgboost-batch 20m Completed 
+  verify_test default HostingDeployment hosting 40m InService
+  verify_test default TrainingJob xgboost-mnist-debugger
 }
 
 # Verifies that all resources were created and are running/completed for the integration tests.
@@ -60,13 +60,13 @@ function verify_integration_tests
   echo "Verifying integration tests"
   verify_canary_tests
 
-  verify_test TrainingJob spot-xgboost-mnist 20m Completed
-  verify_test TrainingJob xgboost-mnist-custom-endpoint 20m Completed
-  # verify_test TrainingJob efs-xgboost-mnist 20m Completed
-  # verify_test TrainingJob fsx-kmeans-mnist 20m Completed
-  verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
-  verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
-  verify_test TrainingJob xgboost-mnist-debugger 20m Completed
+  verify_test default TrainingJob spot-xgboost-mnist 20m Completed
+  verify_test default TrainingJob xgboost-mnist-custom-endpoint 20m Completed
+  # verify_test default TrainingJob efs-xgboost-mnist 20m Completed
+  # verify_test default TrainingJob fsx-kmeans-mnist 20m Completed
+  verify_test default HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
+  verify_test default HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
+  verify_test default TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
   verify_debug_test TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
 }
@@ -104,50 +104,52 @@ function verify_debug_test
 
 # This function verifies that job has started and not failed
 # Parameter:
-#    $1: Kind of CRD
-#    $2: Instance of CRD
-#    $3: Timeout to complete the test
-#    $4: The status that verifies the job has succeeded.
-# e.g. verify_test trainingjobs xgboost-mnist
+#    $1: Namespace of the CRD
+#    $2: Kind of CRD
+#    $3: Instance of CRD
+#    $4: Timeout to complete the test
+#    $5: The status that verifies the job has succeeded.
+# e.g. verify_test default trainingjobs xgboost-mnist
 function verify_test()
 {
-  local crd_type="$1"
-  local crd_instance="$2"
-  local timeout="$3"
-  local desired_status="$4"
+  local crd_namespace="$1"
+  local crd_type="$2"
+  local crd_instance="$3"
+  local timeout="$4"
+  local desired_status="$5"
 
   # Check if job exist
-  kubectl get "${crd_type}" "${crd_instance}"
+  kubectl get -n "${crd_namespace}" "${crd_type}" "${crd_instance}"
   if [ $? -ne 0 ]; then
-    echo "[FAILED] Job does not exist"
+    echo "[FAILED] ${crd_type} ${crd_namespace}:${crd_instance} job does not exist"
     exit 1
   fi
 
   # Wait until Training Job has started, there will be two rows, header(STATUS) and entry.
   # Entry will be none if the job has not started yet. When job starts none will disappear 
   # and real status will be present.
-  echo "Waiting for job to start"
+  echo "Waiting for ${crd_type} ${crd_namespace}:${crd_instance} job to start"
   timeout 1m bash -c \
-    'until [ "$(kubectl get "$0" "$1" -o=custom-columns=STATUS:.status | grep -i none | wc -l)" -eq "0" ]; do \
-      echo "Job has not started yet"; \
+    'until [ "$(kubectl get -n "$0" "$1" "$2" -o=custom-columns=STATUS:.status | grep -i none | wc -l)" -eq "0" ]; do \
+      echo "${crd_type} ${crd_namespace}:${crd_instance} job has not started yet"; \
       sleep 1; \
-    done' "${crd_type}" "${crd_instance}"
+    done' "${crd_namespace}" "${crd_type}" "${crd_instance}"
 
   # Job has started, check whether it has failed or not
-  kubectl get "${crd_type}" "${crd_instance}" -o=custom-columns=NAME:.status | grep -i fail 
+  kubectl get -n "${crd_namespace}" "${crd_type}" "${crd_instance}" -o=custom-columns=NAME:.status | grep -i fail 
   if [ $? -eq 0 ]; then
-    echo "[FAILED] ${crd_type} ${crd_instance} job has failed" 
+    echo "[FAILED] ${crd_type} ${crd_namespace}:${crd_instance} job has failed" 
     exit 1
   fi
 
-  echo "Waiting for job to complete"
-  if ! wait_for_crd_status "$crd_type" "$crd_instance" "$timeout" "$desired_status"; then
+  echo "Waiting for ${crd_type} ${crd_namespace}:${crd_instance} job to complete"
+  if ! wait_for_crd_status "$crd_namespace" "$crd_type" "$crd_instance" "$timeout" "$desired_status"; then
       echo "[FAILED] Waiting for status Completed failed"
       exit 1
   fi
 
   # Check weather job has completed or not
-  echo "[PASSED] Verified ${crd_type} ${crd_instance} has completed"
+  echo "[PASSED] Verified ${crd_type} ${crd_namespace}:${crd_instance} has completed"
 }
 
 # Build a new FSX file system from an S3 data source to be used by FSX integration tests.
