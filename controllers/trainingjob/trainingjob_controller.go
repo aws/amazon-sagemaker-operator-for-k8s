@@ -176,14 +176,12 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	}
 
-	// Check  sagemaker describe output for each debug jobs and
+	// Check sagemaker describe output for each debug jobs and
 	// generates the update if k8s status for corresponding debug jobs differ.
 	// Initially status will be empty so we will generate update for all debug jobs
 	if len(ctx.TrainingJobDescription.DebugRuleEvaluationStatuses) != len(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses) {
-		for _, _ = range ctx.TrainingJobDescription.DebugRuleEvaluationStatuses {
-			if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
-				return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
-			}
+		if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
+			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
 		}
 	} else {
 		for i, debugJob := range ctx.TrainingJobDescription.DebugRuleEvaluationStatuses {
@@ -191,6 +189,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 				if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
 					return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
 				}
+				break
 			}
 		}
 	}
