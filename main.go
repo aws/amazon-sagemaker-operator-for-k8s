@@ -54,7 +54,7 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&namespace, "namespace", "", "The namespace in which the manager controls and reconciles resources.")
+	flag.StringVar(&namespace, "namespace", "", "The namespace in which the manager controls and reconciles resources. Leave it blank to watch all namespaces.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.Logger(true))
@@ -70,7 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctrl.Log.WithName("Namespace").Info(namespace)
+	ctrl.Log.WithName("Starting manager in the namespace: ").Info(namespace)
 
 	const jobPollInterval = "5s"
 
