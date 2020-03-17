@@ -13,6 +13,7 @@ patchesStrategicMerge:
 - resources/manager_add_service_account_patch.yaml
 - resources/modify_cluster_roles_to_roles.yaml
 
+# Patch all ClusterRole* to Role* kinds
 patchesJson6902:
 - target:
     group: rbac.authorization.k8s.io
@@ -41,6 +42,7 @@ patchesJson6902:
     - op: replace
       path: "/kind"
       value: RoleBinding
+# Add --namespace option to the manager pod
 - target:
     group: apps
     version: v1
