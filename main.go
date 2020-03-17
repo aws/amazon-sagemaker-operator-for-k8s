@@ -54,7 +54,7 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&namespace, "namespace", "", "The namespace that the manager's cache can watch objects in.")
+	flag.StringVar(&namespace, "namespace", "", "The namespace in which the manager controls and reconciles resources.")
 	flag.Parse()
 
 	ctrl.SetLogger(zap.Logger(true))
