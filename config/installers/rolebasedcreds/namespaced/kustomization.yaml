@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Adds namespace to all resources.
+namespace: PLACEHOLDER-NAMESPACE
+namePrefix: sagemaker-k8s-operator-
+  
+bases:
+- ../../../base
+- resources
+
+patchesStrategicMerge:
+- resources/manager_add_service_account_patch.yaml
+- resources/modify_cluster_roles_to_roles.yaml
+
+patchesJson6902:
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    namespace: system
+    name: controller-manager
+  patch: |-
+    - op: add
+      path: "/spec/template/spec/containers/1/args/-"
+      value: --namespace=PLACEHOLDER-NAMESPACE
