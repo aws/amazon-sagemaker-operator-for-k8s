@@ -61,6 +61,12 @@ type TrainingJobSpec struct {
 
 	StoppingCondition *commonv1.StoppingCondition `json:"stoppingCondition"`
 
+	DebugRuleConfigurations []*commonv1.DebugRuleConfiguration `json:"debugRuleConfigurations,omitempty"`
+
+	DebugHookConfig *commonv1.DebugHookConfig `json:"debugHookConfig,omitempty"`
+
+	TensorBoardOutputConfig *commonv1.TensorBoardOutputConfig `json:"tensorBoardOutputConfig,omitempty"`
+
 	Tags []commonv1.Tag `json:"tags,omitempty"`
 
 	// The SageMaker training job name. This is optional for the SageMaker K8s operator. If it is empty,
@@ -96,6 +102,10 @@ type TrainingJobStatus struct {
 
 	//Full path to the training artifact (model)
 	ModelPath string `json:"modelPath,omitempty"`
+
+	// Status of rule evaluation jobs, obtained from DebugRuleEvaluationStatuses.
+	// https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DescribeTrainingJob.html#sagemaker-DescribeTrainingJob-response-DebugRuleEvaluationStatuses
+	DebugRuleEvaluationStatuses []commonv1.DebugRuleEvaluationStatus `json:"debugRuleEvaluationStatuses,omitempty"`
 }
 
 // +kubebuilder:object:root=true
