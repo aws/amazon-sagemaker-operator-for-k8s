@@ -176,7 +176,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 
 		It("Updates status", func() {
 			ExpectAdditionalToContain(trainingJob, failureMessage)
-			ExpectStatusToBe(trainingJob, ReconcilingTrainingJobStatus, "")
+			ExpectTrainingJobStatusToBe(trainingJob, ReconcilingTrainingJobStatus, "")
 		})
 	})
 
@@ -238,7 +238,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 
 			It("Updates status", func() {
-				ExpectStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusInProgress), string(sagemaker.SecondaryStatusStarting))
+				ExpectTrainingJobStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusInProgress), string(sagemaker.SecondaryStatusStarting))
 			})
 
 			It("Adds the training job name to the spec", func() {
@@ -304,7 +304,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -337,7 +337,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status to 'Stopping'('') and does not delete TrainingJob", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), "")
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), "")
 				})
 			})
 		})
@@ -356,7 +356,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -389,7 +389,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status to 'Stopping'('') and does not delete TrainingJob", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), "")
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), "")
 				})
 			})
 		})
@@ -408,7 +408,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), "")
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), "")
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -432,7 +432,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status to 'Stopping' and does not delete TrainingJob", func() {
-					ExpectStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusStopping), "")
+					ExpectTrainingJobStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusStopping), "")
 				})
 			})
 		})
@@ -451,7 +451,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), "")
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), "")
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -475,7 +475,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status to 'Stopping' and does not delete TrainingJob", func() {
-					ExpectStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusStopping), "")
+					ExpectTrainingJobStatusToBe(trainingJob, string(sagemaker.TrainingJobStatusStopping), "")
 				})
 			})
 		})
@@ -501,7 +501,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
 				})
 
 				It("Has the additional field set", func() {
@@ -547,7 +547,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -589,7 +589,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -618,15 +618,13 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 		})
 
-		Context("TrainingJob is 'Failed' and has debug job with status 'InProgress'", func() {
+		Context("TrainingJob is 'Failed' and has debug jobs with statuses 'InProgress' and 'IssueFound'", func() {
 			var failureReason string
-			var debugJobStatus []sagemaker.RuleEvaluationStatus
+			debugJobStatus := []sagemaker.RuleEvaluationStatus{sagemaker.RuleEvaluationStatusInProgress, sagemaker.RuleEvaluationStatusIssuesFound}
 
 			BeforeEach(func() {
 				expectedStatus = sagemaker.TrainingJobStatusFailed
 				failureReason = "Failure within the training job"
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusInProgress)
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusIssuesFound)
 
 				// Add the failure reason to the describe output
 				describeOutput := CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus)
@@ -642,7 +640,8 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectAllJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), debugJobStatus)
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectDebugJobsStatusToBe(trainingJob, debugJobStatus)
 				})
 
 				It("Has the additional field set", func() {
@@ -675,15 +674,13 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 		})
 
-		Context("TrainingJob is 'Failed' and has debug job with status 'Stopping'", func() {
+		Context("TrainingJob is 'Failed' and has debug jobs with statuses 'Stopping' and 'IssueFound'", func() {
 			var failureReason string
-			var debugJobStatus []sagemaker.RuleEvaluationStatus
+			debugJobStatus := []sagemaker.RuleEvaluationStatus{sagemaker.RuleEvaluationStatusStopping, sagemaker.RuleEvaluationStatusIssuesFound}
 
 			BeforeEach(func() {
 				expectedStatus = sagemaker.TrainingJobStatusFailed
 				failureReason = "Failure within the training job"
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusStopping)
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusIssuesFound)
 				// Add the failure reason to the describe output
 				describeOutput := CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus)
 				describeOutput.FailureReason = ToStringPtr(failureReason)
@@ -699,7 +696,8 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectAllJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), debugJobStatus)
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectDebugJobsStatusToBe(trainingJob, debugJobStatus)
 				})
 
 				It("Has the additional field set", func() {
@@ -732,12 +730,10 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 		})
 
-		Context("TrainingJob is 'Stopped' and has debug job with status 'InProgress'.", func() {
-			var debugJobStatus []sagemaker.RuleEvaluationStatus
+		Context("TrainingJob is 'Stopped' and has debug jobs with statuses 'InProgress' and 'IssueFound'.", func() {
+			debugJobStatus := []sagemaker.RuleEvaluationStatus{sagemaker.RuleEvaluationStatusInProgress, sagemaker.RuleEvaluationStatusIssuesFound}
 			BeforeEach(func() {
 				expectedStatus = sagemaker.TrainingJobStatusStopped
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusInProgress)
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusIssuesFound)
 				mockSageMakerClientBuilder.
 					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
 			})
@@ -748,8 +744,8 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectAllJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), debugJobStatus)
-
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectDebugJobsStatusToBe(trainingJob, debugJobStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -778,12 +774,10 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 		})
 
-		Context("TrainingJob is 'Stopped' and has debug job with status 'Stopping'", func() {
-			var debugJobStatus []sagemaker.RuleEvaluationStatus
+		Context("TrainingJob is 'Stopped' and has debug jobs with statuses 'Stopping' and 'IssueFound'", func() {
+			debugJobStatus := []sagemaker.RuleEvaluationStatus{sagemaker.RuleEvaluationStatusStopping, sagemaker.RuleEvaluationStatusIssuesFound}
 			BeforeEach(func() {
 				expectedStatus = sagemaker.TrainingJobStatusStopped
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusStopping)
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusIssuesFound)
 				mockSageMakerClientBuilder.
 					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
 			})
@@ -794,7 +788,8 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectAllJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), debugJobStatus)
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectDebugJobsStatusToBe(trainingJob, debugJobStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -823,12 +818,10 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 		})
 
-		Context("TrainingJob is 'Completed' and has debug job with status 'InProgress'", func() {
-			var debugJobStatus []sagemaker.RuleEvaluationStatus
+		Context("TrainingJob is 'Completed' and has debug jobs with statuses 'InProgress' and 'IssueFound'", func() {
+			debugJobStatus := []sagemaker.RuleEvaluationStatus{sagemaker.RuleEvaluationStatusInProgress, sagemaker.RuleEvaluationStatusIssuesFound}
 			BeforeEach(func() {
 				expectedStatus = sagemaker.TrainingJobStatusCompleted
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusInProgress)
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusIssuesFound)
 				mockSageMakerClientBuilder.
 					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
 			})
@@ -839,7 +832,8 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectAllJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), debugJobStatus)
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectDebugJobsStatusToBe(trainingJob, debugJobStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -868,12 +862,10 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 			})
 		})
 
-		Context("TrainingJob is 'Completed' and has debug job with status 'Stopping'", func() {
-			var debugJobStatus []sagemaker.RuleEvaluationStatus
+		Context("TrainingJob is 'Completed' and has debug jobs with statuses 'Stopping' and 'IssueFound'", func() {
+			debugJobStatus := []sagemaker.RuleEvaluationStatus{sagemaker.RuleEvaluationStatusStopping, sagemaker.RuleEvaluationStatusIssuesFound}
 			BeforeEach(func() {
 				expectedStatus = sagemaker.TrainingJobStatusCompleted
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusStopping)
-				debugJobStatus = append(debugJobStatus, sagemaker.RuleEvaluationStatusIssuesFound)
 				mockSageMakerClientBuilder.
 					AddDescribeTrainingJobResponse(CreateDescribeOutputWithDebugJobStatus(expectedStatus, expectedSecondaryStatus, debugJobStatus))
 			})
@@ -884,7 +876,8 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectAllJobsStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus), debugJobStatus)
+					ExpectTrainingJobStatusToBe(trainingJob, string(expectedStatus), string(expectedSecondaryStatus))
+					ExpectDebugJobsStatusToBe(trainingJob, debugJobStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -1009,7 +1002,7 @@ func ExpectAdditionalToContain(trainingJob *trainingjobv1.TrainingJob, substring
 }
 
 // Expect trainingjob status to be as specified.
-func ExpectStatusToBe(trainingJob *trainingjobv1.TrainingJob, primaryStatus, secondaryStatus string) {
+func ExpectTrainingJobStatusToBe(trainingJob *trainingjobv1.TrainingJob, primaryStatus, secondaryStatus string) {
 	var actual trainingjobv1.TrainingJob
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: trainingJob.ObjectMeta.Namespace,
@@ -1021,8 +1014,8 @@ func ExpectStatusToBe(trainingJob *trainingjobv1.TrainingJob, primaryStatus, sec
 	Expect(string(actual.Status.SecondaryStatus)).To(Equal(secondaryStatus))
 }
 
-// Expect trainingjob status and debug job status to be as specified
-func ExpectAllJobsStatusToBe(trainingJob *trainingjobv1.TrainingJob, primaryStatus, secondaryStatus string, debugJobStatus []sagemaker.RuleEvaluationStatus) {
+// Expect debug jobs status to be as specified
+func ExpectDebugJobsStatusToBe(trainingJob *trainingjobv1.TrainingJob, debugJobStatuses []sagemaker.RuleEvaluationStatus) {
 	var actual trainingjobv1.TrainingJob
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: trainingJob.ObjectMeta.Namespace,
@@ -1030,11 +1023,8 @@ func ExpectAllJobsStatusToBe(trainingJob *trainingjobv1.TrainingJob, primaryStat
 	}, &actual)
 	Expect(err).ToNot(HaveOccurred())
 
-	Expect(string(actual.Status.TrainingJobStatus)).To(Equal(primaryStatus))
-	Expect(string(actual.Status.SecondaryStatus)).To(Equal(secondaryStatus))
-
-	for i, _ := range debugJobStatus {
-		Expect(string(*actual.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus)).To(Equal(string(debugJobStatus[i])))
+	for i, debugJobStatus := range debugJobStatuses {
+		Expect(string(*actual.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus)).To(Equal(string(debugJobStatus)))
 	}
 }
 
@@ -1070,10 +1060,10 @@ func CreateDescribeOutputWithOnlyStatus(status sagemaker.TrainingJobStatus, seco
 }
 
 // Helper function to create a DescribeTrainingJobOutput with debug jobs status
-func CreateDescribeOutputWithDebugJobStatus(status sagemaker.TrainingJobStatus, secondaryStatus sagemaker.SecondaryStatus, debugJobStatus []sagemaker.RuleEvaluationStatus) sagemaker.DescribeTrainingJobOutput {
+func CreateDescribeOutputWithDebugJobStatus(status sagemaker.TrainingJobStatus, secondaryStatus sagemaker.SecondaryStatus, debugJobStatuses []sagemaker.RuleEvaluationStatus) sagemaker.DescribeTrainingJobOutput {
 	output := CreateDescribeOutputWithOnlyStatus(status, secondaryStatus)
-	for i, _ := range debugJobStatus {
-		output.DebugRuleEvaluationStatuses = append(output.DebugRuleEvaluationStatuses, sagemaker.DebugRuleEvaluationStatus{RuleEvaluationStatus: debugJobStatus[i]})
+	for _, debugJobStatus := range debugJobStatuses {
+		output.DebugRuleEvaluationStatuses = append(output.DebugRuleEvaluationStatuses, sagemaker.DebugRuleEvaluationStatus{RuleEvaluationStatus: debugJobStatus})
 	}
 	return output
 }
