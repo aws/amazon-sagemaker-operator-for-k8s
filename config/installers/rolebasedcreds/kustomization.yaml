@@ -10,5 +10,8 @@ bases:
 - ../../base
 - namespaced/resources
 
+resources:
+- ../../rbac/clusterspaced
+
 patchesStrategicMerge:
 - namespaced/resources/manager_add_service_account_patch.yaml

@@ -13,5 +13,4 @@ images:
   newName: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s
   newTag: v1
 resources:
-- ../rbac
 - ../manager

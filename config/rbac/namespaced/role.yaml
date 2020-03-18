@@ -1,0 +1,168 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - batchtransformjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - batchtransformjobs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hostingdeployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hostingdeployments/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hyperparametertuningjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hyperparametertuningjobs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - trainingjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - trainingjobs/status
+  verbs:
+  - get
+  - update
+  - patch

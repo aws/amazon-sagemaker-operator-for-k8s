@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-  name: sagemaker-k8s-operator-system
+  name: PLACEHOLDER-NAMESPACE
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -43,26 +43,9 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: sagemaker-k8s-operator-proxy-role
-rules:
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
   creationTimestamp: null
   name: sagemaker-k8s-operator-manager-role
+  namespace: PLACEHOLDER-NAMESPACE
 rules:
 - apiGroups:
   - sagemaker.aws.amazon.com
@@ -226,6 +209,25 @@ rules:
   - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sagemaker-k8s-operator-proxy-role
+  namespace: PLACEHOLDER-NAMESPACE
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: sagemaker-k8s-operator-leader-election-rolebinding
@@ -236,33 +238,35 @@ roleRef:
   name: sagemaker-k8s-operator-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: sagemaker-k8s-operator-default
   namespace: PLACEHOLDER-NAMESPACE
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: sagemaker-k8s-operator-manager-rolebinding
+  namespace: PLACEHOLDER-NAMESPACE
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: sagemaker-k8s-operator-manager-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: sagemaker-k8s-operator-default
   namespace: PLACEHOLDER-NAMESPACE
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: sagemaker-k8s-operator-proxy-rolebinding
+  namespace: PLACEHOLDER-NAMESPACE
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: sagemaker-k8s-operator-proxy-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: sagemaker-k8s-operator-default
   namespace: PLACEHOLDER-NAMESPACE
 ---
 apiVersion: v1

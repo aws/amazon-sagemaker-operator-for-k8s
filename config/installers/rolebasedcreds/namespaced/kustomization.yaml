@@ -9,39 +9,50 @@ bases:
 - ../../../base
 - resources
 
+resources:
+- ../../../rbac/namespaced
+
 patchesStrategicMerge:
 - resources/manager_add_service_account_patch.yaml
-- resources/modify_cluster_roles_to_roles.yaml
 
-# Patch all ClusterRole* to Role* kinds
 patchesJson6902:
+# Rename created namespace
 - target:
-    group: rbac.authorization.k8s.io
     version: v1
-    kind: ClusterRole
-    name: proxy-role
+    kind: Namespace
+    name: sagemaker-k8s-operator-system
   patch: |-
     - op: replace
-      path: "/kind"
-      value: Role
+      path: "/metadata/name"
+      value: PLACEHOLDER-NAMESPACE
+# Patch broken ServiceAccount names/namespaces (they all default back to `default`)
 - target:
     group: rbac.authorization.k8s.io
     version: v1
-    kind: ClusterRoleBinding
+    kind: RoleBinding
     name: manager-rolebinding
   patch: |-
     - op: replace
-      path: "/kind"
-      value: RoleBinding
+      path: "/subjects/0/name"
+      value: sagemaker-k8s-operator-default
 - target:
     group: rbac.authorization.k8s.io
     version: v1
-    kind: ClusterRoleBinding
+    kind: RoleBinding
     name: proxy-rolebinding
   patch: |-
     - op: replace
-      path: "/kind"
-      value: RoleBinding
+      path: "/subjects/0/name"
+      value: sagemaker-k8s-operator-default
+- target:
+    group: rbac.authorization.k8s.io
+    version: v1
+    kind: RoleBinding
+    name: leader-election-rolebinding
+  patch: |-
+    - op: replace
+      path: "/subjects/0/name"
+      value: sagemaker-k8s-operator-default
 # Add --namespace option to the manager pod
 - target:
     group: apps
