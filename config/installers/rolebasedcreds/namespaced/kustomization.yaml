@@ -10,7 +10,7 @@ bases:
 - resources
 
 resources:
-- ../../../rbac/namespaced
+- ../../../bindings/namespaced
 
 patchesStrategicMerge:
 - resources/manager_add_service_account_patch.yaml
