@@ -25,7 +25,11 @@ patchesJson6902:
     - op: replace
       path: "/metadata/name"
       value: PLACEHOLDER-NAMESPACE
-# Patch broken ServiceAccount names/namespaces (they all default back to `default`)
+# Patch broken ServiceAccount names/namespaces
+# Because we are messing with namespaces so much, especially using patching, 
+# it's breaking all the built in dynamic references that Kustomize provides
+# which would ensure they are all in the correct namespace.
+# See issue https://github.com/kubernetes-sigs/kustomize/issues/1377
 - target:
     group: rbac.authorization.k8s.io
     version: v1
