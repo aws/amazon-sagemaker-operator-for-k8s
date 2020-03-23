@@ -100,4 +100,6 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 create-installers: set-image
-	kustomize build config/rolebasedcreds > release/rolebased/installer.yaml
+	kustomize build config/installers/rolebasedcreds > release/rolebased/installer.yaml
+	kustomize build config/installers/rolebasedcreds/namespaced > release/rolebased/namespaced/operator.yaml
+	kustomize build config/crd > release/rolebased/namespaced/crd.yaml

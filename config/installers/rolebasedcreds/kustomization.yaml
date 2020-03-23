@@ -4,12 +4,14 @@ kind: Kustomization
 # Adds namespace to all resources.
 namespace: sagemaker-k8s-operator-system
 namePrefix: sagemaker-k8s-operator-
-
-resources: 
- - serviceaccount.yaml
-
+  
 bases:
-- ../base
+- ../../crd
+- ../../base
+- namespaced/resources
+
+resources:
+- ../../bindings/clusterspaced
 
 patchesStrategicMerge:
-- manager_add_service_account_patch.yaml
+- namespaced/resources/manager_add_service_account_patch.yaml

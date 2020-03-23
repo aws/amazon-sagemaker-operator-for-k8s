@@ -14,4 +14,6 @@ secretGenerator:
 patchesStrategicMerge:
 - manager_creds_patch.yaml
 resources:
+- ../crd
 - ../base
+- ../bindings/clusterspaced
