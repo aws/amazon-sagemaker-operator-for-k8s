@@ -17,6 +17,8 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+
 	"github.com/adammck/venv"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
@@ -61,7 +63,7 @@ func (l *AwsConfigLoader) InstallCredsUsingSDKV1(config *aws.Config, regionOverr
 	// Reference: https://eksctl.io/usage/iamserviceaccounts/
 	if (len(awsAccessKeyId) == 0 || len(awsSecretAccessKey) == 0) && len(awsWebIdentityTokenFile) != 0 && len(awsRoleArn) != 0 {
 		credsProvider := aws.SafeCredentialsProvider{}
-		credsProvider.RetrieveFn = func() (aws.Credentials, error) {
+		credsProvider.RetrieveFn = func(context.Context) (aws.Credentials, error) {
 			sess := session.Must(session.NewSession(&awsv1.Config{
 				Region: &regionOverride,
 			}))

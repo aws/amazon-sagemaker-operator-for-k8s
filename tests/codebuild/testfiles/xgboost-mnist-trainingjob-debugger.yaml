@@ -1,0 +1,85 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: TrainingJob
+metadata:
+  name: xgboost-mnist-debugger
+spec:
+    hyperParameters:
+        - name: max_depth
+          value: "5"
+        - name: eta
+          value: "0.2"
+        - name: gamma
+          value: "4"
+        - name: min_child_weight
+          value: "6"
+        - name: silent
+          value: "0"
+        - name: objective
+          value: reg:squarederror 
+        - name: subsample
+          value: "0.7"
+        - name: num_round
+          value: "51"
+    algorithmSpecification:
+        trainingImage: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:0.90-2-cpu-py3
+        trainingInputMode: File
+    roleArn: {ROLE_ARN}
+    region: us-west-2
+    outputDataConfig:
+        s3OutputPath: s3://{DATA_BUCKET}/xgboost-debugger/output
+    resourceConfig:
+        instanceCount: 1
+        instanceType: ml.m4.xlarge
+        volumeSizeInGB: 5
+    stoppingCondition:
+        maxRuntimeInSeconds: 86400
+    inputDataConfig:
+        - channelName: train
+          dataSource:
+            s3DataSource:
+                s3DataType: S3Prefix
+                s3Uri: s3://{DATA_BUCKET}/xgboost-debugger/train
+                s3DataDistributionType: FullyReplicated
+          contentType: libsvm
+          compressionType: None
+        - channelName: validation
+          dataSource:
+            s3DataSource:
+                s3DataType: S3Prefix
+                s3Uri: s3://{DATA_BUCKET}/xgboost-debugger/validation
+                s3DataDistributionType: FullyReplicated
+          contentType: libsvm
+          compressionType: None
+    debugHookConfig:
+      s3OutputPath: s3://{DATA_BUCKET}/xgboost-debugger/hookconfig
+      collectionConfigurations:
+        - collectionName: feature_importance
+          collectionParameters:
+            - name: save_interval
+              value: "5"
+        - collectionName: losses
+          collectionParameters:
+            - name: save_interval"
+              value: "500" 
+        - collectionName: average_shap
+          collectionParameters:
+            - name: save_interval
+              value: "5" 
+        - collectionName: metrics
+          collectionParameters:
+            - name: save_interval
+              value: "5" 
+    debugRuleConfigurations:
+      - ruleConfigurationName: LossNotDecreasing
+        ruleEvaluatorImage: 895741380848.dkr.ecr.us-west-2.amazonaws.com/sagemaker-debugger-rules:latest
+        ruleParameters:
+          - name: collection_names
+            value: metrics
+          - name: num_steps
+            value: "10"
+          - name: rule_to_invoke
+            value: LossNotDecreasing
+
+    tags:
+      - key: tagKey
+        value: tagValue

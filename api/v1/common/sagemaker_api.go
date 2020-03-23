@@ -480,3 +480,51 @@ type TransformResources struct {
 
 	VolumeKmsKeyId *string `json:"volumeKmsKeyId,omitempty"`
 }
+
+// DebugRuleConfiguration https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleConfiguration.html
+type DebugRuleConfiguration struct {
+	RuleConfigurationName *string `json:"ruleConfigurationName"`
+	LocalPath             *string `json:"localPath,omitempty"`
+	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	S3OutputPath       *string `json:"s3OutputPath,omitempty"`
+	RuleEvaluatorImage *string `json:"ruleEvaluatorImage"`
+	// +kubebuilder:validation:Minimum=1
+	VolumeSizeInGB *int64          `json:"volumeSizeInGB,omitempty"`
+	InstanceType   string          `json:"instanceType,omitempty"`
+	RuleParameters []*KeyValuePair `json:"ruleParameters,omitempty"`
+}
+
+// DebugHookConfig https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugHookConfig.html
+type DebugHookConfig struct {
+	LocalPath *string `json:"localPath,omitempty"`
+	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	S3OutputPath             *string                    `json:"s3OutputPath"`
+	HookParameters           []*KeyValuePair            `json:"ruleParameters,omitempty"`
+	CollectionConfigurations []*CollectionConfiguration `json:"collectionConfigurations,omitempty"`
+}
+
+// CollectionConfiguration https://docs.aws.amazon.com/sagemaker/latest/dg/API_CollectionConfiguration.html
+type CollectionConfiguration struct {
+	CollectionName       *string         `json:"collectionName,omitempty"`
+	CollectionParameters []*KeyValuePair `json:"collectionParameters,omitempty"`
+}
+
+// TensorBoardOutputConfig https://docs.aws.amazon.com/sagemaker/latest/dg/API_TensorBoardOutputConfig.html
+type TensorBoardOutputConfig struct {
+	LocalPath *string `json:"localPath,omitempty"`
+	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	S3OutputPath *string `json:"s3OutputPath"`
+}
+
+// DebugRuleEvalutionStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
+type DebugRuleEvaluationStatus struct {
+	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
+
+	RuleConfigurationName *string `json:"ruleConfigurationName,omitempty"`
+
+	RuleEvaluationJobArn *string `json:"ruleEvaluationJobArn,omitempty"`
+
+	RuleEvaluationStatus *string `json:"ruleEvaluationStatus,omitempty"`
+
+	StatusDetail *string `json:"statusDetail,omitempty"`
+}

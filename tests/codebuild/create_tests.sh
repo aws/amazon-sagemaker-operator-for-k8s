@@ -18,6 +18,7 @@ function run_canary_tests
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model xgboost-model)"
   run_test testfiles/xgboost-mnist-batchtransform.yaml 
   run_test testfiles/xgboost-hosting-deployment.yaml
+  run_test testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Applies each of the resources needed for the integration tests.
@@ -39,6 +40,7 @@ function run_integration_tests
   # run_test testfiles/fsx-kmeans-mnist-trainingjob.yaml
   run_test testfiles/spot-xgboost-mnist-hpo.yaml
   run_test testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+  run_test testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
@@ -49,6 +51,7 @@ function verify_canary_tests
   verify_test HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test BatchTransformJob xgboost-batch 20m Completed 
   verify_test HostingDeployment hosting 40m InService
+  verify_test TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
 # Verifies that all resources were created and are running/completed for the integration tests.
@@ -63,6 +66,29 @@ function verify_integration_tests
   # verify_test TrainingJob fsx-kmeans-mnist 20m Completed
   verify_test HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
   verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
+  verify_test TrainingJob xgboost-mnist-debugger 20m Completed
+  # Verify that debug job has status
+  verify_debug_test TrainingJob xgboost-mnist-debugger NoIssuesFound
+}
+
+# This function verifies that a given debug job has specific status
+# Parameter:
+#    $1: CRD type
+#    $2: Instance of CRD
+#    $3: Single debug job status
+function verify_debug_test
+{
+  local crd_type="$1"
+  local crd_instance="$2"
+  local expected_debug_job_status="$3"
+  # TODO extend this for multiple debug job with debug job statuses parameter
+  local found_debug_job_status="$(kubectl get "$crd_type" "$crd_instance" -o json | jq -r '.status.debugRuleEvaluationStatuses[0].ruleEvaluationStatus')"
+  if [ "${expected_debug_job_status}" == "${found_debug_job_status}" ]; then
+      echo "[PASSED] Verified ${crd_type} ${crd_instance} debug job has status ${expected_debug_job_status}"
+  else
+      echo "[FAILED] ${crd_type} ${crd_instance} debug job has status ${found_debug_job_status} while expected status was ${expected_debug_job_status}"
+      exit 1
+  fi
 }
 
 # This function verifies that job has started and not failed

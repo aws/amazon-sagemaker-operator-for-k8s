@@ -97,6 +97,12 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return controllers.RequeueImmediately()
 	}
 
+	// If there are any debug rule jobs still in progress, keep requeueing
+	for _, debugRuleJob := range ctx.TrainingJob.Status.DebugRuleEvaluationStatuses {
+		if controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusInProgress) || controllers.GetOrDefault(debugRuleJob.RuleEvaluationStatus, "") == string(sagemaker.RuleEvaluationStatusStopping) {
+			return controllers.RequeueAfterInterval(r.PollInterval, nil)
+		}
+	}
 	switch ctx.TrainingJob.Status.TrainingJobStatus {
 	case string(sagemaker.TrainingJobStatusCompleted):
 		fallthrough
@@ -170,6 +176,24 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	}
 
+	// Check sagemaker describe output for each debug jobs and
+	// generates the update if k8s status for corresponding debug jobs differ.
+	// Initially status will be empty so we will generate update for all debug jobs
+	if len(ctx.TrainingJobDescription.DebugRuleEvaluationStatuses) != len(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses) {
+		if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
+			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
+		}
+	} else {
+		for i, debugJob := range ctx.TrainingJobDescription.DebugRuleEvaluationStatuses {
+			if string(debugJob.RuleEvaluationStatus) != controllers.GetOrDefault(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus, "") {
+				if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
+					return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
+				}
+				break
+			}
+		}
+	}
+
 	switch ctx.TrainingJobDescription.TrainingJobStatus {
 	case sagemaker.TrainingJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
@@ -223,6 +247,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 
 // Initialize fields on the context object which will be used later.
 func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
+
 	// Ensure we are using the job name specified in the spec
 	if ctx.TrainingJob.Spec.TrainingJobName != nil && len(*ctx.TrainingJob.Spec.TrainingJobName) > 0 {
 		ctx.TrainingJobName = *ctx.TrainingJob.Spec.TrainingJobName
@@ -278,7 +303,7 @@ func (r *Reconciler) addModelPathToStatus(ctx reconcileRequestContext) error {
 	// SageMaker documentation https://docs.aws.amazon.com/sagemaker/latest/dg/cdf-training.html
 	const outputPath string = "/output/model.tar.gz"
 	ctx.TrainingJob.Status.ModelPath = *ctx.TrainingJob.Spec.OutputDataConfig.S3OutputPath + ctx.TrainingJob.Status.SageMakerTrainingJobName + outputPath
-	if err = r.Update(ctx, ctx.TrainingJob); err != nil {
+	if err = r.Status().Update(ctx, ctx.TrainingJob); err != nil {
 		return err
 	}
 
@@ -295,6 +320,22 @@ func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 	}
 	ctx.Log.Info("Finalizer has been removed")
 
+	return nil
+}
+
+// Add information regarding the debugging statuses to the status fields.
+func (r *Reconciler) addDebugRuleEvaluationStatusesToStatus(ctx reconcileRequestContext) error {
+	debugStatuses, err := sdkutil.ConvertDebugRuleEvaluationStatusesFromSageMaker(ctx.TrainingJobDescription.DebugRuleEvaluationStatuses)
+
+	if err != nil {
+		return err
+	}
+
+	ctx.TrainingJob.Status.DebugRuleEvaluationStatuses = debugStatuses
+
+	if err = r.Status().Update(ctx, ctx.TrainingJob); err != nil {
+		return err
+	}
 	return nil
 }
 

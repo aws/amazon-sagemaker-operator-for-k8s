@@ -534,6 +534,7 @@ func (m *mockSageMakerClient) mockRequestBuilder() *aws.Request {
 			Header: map[string][]string{},
 		},
 		HTTPResponse: &http.Response{},
+		Retryer:      &aws.NoOpRetryer{},
 		// Required for pagination operation.
 		Operation: &aws.Operation{
 			Paginator: nil,
