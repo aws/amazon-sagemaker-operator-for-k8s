@@ -95,7 +95,7 @@ function verify_debug_test
     done' "${crd_type}" "${crd_instance}" "${expected_debug_job_status}"
 
   if [ $? -ne 0 ]; then
-    echo "[FAILED] debug job ${crd_type} ${crd_instance} with expected status ${expected_debug_job_status} has timedout"
+    echo "[FAILED] Debug job ${crd_type} ${crd_instance} with expected status ${expected_debug_job_status} has timed out"
     exit 1
   fi
 
