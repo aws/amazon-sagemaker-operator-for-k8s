@@ -68,7 +68,7 @@ function verify_integration_tests
   verify_test HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
   verify_test TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
-  verify_debug_test TrainingJob xgboost-mnist-debugger NoIssuesFound
+  verify_debug_test TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
 }
 
 # This function verifies that a given debug job has specific status
@@ -80,15 +80,26 @@ function verify_debug_test
 {
   local crd_type="$1"
   local crd_instance="$2"
-  local expected_debug_job_status="$3"
+  local timeout="$3"
+  local expected_debug_job_status="$4"
+  # First verify that trainingjob has been completed
+  verify_test TrainingJob xgboost-mnist-debugger $timeout Completed
+
   # TODO extend this for multiple debug job with debug job statuses parameter
-  local found_debug_job_status="$(kubectl get "$crd_type" "$crd_instance" -o json | jq -r '.status.debugRuleEvaluationStatuses[0].ruleEvaluationStatus')"
-  if [ "${expected_debug_job_status}" == "${found_debug_job_status}" ]; then
-      echo "[PASSED] Verified ${crd_type} ${crd_instance} debug job has status ${expected_debug_job_status}"
-  else
-      echo "[FAILED] ${crd_type} ${crd_instance} debug job has status ${found_debug_job_status} while expected status was ${expected_debug_job_status}"
-      exit 1
+
+  echo "Waiting for debug job to finish"
+  timeout "${timeout}" bash -c \
+    'until [ "$(kubectl get "$0" "$1" -o json | jq -r .status.debugRuleEvaluationStatuses[0].ruleEvaluationStatus)" != "$2" ]; do \
+      echo "Debug job has not completed yet"; \
+      sleep 1; \
+    done' "${crd_type}" "${crd_instance}" "${expected_debug_job_status}"
+
+  if [ $? -ne 0 ]; then
+    echo "[FAILED] Debug job ${crd_type} ${crd_instance} with expected status ${expected_debug_job_status} has timed out"
+    exit 1
   fi
+
+  echo "Debug job has completed"
 }
 
 # This function verifies that job has started and not failed
