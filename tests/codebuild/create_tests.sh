@@ -89,7 +89,7 @@ function verify_debug_test
 
   echo "Waiting for debug job to finish"
   timeout "${timeout}" bash -c \
-    'until [ "$(kubectl get "$0" "$1" -o json | jq -r .status.debugRuleEvaluationStatuses[0].ruleEvaluationStatus)" != "$2" ]; do \
+    'until [ "$(kubectl get "$0" "$1" -o json | jq -r .status.debugRuleEvaluationStatuses[0].ruleEvaluationStatus)" == "$2" ]; do \
       echo "Debug job has not completed yet"; \
       sleep 1; \
     done' "${crd_type}" "${crd_instance}" "${expected_debug_job_status}"
