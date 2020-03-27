@@ -53,6 +53,8 @@ function wait_for_crd_status()
 }
 
 # Cleans up all resources created during tests.
+# Parameter:
+#    $1: Namespace of CRD
 function delete_all_resources()
 {
   local crd_namespace="$1"

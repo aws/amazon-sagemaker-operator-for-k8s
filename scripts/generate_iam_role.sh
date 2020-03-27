@@ -31,7 +31,10 @@ function get_oidc_id {
 }
 
 # A function that generates an IAM role for the given account, cluster, namespace, region
+# Parameter:
+#    $1: Name of the trust file to generate.
 function create_namespaced_iam_role {
+    local trustfile="${1}"
     # Check if role already exists
     aws iam get-role --role-name ${ROLE_NAME}
     if [[ $? -eq 0 ]]; then
@@ -44,18 +47,20 @@ function create_namespaced_iam_role {
 }
 
 # Remove the generated trust file
-function cleanup {
-    rm ${trustfile} 
+# Parameter:
+#    $1: Name of the trust file to delete.
+function delete_generated_file {
+    rm "${1}" 
 }
 
 echo "Get the OIDC ID for the cluster"
 get_oidc_id
 echo "Delete the trust json file if it already exists"
-cleanup
+delete_generated_file "${trustfile}"
 echo "Generate a trust json"
 ./generate_trust_policy.sh ${cluster_region} ${aws_account} ${oidc_id} ${OPERATOR_NAMESPACE} > "${trustfile}"
 echo "Create the IAM Role using these values"
-create_namespaced_iam_role
+create_namespaced_iam_role "${trustfile}"
 echo "Cleanup for the next run!"
-cleanup
+delete_generated_file "${trustfile}"
 

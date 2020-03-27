@@ -27,7 +27,7 @@ function cleanup_default_namespace {
     set +e
     get_manager_logs
     delete_all_resources "default"
-    kustomize build $path_to_installer/config/default | kubectl delete -f -
+    kustomize build "$path_to_installer/config/default" | kubectl delete -f -
 }
 
 # A function to cleanup resources before exit. If cluster was not launched by the script, only the CRDs, jobs and operator will be deleted.
@@ -45,13 +45,13 @@ function cleanup {
         echo "need_setup_cluster is true, tearing down cluster we created."
         eksctl delete cluster --name "${cluster_name}" --region "${cluster_region}"
         # Delete the role associated with the cluster thats being deleted
-        aws iam delete-role --role-name ${role_name}
+        aws iam delete-role --role-name "${role_name}"
     else
         echo "need_setup_cluster is not true, will remove operator without deleting cluster"
-        kustomize build $path_to_installer/config/default | kubectl delete -f -
+        kustomize build "$path_to_installer/config/default" | kubectl delete -f -
         # Delete the namespaced operator. TODO: This can be cleaner if parameterized
-        kustomize build $path_to_installer/config/crd | kubectl delete -f -
-        generate_namespace_operator_installer ${crd_namespace}
+        kustomize build "$path_to_installer/config/crd" | kubectl delete -f -
+        generate_namespace_operator_installer "${crd_namespace}"
         kubectl delete -f temp_file.yaml    
     fi
 
@@ -144,7 +144,9 @@ echo "Skipping private link test"
 #cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"
 
 echo "RUN INTEGRATION TESTS FOR THE NAMESPACED OPERATOR DEPLOYMENT"
-# HELPER FUNCTIONS
+# A helper function to generate an IAM Role name for the current cluster and sepcified namespace
+# Parameter:
+#    $1: Namespace of CRD
 function generate_iam_role_name {
     local crd_namespace="$1"
     local cluster=$(echo ${cluster_name} | cut -d'/' -f2)
@@ -152,6 +154,9 @@ function generate_iam_role_name {
     role_name="${cluster}-${crd_namespace}"
 }
 
+# A function that builds the kustomize target, then deploys the CRDs (cluster scope) and operator (namespace scope).
+# Parameter:
+#    $1: Namespace of CRD
 function operator_namespace_deploy {
     local crd_namespace="$1"
 
@@ -169,6 +174,10 @@ function operator_namespace_deploy {
     kubectl get pods --all-namespaces | grep sagemaker
 }
 
+# A helper function that generates the namespace-scoped operator installer yaml file with updated namespace and role. 
+# Parameter:
+#    $1: Namespace of CRD
+# TODO:  Investigate if it is possible to overlay values when we build the Kustomize targets instead. 
 function generate_namespace_operator_installer {
     local crd_namespace="$1"
     local aws_account=$(aws sts get-caller-identity --query Account --output text)
@@ -184,8 +193,8 @@ echo "Cleanup the default namespace to test namespace deployment"
 cleanup_default_namespace
 
 #Create the IAM Role for the given namespace
-generate_iam_role_name ${crd_namespace}
-cd scripts && ./generate_iam_role.sh ${cluster_name} ${crd_namespace} ${role_name} && cd ..
+generate_iam_role_name "${crd_namespace}"
+cd scripts && ./generate_iam_role.sh "${cluster_name}" "${crd_namespace}" "${role_name}" && cd ..
 
 # Allow for overriding the installation of the CRDs/controller image from the
 # build scripts if we want to use our own installation
