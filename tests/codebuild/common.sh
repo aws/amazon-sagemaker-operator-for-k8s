@@ -55,9 +55,10 @@ function wait_for_crd_status()
 # Cleans up all resources created during tests.
 function delete_all_resources()
 {
-  kubectl delete hyperparametertuningjob --all
-  kubectl delete trainingjob --all
-  kubectl delete batchtransformjob --all
-  kubectl delete hostingdeployment --all
-  kubectl delete model --all
+  local crd_namespace="$1"
+  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
+  kubectl delete -n "$crd_namespace" trainingjob --all
+  kubectl delete -n "$crd_namespace" batchtransformjob --all
+  kubectl delete -n "$crd_namespace" hostingdeployment --all 
+  kubectl delete -n "$crd_namespace" model --all 
 }

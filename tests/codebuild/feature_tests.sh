@@ -14,10 +14,11 @@ function run_feature_canary_tests
 function run_feature_integration_tests
 {
   echo "Running feature integration tests"
+  local crd_namespace="$1"
   run_feature_canary_tests
 
-  run_test default testfiles/failing-xgboost-mnist-hpo.yaml
-  run_test default testfiles/failing-xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/failing-xgboost-mnist-hpo.yaml
+  run_test "${crd_namespace}" testfiles/failing-xgboost-mnist-trainingjob.yaml
 }
 
 # Verify that each canary feature test has completed successfully.
@@ -30,6 +31,7 @@ function verify_feature_canary_tests
 function verify_feature_integration_tests
 {
   echo "Verifying feature integration tests"
+  local crd_namespace="$1"
   verify_feature_canary_tests
 
   if ! wait_for_crd_status "$crd_namespace" TrainingJob failing-xgboost-mnist 5m Failed; then

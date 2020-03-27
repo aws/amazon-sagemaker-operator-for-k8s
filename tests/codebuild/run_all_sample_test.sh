@@ -6,10 +6,12 @@ source delete_tests.sh
 source inject_tests.sh
 source smlogs_tests.sh
 
-run_integration_tests
-run_feature_integration_tests
-verify_integration_tests
-verify_feature_integration_tests
-run_smlogs_integration_tests
-delete_all_resources # Delete all existing resources to re-use metadata names
-run_delete_integration_tests
+crd_namespace=${1}
+
+run_integration_tests ${crd_namespace}
+run_feature_integration_tests ${crd_namespace}
+verify_integration_tests ${crd_namespace}
+verify_feature_integration_tests ${crd_namespace}
+run_smlogs_integration_tests ${crd_namespace}
+delete_all_resources ${crd_namespace} # Delete all existing resources to re-use metadata names
+run_delete_integration_tests ${crd_namespace}

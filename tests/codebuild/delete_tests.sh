@@ -4,28 +4,34 @@ source common.sh
 source create_tests.sh # TODO: Remove temporary import for "verify_test" method
 
 # Verify that k8s and SageMaker resources are deleted when the user uses the delete verb.
+# Parameter:
+#    $1: CRD namespace
 function run_delete_canary_tests
 {
   # Run verbose output for delete tests for simpler debugging
   set -x
+  local crd_namespace="$1"
   echo "Running delete canary tests"
-  verify_delete default TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
+  verify_delete "${crd_namespace}" TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
 
-  verify_delete default HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
+  verify_delete "${crd_namespace}" HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 
   # Create model before running batch delete test
-  run_test default testfiles/xgboost-model.yaml
-  verify_test default Model xgboost-model 1m Created
-  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model default xgboost-model)"
+  run_test "${crd_namespace}" testfiles/xgboost-model.yaml
+  verify_test "${crd_namespace}" Model xgboost-model 1m Created
+  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
 
-  verify_delete default BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
+  verify_delete "${crd_namespace}" BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
   set +x
 }
 
+# Parameter:
+#    $1: CRD namespace
 function run_delete_integration_tests
 {
   echo "Running delete integration tests"
-  run_delete_canary_tests
+  local crd_namespace="$1"
+  run_delete_canary_tests "${crd_namespace}"
 }
 
 # Applies a k8s resource, waits for it to start and then immediately deletes

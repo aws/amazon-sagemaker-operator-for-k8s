@@ -4,28 +4,35 @@ source common.sh
 source inject_tests.sh
 
 # Applies each of the resources needed for the canary tests.
+# Parameter:
+#    $1: Namespace of the CRD
 function run_canary_tests
 {
-  echo "Running canary tests"
+  local crd_namespace="$1"
+
+  echo "Injecting variables into tests"
   inject_all_variables
 
-  run_test default testfiles/xgboost-mnist-trainingjob.yaml
-  run_test default testfiles/xgboost-mnist-hpo.yaml
+  echo "Starting Canary Tests"
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
   # Special code for batch transform till we fix issue-59
-  run_test default testfiles/xgboost-model.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-model.yaml
   # We need to get sagemaker model before running batch transform
-  verify_test default Model xgboost-model 1m Created
-  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model default xgboost-model)"
-  run_test default testfiles/xgboost-mnist-batchtransform.yaml 
-  run_test default testfiles/xgboost-hosting-deployment.yaml
-  run_test default testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  verify_test "${crd_namespace}" Model xgboost-model 1m Created
+  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
+  run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Applies each of the resources needed for the integration tests.
+# Parameter:
+#    $1: Namespace of the CRD
 function run_integration_tests
 {
-  echo "Running integration tests"
-  run_canary_tests
+  local crd_namespace="$1"
+  run_canary_tests "${crd_namespace}"
 
   # TODO: Automate creation/testing of EFS file systems for relevant jobs
   # Build prerequisite resources
@@ -34,54 +41,63 @@ function run_integration_tests
     #build_fsx_from_s3
   fi
 
-  run_test default testfiles/spot-xgboost-mnist-trainingjob.yaml
-  run_test default testfiles/xgboost-mnist-custom-endpoint.yaml
-  # run_test default testfiles/efs-xgboost-mnist-trainingjob.yaml
-  # run_test default testfiles/fsx-kmeans-mnist-trainingjob.yaml
-  run_test default testfiles/spot-xgboost-mnist-hpo.yaml
-  run_test default testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
-  run_test default testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  echo "Starting integration tests"
+  run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-custom-endpoint.yaml
+  # run_test "${crd_namespace}" testfiles/efs-xgboost-mnist-trainingjob.yaml
+  # run_test "${crd_namespace}" testfiles/fsx-kmeans-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
+# Parameter:
+#    $1: Namespace of the CRD
 function verify_canary_tests
 {
+  local crd_namespace="$1"
   echo "Verifying canary tests"
-  verify_test default TrainingJob xgboost-mnist 20m Completed
-  verify_test default HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
-  verify_test default BatchTransformJob xgboost-batch 20m Completed 
-  verify_test default HostingDeployment hosting 40m InService
-  verify_test default TrainingJob xgboost-mnist-debugger
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist 20m Completed
+  verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
+  verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
+  verify_test "${crd_namespace}" HostingDeployment hosting 40m InService
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
 # Verifies that all resources were created and are running/completed for the integration tests.
+# Parameter:
+#    $1: Namespace of the CRD
 function verify_integration_tests
 {
+  local crd_namespace="$1"
   echo "Verifying integration tests"
-  verify_canary_tests
+  verify_canary_tests "${crd_namespace}"
 
-  verify_test default TrainingJob spot-xgboost-mnist 20m Completed
-  verify_test default TrainingJob xgboost-mnist-custom-endpoint 20m Completed
-  # verify_test default TrainingJob efs-xgboost-mnist 20m Completed
-  # verify_test default TrainingJob fsx-kmeans-mnist 20m Completed
-  verify_test default HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
-  verify_test default HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
-  verify_test default TrainingJob xgboost-mnist-debugger 20m Completed
+  verify_test "${crd_namespace}" TrainingJob spot-xgboost-mnist 20m Completed
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-custom-endpoint 20m Completed
+  # verify_test "${crd_namespace}" TrainingJob efs-xgboost-mnist 20m Completed
+  # verify_test "${crd_namespace}" TrainingJob fsx-kmeans-mnist 20m Completed
+  verify_test "${crd_namespace}" HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
+  verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
-  verify_debug_test TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
+  verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
 }
 
 # This function verifies that a given debug job has specific status
 # Parameter:
+#    $1: CRD namespace
 #    $1: CRD type
 #    $2: Instance of CRD
 #    $3: Single debug job status
 function verify_debug_test
 {
-  local crd_type="$1"
-  local crd_instance="$2"
-  local timeout="$3"
-  local expected_debug_job_status="$4"
+  local crd_namespace="$1"
+  local crd_type="$2"
+  local crd_instance="$3"
+  local timeout="$4"
+  local expected_debug_job_status="$5"
   # First verify that trainingjob has been completed
   verify_test TrainingJob xgboost-mnist-debugger $timeout Completed
 
@@ -89,10 +105,10 @@ function verify_debug_test
 
   echo "Waiting for debug job to finish"
   timeout "${timeout}" bash -c \
-    'until [ "$(kubectl get "$0" "$1" -o json | jq -r .status.debugRuleEvaluationStatuses[0].ruleEvaluationStatus)" == "$2" ]; do \
+    'until [ "$(kubectl get -n "$0" "$1" "$2" -o json | jq -r .status.debugRuleEvaluationStatuses[0].ruleEvaluationStatus)" == "$3" ]; do \
       echo "Debug job has not completed yet"; \
       sleep 1; \
-    done' "${crd_type}" "${crd_instance}" "${expected_debug_job_status}"
+    done' "${crd_namespace}" "${crd_type}" "${crd_instance}" "${expected_debug_job_status}"
 
   if [ $? -ne 0 ]; then
     echo "[FAILED] Debug job ${crd_type} ${crd_instance} with expected status ${expected_debug_job_status} has timed out"
