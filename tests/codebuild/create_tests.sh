@@ -99,7 +99,7 @@ function verify_debug_test
   local timeout="$4"
   local expected_debug_job_status="$5"
   # First verify that trainingjob has been completed
-  verify_test TrainingJob xgboost-mnist-debugger $timeout Completed
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger $timeout Completed
 
   # TODO extend this for multiple debug job with debug job statuses parameter
 
