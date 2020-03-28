@@ -207,6 +207,6 @@ fi
 # Run the integration test file
 echo "Starting Integ Tests for namespaced operator deployment"
 pushd tests/codebuild/ 
-    ./run_all_sample_test.sh "${crd_namespace}"
+    ./run_all_sample_namespace_tests.sh "${crd_namespace}"
 popd
 
