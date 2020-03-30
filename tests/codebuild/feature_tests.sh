@@ -37,7 +37,7 @@ function verify_feature_namespaced_tests
   echo "Verifying namespace deployment test"
   local crd_namespace="$1"
   if ! verify_trainingjob_has_no_sagemaker_name "$crd_namespace" TrainingJob "xgboost-mnist"; then
-    echo "[FAILED] TrainingJob deployed to default namespace was created" 
+    echo "[FAILED] TrainingJob deployed to $crd_namespace namespace was created" 
     exit 1
   fi
 }
