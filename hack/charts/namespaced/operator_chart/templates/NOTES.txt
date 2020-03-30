@@ -1,0 +1,10 @@
+Amazon SageMaker Operator for Kubernetes installed!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get {{ .Release.Name }}
+
+For more information about the operator: https://sagemaker.readthedocs.io/en/stable/amazon_sagemaker_operators_for_kubernetes.html

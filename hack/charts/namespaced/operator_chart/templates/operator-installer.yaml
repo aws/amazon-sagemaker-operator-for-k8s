@@ -1,0 +1,317 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: {{ .Release.Namespace | default "" | quote }}
+  ---
+kind: ServiceAccount
+metadata:
+  annotations:
+    eks.amazonaws.com/role-arn: {{ .Values.roleArn | quote }}
+  name: sagemaker-k8s-operator-default
+  namespace: {{ .Release.Namespace | default "" | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sagemaker-k8s-operator-leader-election-role
+  namespace: {{ .Release.Namespace | default "" | quote }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: sagemaker-k8s-operator-manager-role
+  namespace: {{ .Release.Namespace | default "" | quote }}
+rules:
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - batchtransformjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - batchtransformjobs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hostingdeployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hostingdeployments/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hyperparametertuningjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hyperparametertuningjobs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - models/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - trainingjobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - trainingjobs/status
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sagemaker-k8s-operator-proxy-role
+  namespace: {{ .Release.Namespace | default "" | quote }}
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sagemaker-k8s-operator-leader-election-rolebinding
+  namespace: {{ .Release.Namespace | default "" | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sagemaker-k8s-operator-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: sagemaker-k8s-operator-default
+  namespace: {{ .Release.Namespace | default "" | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sagemaker-k8s-operator-manager-rolebinding
+  namespace: {{ .Release.Namespace | default "" | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sagemaker-k8s-operator-manager-role
+subjects:
+- kind: ServiceAccount
+  name: sagemaker-k8s-operator-default
+  namespace: {{ .Release.Namespace | default "" | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sagemaker-k8s-operator-proxy-rolebinding
+  namespace: {{ .Release.Namespace | default "" | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sagemaker-k8s-operator-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: sagemaker-k8s-operator-default
+  namespace: {{ .Release.Namespace | default "" | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "8443"
+    prometheus.io/scheme: https
+    prometheus.io/scrape: "true"
+  labels:
+    control-plane: controller-manager
+  name: sagemaker-k8s-operator-controller-manager-metrics-service
+  namespace: {{ .Release.Namespace | default "" | quote }}
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: sagemaker-k8s-operator-controller-manager
+  namespace: {{ .Release.Namespace | default "" | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+      - args:
+        - --metrics-addr=127.0.0.1:8080
+        - --namespace={{ .Release.Namespace | default ""}}
+        command:
+        - /manager
+        env:
+        - name: AWS_DEFAULT_SAGEMAKER_ENDPOINT
+          value: ""
+        image: "{{ template "controller.image" . }}"
+        imagePullPolicy: Always
+        name: manager
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      serviceAccountName: sagemaker-k8s-operator-default
+      terminationGracePeriodSeconds: 10
