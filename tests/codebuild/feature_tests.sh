@@ -11,6 +11,8 @@ function run_feature_canary_tests
 }
 
 # Applies each of the resources needed for the integration tests.
+# Parameter:
+#    $1: CRD namespace
 function run_feature_integration_tests
 {
   echo "Running feature integration tests"
@@ -23,6 +25,8 @@ function run_feature_integration_tests
 
 # Creates a training job in the specified namespace
 # For this test, the job is created in a namespace that does not have the operator. 
+# Parameter:
+#    $1: CRD namespace
 function run_feature_namespaced_tests
 {
   echo "Running feature namespaced tests"
@@ -32,6 +36,8 @@ function run_feature_namespaced_tests
 }
 
 # Verifies that the job created in an incorrect namespace does not gain a status or sagemaker name.
+# Parameter:
+#    $1: CRD namespace
 function verify_feature_namespaced_tests
 {
   echo "Verifying namespace deployment test"
@@ -49,6 +55,8 @@ function verify_feature_canary_tests
 }
 
 # Verifies that each integration feature test has completed successfully.
+# Parameter:
+#    $1: CRD namespace
 function verify_feature_integration_tests
 {
   echo "Verifying feature integration tests"
