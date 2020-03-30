@@ -170,7 +170,7 @@ function operator_namespace_deploy {
     # Wait to increase chance that pod is ready
     # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
     sleep 60
-    echo "Check that the manager pod is running"
+    echo "Print manager pod status"
     kubectl get pods --all-namespaces | grep sagemaker
 }
 
