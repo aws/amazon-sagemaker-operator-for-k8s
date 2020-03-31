@@ -29,10 +29,12 @@ function run_feature_integration_tests
 #    $1: CRD namespace
 function run_feature_namespaced_tests
 {
-  echo "Running feature namespaced tests"
+  echo "Running feature namespaced test"
   local crd_namespace="$1"
+  # Create the noop-namespace if it does not exist
+  kubectl create namespace "${crd_namespace}"
   run_feature_canary_tests
-  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml  
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-namespaced.yaml  
 }
 
 # Verifies that the job created in an incorrect namespace does not gain a status or sagemaker name.
@@ -42,10 +44,17 @@ function verify_feature_namespaced_tests
 {
   echo "Verifying namespace deployment test"
   local crd_namespace="$1"
-  if ! verify_trainingjob_has_no_sagemaker_name "$crd_namespace" TrainingJob "xgboost-mnist"; then
-    echo "[FAILED] TrainingJob deployed to $crd_namespace namespace was created" 
+  sleep 5
+
+  if verify_trainingjob_has_no_status "$crd_namespace" TrainingJob "xgboost-mnist-namespaced"; then
+    echo "[FAILED] TrainingJob deployed to $crd_namespace namespace was created and has a job status" 
     exit 1
   fi
+  if verify_trainingjob_has_no_sagemaker_name "$crd_namespace" TrainingJob "xgboost-mnist-namespaced"; then
+    echo "[FAILED] TrainingJob deployed to $crd_namespace namespace was created and has a sagemaker job name" 
+    exit 1
+  fi
+
 }
 
 # Verify that each canary feature test has completed successfully.
@@ -126,6 +135,25 @@ function verify_failed_trainingjobs_from_hpo_have_additional
   done
 }
 
+# This function verifies that a given training job does not have a status.
+# Returns 1 if job creation fails.
+# Parameter:
+#    $1: CRD namespace
+#    $2: CRD type
+#    $3: Instance of CRD
+function verify_trainingjob_has_no_status
+{
+  local crd_namespace="$1"
+  local crd_type="$2"
+  local crd_instance="$3"
+  local sagemaker_training_job_status="$(kubectl get -n "$crd_namespace" "$crd_type" "$crd_instance" -o json | jq -r '.status')"
+
+  if [ "$sagemaker_training_job_status" = null ]; then
+    echo "[SUCCESS] $crd_type deployed to $crd_namespace namespace does not have a status"
+    return 1
+  fi
+}
+
 # This function verifies that a given training job does not have a sagemaker job name. 
 # Returns 1 if job creation fails.
 # Parameter:
@@ -139,7 +167,7 @@ function verify_trainingjob_has_no_sagemaker_name
   local crd_instance="$3"
   local sagemaker_training_job_name="$(kubectl get -n "$crd_namespace" "$crd_type" "$crd_instance" -o json | jq -r '.status.sageMakerTrainingJobName')"
 
-  if [ "$sagemaker_training_job_name" == null ]; then
+  if [ "$sagemaker_training_job_name" = null ]; then
     echo "[SUCCESS] $crd_type deployed to $crd_namespace namespace does not have a sagemaker job name"
     return 1
   fi

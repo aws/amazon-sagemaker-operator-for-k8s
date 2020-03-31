@@ -6,7 +6,7 @@
 # crd_namespace is currently hardcoded here for cleanup. Should be an env variable set in the pipeline and .env file
 
 source tests/codebuild/common.sh
-crd_namespace="test-namespace"
+crd_namespace=${NAMESPACE_OVERRIDE:-"test-namespace"}
 
 # Verbose trace of commands, helpful since test iteration takes a long time.
 set -x 
@@ -34,7 +34,7 @@ function cleanup_default_namespace {
 function cleanup {
     # We want to run every command in this function, even if some fail.
     set +e
-    echo "Running final cluster cleanup, some commands may fail if resources do not exist."
+    echo "[SECTION] Running final cluster cleanup, some commands may fail if resources do not exist."
 
     get_manager_logs "${crd_namespace}"
     delete_all_resources "${crd_namespace}"
@@ -103,7 +103,7 @@ else
     readonly cluster_region="$(echo "${cluster_info}" | awk '{print $2}')"
 fi
 
-echo "SETUP FOR INTEGRATION TESTS"
+echo "[SECTION] Setup for integration tests"
 # Download the CRD from the tarball artifact bucket
 aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-west-2-alpha.tar.gz sagemaker-k8s-operator.tar.gz 
 tar -xf sagemaker-k8s-operator.tar.gz
@@ -118,7 +118,7 @@ pushd sagemaker-k8s-operator
     popd
 popd
 
-echo "RUN INTEGRATION TESTS FOR THE CLUSTER SCOPED OPERATOR DEPLOYMENT"
+echo "[SECTION] Run integration tests for the cluster scoped operator deployment"
 # Allow for overriding the installation of the CRDs/controller image from the
 # build scripts if we want to use our own installation
 if [ "${SKIP_INSTALLATION}" == "true" ]; then
@@ -143,7 +143,7 @@ popd
 echo "Skipping private link test"
 #cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"
 
-echo "RUN INTEGRATION TESTS FOR THE NAMESPACED OPERATOR DEPLOYMENT"
+echo "[SECTION] Run integration tests for the namespaced operator deployment"
 # A helper function to generate an IAM Role name for the current cluster and sepcified namespace
 # Parameter:
 #    $1: Namespace of CRD
