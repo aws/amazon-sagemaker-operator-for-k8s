@@ -291,7 +291,7 @@ spec:
           name: https
       - args:
         - --metrics-addr=127.0.0.1:8080
-        - --namespace={{ .Release.Namespace | default ""}}
+        - --namespace={{ .Release.Namespace | default "" | quote }}
         command:
         - /manager
         env:
