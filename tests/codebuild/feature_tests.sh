@@ -27,7 +27,7 @@ function run_feature_integration_tests
 # For this test, the job is created in a namespace that does not have the operator. 
 # Parameter:
 #    $1: CRD namespace
-function run_feature_namespaced_tests
+function run_namespace_deployment_tests
 {
   echo "Running feature namespaced test"
   local crd_namespace="$1"
@@ -40,17 +40,17 @@ function run_feature_namespaced_tests
 # Verifies that the job created in an incorrect namespace does not gain a status or sagemaker name.
 # Parameter:
 #    $1: CRD namespace
-function verify_feature_namespaced_tests
+function verify_job_fails_outside_operator_namespace
 {
   echo "Verifying namespace deployment test"
   local crd_namespace="$1"
   sleep 5
 
-  if verify_trainingjob_has_no_status "$crd_namespace" TrainingJob "xgboost-mnist-namespaced"; then
+  if verify_job_has_no_status "$crd_namespace" TrainingJob "xgboost-mnist-namespaced"; then
     echo "[FAILED] TrainingJob deployed to $crd_namespace namespace was created and has a job status" 
     exit 1
   fi
-  if verify_trainingjob_has_no_sagemaker_name "$crd_namespace" TrainingJob "xgboost-mnist-namespaced"; then
+  if verify_trainingjob_has_no_sagemaker_name "$crd_namespace" "xgboost-mnist-namespaced"; then
     echo "[FAILED] TrainingJob deployed to $crd_namespace namespace was created and has a sagemaker job name" 
     exit 1
   fi
@@ -135,20 +135,20 @@ function verify_failed_trainingjobs_from_hpo_have_additional
   done
 }
 
-# This function verifies that a given training job does not have a status.
+# This function verifies that a given job does not have a status.
 # Returns 1 if job creation fails.
 # Parameter:
 #    $1: CRD namespace
 #    $2: CRD type
 #    $3: Instance of CRD
-function verify_trainingjob_has_no_status
+function verify_job_has_no_status
 {
   local crd_namespace="$1"
   local crd_type="$2"
   local crd_instance="$3"
-  local sagemaker_training_job_status="$(kubectl get -n "$crd_namespace" "$crd_type" "$crd_instance" -o json | jq -r '.status')"
+  local sagemaker_job_status="$(kubectl get -n "$crd_namespace" "$crd_type" "$crd_instance" -o json | jq -r '.status')"
 
-  if [ "$sagemaker_training_job_status" = null ]; then
+  if [ "$sagemaker_job_status" = null ]; then
     echo "[SUCCESS] $crd_type deployed to $crd_namespace namespace does not have a status"
     return 1
   fi
@@ -163,8 +163,8 @@ function verify_trainingjob_has_no_status
 function verify_trainingjob_has_no_sagemaker_name
 {
   local crd_namespace="$1"
-  local crd_type="$2"
-  local crd_instance="$3"
+  local crd_instance="$2"
+  local crd_type="TrainingJob"
   local sagemaker_training_job_name="$(kubectl get -n "$crd_namespace" "$crd_type" "$crd_instance" -o json | jq -r '.status.sageMakerTrainingJobName')"
 
   if [ "$sagemaker_training_job_name" = null ]; then
