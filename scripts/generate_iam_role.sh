@@ -4,29 +4,29 @@
 # https://sagemaker.readthedocs.io/en/stable/amazon_sagemaker_operators_for_kubernetes.html#create-an-iam-role
 #
 # Run as:
-# $ ./generate_iam_role.sh ${cluster_arn} ${operator_namespace} ${role_name}
+# $ ./generate_iam_role.sh ${cluster_arn/cluster_name} ${operator_namespace} ${role_name} ${cluster_region}
 #
 
-CLUSTER_ARN=${1}
-OPERATOR_NAMESPACE=${2}
-ROLE_NAME=${3}
+CLUSTER_ARN="${1}"
+OPERATOR_NAMESPACE="${2}"
+ROLE_NAME="${3}"
+CLUSTER_REGION="${4:-us-east-1}"
 aws_account=$(aws sts get-caller-identity --query Account --output text)
 trustfile="trust.json"
 
-# Use the cluster arn to get the region and cluster name
+# if using an existing cluster, use the cluster arn to get the region and cluster name
 # example, cluster_arn=arn:aws:eks:us-east-1:12345678910:cluster/test
 cluster_name=$(echo ${CLUSTER_ARN} | cut -d'/' -f2)
-cluster_region=$(echo ${CLUSTER_ARN} | cut -d':' -f4)
 
 # A function to get the OIDC_ID associated with an EKS cluster
 function get_oidc_id {
     # TODO: Ideally this should be based on version compatibility instead of command failure
-    eksctl utils associate-iam-oidc-provider --cluster ${cluster_name} --region ${cluster_region} --approve
+    eksctl utils associate-iam-oidc-provider --cluster ${cluster_name} --region ${CLUSTER_REGION} --approve
     if [[ $? -ge 1 ]]; then
-        eksctl utils associate-iam-oidc-provider --name ${cluster_name} --region ${cluster_region} --approve
+        eksctl utils associate-iam-oidc-provider --name ${cluster_name} --region ${CLUSTER_REGION} --approve
     fi
     
-    local oidc=$(aws eks describe-cluster --name ${cluster_name} --region ${cluster_region} --query cluster.identity.oidc.issuer --output text)
+    local oidc=$(aws eks describe-cluster --name ${cluster_name} --region ${CLUSTER_REGION} --query cluster.identity.oidc.issuer --output text)
     oidc_id=$(echo ${oidc} | rev | cut -d'/' -f1 | rev)
 }
 
@@ -58,7 +58,7 @@ get_oidc_id
 echo "Delete the trust json file if it already exists"
 delete_generated_file "${trustfile}"
 echo "Generate a trust json"
-./generate_trust_policy.sh ${cluster_region} ${aws_account} ${oidc_id} ${OPERATOR_NAMESPACE} > "${trustfile}"
+./generate_trust_policy.sh ${CLUSTER_REGION} ${aws_account} ${oidc_id} ${OPERATOR_NAMESPACE} > "${trustfile}"
 echo "Create the IAM Role using these values"
 create_namespaced_iam_role "${trustfile}"
 echo "Cleanup for the next run!"

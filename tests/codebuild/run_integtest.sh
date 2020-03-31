@@ -194,7 +194,7 @@ cleanup_default_namespace
 
 #Create the IAM Role for the given namespace
 generate_iam_role_name "${crd_namespace}"
-cd scripts && ./generate_iam_role.sh "${cluster_name}" "${crd_namespace}" "${role_name}" && cd ..
+cd scripts && ./generate_iam_role.sh "${cluster_name}" "${crd_namespace}" "${role_name}" "${cluster_region}" && cd ..
 
 # Allow for overriding the installation of the CRDs/controller image from the
 # build scripts if we want to use our own installation
