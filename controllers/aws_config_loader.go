@@ -49,12 +49,9 @@ func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSp
 	var config aws.Config
 	var err error
 
-	if config, err = external.LoadDefaultAWSConfig(); err != nil {
+	if config, err = external.LoadDefaultAWSConfig(external.WithRegion(regionOverride)); err != nil {
 		return aws.Config{}, err
 	}
-
-	// Override region
-	config.Region = regionOverride
 
 	// Override SageMaker endpoint.
 	// Precendence is given to job override then operator override (from the environment variable).
