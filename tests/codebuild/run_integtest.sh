@@ -45,6 +45,7 @@ function cleanup {
         echo "need_setup_cluster is true, tearing down cluster we created."
         eksctl delete cluster --name "${cluster_name}" --region "${cluster_region}"
         # Delete the role associated with the cluster thats being deleted
+        aws iam detach-role-policy --role-name "${role_name}" --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
         aws iam delete-role --role-name "${role_name}"
     else
         echo "need_setup_cluster is not true, will remove operator without deleting cluster"
@@ -92,7 +93,7 @@ if [ "${need_setup_cluster}" == "true" ]; then
     readonly cluster_region="us-east-1"
 
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
-    eksctl create cluster "${cluster_name}" --nodes 2 --node-type=c5.4xlarge --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.14 --fargate 
+    eksctl create cluster "${cluster_name}" --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.14 --fargate 
     eksctl create fargateprofile --namespace "${crd_namespace}" --cluster "${cluster_name}" --name namespace-profile --region "${cluster_region}"
     eksctl create fargateprofile --namespace sagemaker-k8s-operator-system --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
 
@@ -127,18 +128,18 @@ if [ "${SKIP_INSTALLATION}" == "true" ]; then
 else
     pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
         echo "Deploying the operator to the default namespace"
-        ##kustomize build config/default | kubectl apply -f -
+        kustomize build config/default | kubectl apply -f -
     popd
     echo "Waiting for controller pod to be Ready"
     # Wait to increase chance that pod is ready
     # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
     sleep 60
-    #kubectl get pods --all-namespaces | grep sagemaker
+    kubectl get pods --all-namespaces | grep sagemaker
 fi 
 
 echo "Starting Integ Tests in default namespace"
 pushd tests/codebuild
-    ##./run_all_sample_test.sh "default"
+    ./run_all_sample_test.sh "default"
 popd
 
 echo "Skipping private link test"
@@ -191,9 +192,10 @@ function generate_namespace_operator_installer {
 
 # Cleanup 
 echo "Cleanup the default namespace to test namespace deployment"
-##cleanup_default_namespace
+cleanup_default_namespace
 
 # If any command fails, exit the script with an error code.
+# Cleanup unsets this
 set -e
 
 #Create the IAM Role for the given namespace
