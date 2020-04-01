@@ -28,7 +28,6 @@ function cleanup_default_namespace {
     get_manager_logs
     delete_all_resources "default"
     kustomize build "$path_to_installer/config/default" | kubectl delete -f -
-    set -e
 }
 
 # A function to cleanup resources before exit. If cluster was not launched by the script, only the CRDs, jobs and operator will be deleted.
@@ -59,7 +58,6 @@ function cleanup {
     if [ "${existing_fsx}" == "false" ] && [ "$FSX_ID" != "" ]; then
         aws fsx --region us-west-2 delete-file-system --file-system-id "$FSX_ID"
     fi
-    set -e
 }
 
 # Set the trap to clean up resources
@@ -192,7 +190,10 @@ function generate_namespace_operator_installer {
 
 # Cleanup 
 echo "Cleanup the default namespace to test namespace deployment"
-cleanup_default_namespace
+##cleanup_default_namespace
+
+# If any command fails, exit the script with an error code.
+set -e
 
 #Create the IAM Role for the given namespace
 generate_iam_role_name "${crd_namespace}"
