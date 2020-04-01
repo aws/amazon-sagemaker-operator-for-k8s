@@ -132,7 +132,7 @@ else
     # Wait to increase chance that pod is ready
     # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
     sleep 60
-    kubectl get pods --all-namespaces | grep sagemaker
+    #kubectl get pods --all-namespaces | grep sagemaker
 fi 
 
 echo "Starting Integ Tests in default namespace"
