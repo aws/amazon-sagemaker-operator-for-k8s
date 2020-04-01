@@ -128,7 +128,7 @@ if [ "${SKIP_INSTALLATION}" == "true" ]; then
 else
     pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
         echo "Deploying the operator to the default namespace"
-        kustomize build config/default | kubectl apply -f -
+        ##kustomize build config/default | kubectl apply -f -
     popd
     echo "Waiting for controller pod to be Ready"
     # Wait to increase chance that pod is ready
@@ -139,7 +139,7 @@ fi
 
 echo "Starting Integ Tests in default namespace"
 pushd tests/codebuild
-    ./run_all_sample_test.sh "default"
+    ##./run_all_sample_test.sh "default"
 popd
 
 echo "Skipping private link test"
