@@ -15,6 +15,12 @@ Clone the existing repository as follows:
 $ git clone https://github.com/aws/amazon-sagemaker-operator-for-k8s.git
 ```
 
+Navigate to the helm chart directory
+
+```bash
+cd amazon-sagemaker-operator-for-k8s/hack/charts/installer/namespaced
+```
+
 ## Install the CRDs
 Install the CRDs using the following command:
 ```bash
