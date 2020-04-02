@@ -1,10 +1,11 @@
 module go.amzn.com/sagemaker/smlogs-kubectl-plugin
 
-go 1.12
+go 1.13
 
 require (
 	github.com/aws/amazon-sagemaker-operator-for-k8s v0.0.0
-	github.com/aws/aws-sdk-go-v2 v0.19.0
+	github.com/aws/aws-sdk-go-v2 v0.20.0
+	github.com/kr/pty v1.1.5 // indirect
 	github.com/spf13/cobra v0.0.4
 	github.com/spf13/pflag v1.0.3
 	k8s.io/api v0.0.0-20190711103429-37c3b8b1ca65
