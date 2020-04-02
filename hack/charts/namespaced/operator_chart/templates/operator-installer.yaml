@@ -123,6 +123,26 @@ rules:
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
+  - endpointconfigs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - endpointconfigs/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
   - hyperparametertuningjobs
   verbs:
   - get
@@ -291,7 +311,7 @@ spec:
           name: https
       - args:
         - --metrics-addr=127.0.0.1:8080
-        - --namespace={{ .Release.Namespace | default "" | quote }}
+        - --namespace={{ .Release.Namespace | default "" }}
         command:
         - /manager
         env:
