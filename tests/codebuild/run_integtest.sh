@@ -1,33 +1,59 @@
 #!/bin/bash
 
-source tests/codebuild/common.sh
-
 # TODOs
 # 1. Add validation for each steps and abort the test if steps fails
 # Build environment `Docker image` has all prerequisite setup and credentials are being passed using AWS system manager
+# crd_namespace is currently hardcoded here for cleanup. Should be an env variable set in the pipeline and .env file
+
+source tests/codebuild/common.sh
+crd_namespace=${NAMESPACE_OVERRIDE:-"test-namespace"}
 
 # Verbose trace of commands, helpful since test iteration takes a long time.
 set -x 
 
-# A function to delete cluster, if cluster was not launched this will fail, so test will fail ultimately too
+# A function to print the operator logs for a given namespace
+# Parameter:
+#    $1: Namespace of the operator
+function get_manager_logs {
+    local crd_namespace="${1-sagemaker-k8s-operator-system}"
+    if [ "${PRINT_DEBUG}" != "false" ]; then
+        echo "Controller manager logs in the ${crd_namespace} namespace"
+        kubectl -n "${crd_namespace}" logs "$(kubectl get pods -n "${crd_namespace}" | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
+    fi
+}
+
+# A function that cleans up Jobs, CRDs and Operator in the default namespace
+function cleanup_default_namespace {
+    set +e
+    get_manager_logs
+    delete_all_resources "default"
+    kustomize build "$path_to_installer/config/default" | kubectl delete -f -
+}
+
+# A function to cleanup resources before exit. If cluster was not launched by the script, only the CRDs, jobs and operator will be deleted.
 function cleanup {
     # We want to run every command in this function, even if some fail.
     set +e
+    echo "[SECTION] Running final cluster cleanup, some commands may fail if resources do not exist."
 
-    if [ "${PRINT_DEBUG}" != "false" ]; then
-        echo "Controller manager logs:"
-        kubectl -n sagemaker-k8s-operator-system logs "$(kubectl get pods -n sagemaker-k8s-operator-system | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
-    fi
-
-    delete_all_resources
-
+    get_manager_logs "${crd_namespace}"
+    delete_all_resources "${crd_namespace}"
+    cleanup_default_namespace
+    
     # Tear down the cluster if we set it up.
     if [ "${need_setup_cluster}" == "true" ]; then
         echo "need_setup_cluster is true, tearing down cluster we created."
         eksctl delete cluster --name "${cluster_name}" --region "${cluster_region}"
+        # Delete the role associated with the cluster thats being deleted
+        aws iam detach-role-policy --role-name "${role_name}" --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+        aws iam delete-role --role-name "${role_name}"
     else
         echo "need_setup_cluster is not true, will remove operator without deleting cluster"
-        kustomize build bin/sagemaker-k8s-operator-install-scripts/config/default | kubectl delete -f -
+        kustomize build "$path_to_installer/config/default" | kubectl delete -f -
+        # Delete the namespaced operator. TODO: This can be cleaner if parameterized
+        kustomize build "$path_to_installer/config/crd" | kubectl delete -f -
+        generate_namespace_operator_installer "${crd_namespace}"
+        kubectl delete -f temp_file.yaml    
     fi
 
     if [ "${existing_fsx}" == "false" ] && [ "$FSX_ID" != "" ]; then
@@ -67,7 +93,8 @@ if [ "${need_setup_cluster}" == "true" ]; then
     readonly cluster_region="us-east-1"
 
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
-    eksctl create cluster "${cluster_name}" --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.14 --fargate 
+    eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.14 --fargate 
+    eksctl create fargateprofile --namespace "${crd_namespace}" --cluster "${cluster_name}" --name namespace-profile --region "${cluster_region}"
     eksctl create fargateprofile --namespace sagemaker-k8s-operator-system --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
 
     echo "Setting kubeconfig"
@@ -78,40 +105,114 @@ else
     readonly cluster_region="$(echo "${cluster_info}" | awk '{print $2}')"
 fi
 
-
+echo "[SECTION] Setup for integration tests"
 # Download the CRD from the tarball artifact bucket
 aws s3 cp s3://$ALPHA_TARBALL_BUCKET/${CODEBUILD_RESOLVED_SOURCE_VERSION}/sagemaker-k8s-operator-us-west-2-alpha.tar.gz sagemaker-k8s-operator.tar.gz 
 tar -xf sagemaker-k8s-operator.tar.gz
-
 # Jump to the root dir of the operator
 pushd sagemaker-k8s-operator
-
-    # Setup the PATH for smlogs
+# Setup the PATH for smlogs
     mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
-
-    # Allow for overriding the installation of the CRDs/controller image from the
-    # build scripts if we want to use our own installation
-    if [ "${SKIP_INSTALLATION}" == "true" ]; then
-        echo "Skipping installation of CRDs and operator"
-    else
-        # Goto directory that holds the CRD  
-        pushd sagemaker-k8s-operator-install-scripts
-            # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
-            ./setup_awscreds
-
-            echo "Deploying the operator"
-            kustomize build config/default | kubectl apply -f -
-        popd
-
-        echo "Waiting for controller pod to be Ready"
-        # Wait to increase chance that pod is ready
-        # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
-        sleep 60
-    fi 
+    pushd sagemaker-k8s-operator-install-scripts
+        # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
+        ./setup_awscreds
+        path_to_installer=$(pwd)
+    popd
 popd
 
-# Run the integration test file
-cd tests/codebuild/ && ./run_all_sample_test.sh
+echo "[SECTION] Run integration tests for the cluster scoped operator deployment"
+# Allow for overriding the installation of the CRDs/controller image from the
+# build scripts if we want to use our own installation
+if [ "${SKIP_INSTALLATION}" == "true" ]; then
+    echo "Skipping installation of CRDs and operator"
+else
+    pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
+        echo "Deploying the operator to the default namespace"
+        kustomize build config/default | kubectl apply -f -
+    popd
+    echo "Waiting for controller pod to be Ready"
+    # Wait to increase chance that pod is ready
+    # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
+    sleep 60
+    kubectl get pods --all-namespaces | grep sagemaker
+fi 
+
+echo "Starting Integ Tests in default namespace"
+pushd tests/codebuild
+    ./run_all_sample_test.sh "default"
+popd
 
 echo "Skipping private link test"
 #cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"
+
+echo "[SECTION] Run integration tests for the namespaced operator deployment"
+# A helper function to generate an IAM Role name for the current cluster and sepcified namespace
+# Parameter:
+#    $1: Namespace of CRD
+function generate_iam_role_name {
+    local crd_namespace="$1"
+    local cluster=$(echo ${cluster_name} | cut -d'/' -f2)
+
+    role_name="${cluster}-${crd_namespace}"
+}
+
+# A function that builds the kustomize target, then deploys the CRDs (cluster scope) and operator (namespace scope).
+# Parameter:
+#    $1: Namespace of CRD
+function operator_namespace_deploy {
+    local crd_namespace="$1"
+
+    # Goto directory that holds the CRD 
+    pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
+        kustomize build config/crd | kubectl apply -f -
+        generate_namespace_operator_installer ${crd_namespace}
+        kubectl apply -f temp_file.yaml
+    popd
+    echo "Waiting for controller pod to be Ready"
+    # Wait to increase chance that pod is ready
+    # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
+    sleep 60
+    echo "Print manager pod status"
+    kubectl get pods --all-namespaces | grep sagemaker
+}
+
+# A helper function that generates the namespace-scoped operator installer yaml file with updated namespace and role. 
+# Parameter:
+#    $1: Namespace of CRD
+# TODO:  Investigate if it is possible to overlay values when we build the Kustomize targets instead. 
+function generate_namespace_operator_installer {
+    local crd_namespace="$1"
+    local aws_account=$(aws sts get-caller-identity --query Account --output text)
+
+    kustomize build config/installers/rolebasedcreds/namespaced > temp_file.yaml
+    sed -i "s/PLACEHOLDER-NAMESPACE/$crd_namespace/g" temp_file.yaml
+    sed -i "s/123456789012/$aws_account/g" temp_file.yaml
+    sed -i "s/DELETE_ME/$role_name/g" temp_file.yaml
+}
+
+# Cleanup 
+echo "Cleanup the default namespace to test namespace deployment"
+cleanup_default_namespace
+
+# If any command fails, exit the script with an error code.
+# Cleanup unsets this
+set -e
+
+#Create the IAM Role for the given namespace
+generate_iam_role_name "${crd_namespace}"
+cd scripts && ./generate_iam_role.sh "${cluster_name}" "${crd_namespace}" "${role_name}" "${cluster_region}" && cd ..
+
+# Allow for overriding the installation of the CRDs/controller image from the
+# build scripts if we want to use our own installation
+if [ "${SKIP_INSTALLATION}" == "true" ]; then
+    echo "Skipping installation of CRDs and operator"
+else
+    operator_namespace_deploy "${crd_namespace}"        
+fi 
+
+# Run the integration test file
+echo "Starting Integ Tests for namespaced operator deployment"
+pushd tests/codebuild/ 
+    ./run_all_sample_namespace_tests.sh "${crd_namespace}"
+popd
+
