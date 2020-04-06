@@ -125,6 +125,8 @@ function generate_iam_role_name {
     local cluster=$(echo ${cluster_name} | cut -d'/' -f2)
 
     role_name="${cluster}-${crd_namespace}"
+    # IAM Role name must have length less than 64
+    role_name=`echo $role_name|cut -c1-64`
 }
 
 # A helper function that generates the namespace-scoped operator installer yaml file with updated namespace and role. 
