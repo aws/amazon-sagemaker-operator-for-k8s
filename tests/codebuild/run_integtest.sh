@@ -28,7 +28,19 @@ function cleanup_default_namespace {
     set +e
     get_manager_logs
     delete_all_resources "default"
-    kustomize build "$path_to_installer/config/default" | kubectl delete -f -
+    generate_operator_installer_for_given_role "${default_operator_namespace}" "config/installers/rolebasedcreds" "${default_role_name}"
+    kubectl delete -f temp_file.yaml
+    rm temp_file.yaml
+}
+
+# A function that cleans up Jobs, CRDs and Operator in the default namespace
+# Parameter:
+#    $1: Name of the Role to be deleted
+function delete_generated_role {
+    local role_to_delete="${1}"
+    # Delete the role associated with the cluster thats being deleted
+    aws iam detach-role-policy --role-name "${role_to_delete}" --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+    aws iam delete-role --role-name "${role_to_delete}"
 }
 
 # A function to cleanup resources before exit. If cluster was not launched by the script, only the CRDs, jobs and operator will be deleted.
@@ -46,15 +58,16 @@ function cleanup {
         echo "need_setup_cluster is true, tearing down cluster we created."
         eksctl delete cluster --name "${cluster_name}" --region "${cluster_region}"
         # Delete the role associated with the cluster thats being deleted
-        aws iam detach-role-policy --role-name "${role_name}" --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
-        aws iam delete-role --role-name "${role_name}"
+        delete_generated_role "${role_name}"
+        delete_generated_role "${default_role_name}"
     else
         echo "need_setup_cluster is not true, will remove operator without deleting cluster"
         kustomize build "$path_to_installer/config/default" | kubectl delete -f -
         # Delete the namespaced operator. TODO: This can be cleaner if parameterized
         kustomize build "$path_to_installer/config/crd" | kubectl delete -f -
-        generate_namespace_operator_installer "${crd_namespace}"
-        kubectl delete -f temp_file.yaml    
+        generate_operator_installer_for_given_role ${crd_namespace} "config/installers/rolebasedcreds/namespaced" "${role_name}"
+        kubectl delete -f temp_file.yaml 
+        rm temp_file.yaml   
     fi
 
     if [ "${existing_fsx}" == "false" ] && [ "$FSX_ID" != "" ]; then
@@ -151,7 +164,8 @@ function generate_operator_installer_for_given_role {
 echo "[SECTION] Run integration tests for the cluster scoped operator deployment"
 
 generate_iam_role_name "${default_operator_namespace}"
-cd scripts && ./generate_iam_role.sh "${cluster_name}" "${default_operator_namespace}" "${role_name}" "${cluster_region}" && cd ..
+default_role_name="${role_name}"  # role_name will get overwritten, save for cleanup. 
+cd scripts && ./generate_iam_role.sh "${cluster_name}" "${default_operator_namespace}" "${default_role_name}" "${cluster_region}" && cd ..
 
 # Allow for overriding the installation of the CRDs/controller image from the
 # build scripts if we want to use our own installation
@@ -160,7 +174,7 @@ if [ "${SKIP_INSTALLATION}" == "true" ]; then
 else
     pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
         echo "Deploying the operator to the default namespace"
-        generate_operator_installer_for_given_role "${default_operator_namespace}" "config/installers/rolebasedcreds" "${role_name}"
+        generate_operator_installer_for_given_role "${default_operator_namespace}" "config/installers/rolebasedcreds" "${default_role_name}"
         kubectl apply -f temp_file.yaml
         rm temp_file.yaml
     popd
