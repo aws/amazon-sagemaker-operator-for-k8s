@@ -6,6 +6,7 @@
 # crd_namespace is currently hardcoded here for cleanup. Should be an env variable set in the pipeline and .env file
 
 source tests/codebuild/common.sh
+default_operator_namespace="sagemaker-k8s-operator-system"
 crd_namespace=${NAMESPACE_OVERRIDE:-"test-namespace"}
 
 # Verbose trace of commands, helpful since test iteration takes a long time.
@@ -15,7 +16,7 @@ set -x
 # Parameter:
 #    $1: Namespace of the operator
 function get_manager_logs {
-    local crd_namespace="${1-sagemaker-k8s-operator-system}"
+    local crd_namespace="${1:-$default_operator_namespace}"
     if [ "${PRINT_DEBUG}" != "false" ]; then
         echo "Controller manager logs in the ${crd_namespace} namespace"
         kubectl -n "${crd_namespace}" logs "$(kubectl get pods -n "${crd_namespace}" | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
@@ -95,7 +96,7 @@ if [ "${need_setup_cluster}" == "true" ]; then
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
     eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.14 --fargate 
     eksctl create fargateprofile --namespace "${crd_namespace}" --cluster "${cluster_name}" --name namespace-profile --region "${cluster_region}"
-    eksctl create fargateprofile --namespace sagemaker-k8s-operator-system --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
+    eksctl create fargateprofile --namespace "${default_operator_namespace}" --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
 
     echo "Setting kubeconfig"
     export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
@@ -113,14 +114,43 @@ tar -xf sagemaker-k8s-operator.tar.gz
 pushd sagemaker-k8s-operator
 # Setup the PATH for smlogs
     mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
-    pushd sagemaker-k8s-operator-install-scripts
-        # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in build spec, we will not create new user
-        ./setup_awscreds
-        path_to_installer=$(pwd)
-    popd
+    path_to_installer=$(pwd)/sagemaker-k8s-operator-install-scripts
 popd
 
+# A helper function to generate an IAM Role name for the current cluster and sepcified namespace
+# Parameter:
+#    $1: Namespace of CRD
+function generate_iam_role_name {
+    local crd_namespace="$1"
+    local cluster=$(echo ${cluster_name} | cut -d'/' -f2)
+
+    role_name="${cluster}-${crd_namespace}"
+}
+
+# A helper function that generates the namespace-scoped operator installer yaml file with updated namespace and role. 
+# Parameter:
+#    $1: Namespace to which the op pod is installed. For cluster scope, this value is not used. 
+#    $2: Path to the kustomize source
+#    $3: Name of the IAM Role to use
+# TODO:  Investigate if it is possible to overlay values when we build the Kustomize targets instead. 
+function generate_operator_installer_for_given_role {
+    local crd_namespace="$1"
+    local file_path="$2"
+    local role="$3"
+    local aws_account=$(aws sts get-caller-identity --query Account --output text)
+
+    kustomize build "${file_path}" > temp_file.yaml
+    sed -i "s/PLACEHOLDER-NAMESPACE/$crd_namespace/g" temp_file.yaml
+    sed -i "s/123456789012/$aws_account/g" temp_file.yaml
+    sed -i "s/DELETE_ME/$role/g" temp_file.yaml
+}
+
+
 echo "[SECTION] Run integration tests for the cluster scoped operator deployment"
+
+generate_iam_role_name "${default_operator_namespace}"
+cd scripts && ./generate_iam_role.sh "${cluster_name}" "${default_operator_namespace}" "${role_name}" "${cluster_region}" && cd ..
+
 # Allow for overriding the installation of the CRDs/controller image from the
 # build scripts if we want to use our own installation
 if [ "${SKIP_INSTALLATION}" == "true" ]; then
@@ -128,7 +158,9 @@ if [ "${SKIP_INSTALLATION}" == "true" ]; then
 else
     pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
         echo "Deploying the operator to the default namespace"
-        kustomize build config/default | kubectl apply -f -
+        generate_operator_installer_for_given_role "${default_operator_namespace}" "config/installers/rolebasedcreds" "${role_name}"
+        kubectl apply -f temp_file.yaml
+        rm temp_file.yaml
     popd
     echo "Waiting for controller pod to be Ready"
     # Wait to increase chance that pod is ready
@@ -145,17 +177,8 @@ popd
 echo "Skipping private link test"
 #cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"
 
+
 echo "[SECTION] Run integration tests for the namespaced operator deployment"
-# A helper function to generate an IAM Role name for the current cluster and sepcified namespace
-# Parameter:
-#    $1: Namespace of CRD
-function generate_iam_role_name {
-    local crd_namespace="$1"
-    local cluster=$(echo ${cluster_name} | cut -d'/' -f2)
-
-    role_name="${cluster}-${crd_namespace}"
-}
-
 # A function that builds the kustomize target, then deploys the CRDs (cluster scope) and operator (namespace scope).
 # Parameter:
 #    $1: Namespace of CRD
@@ -165,7 +188,7 @@ function operator_namespace_deploy {
     # Goto directory that holds the CRD 
     pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
         kustomize build config/crd | kubectl apply -f -
-        generate_namespace_operator_installer ${crd_namespace}
+        generate_operator_installer_for_given_role ${crd_namespace} "config/installers/rolebasedcreds/namespaced" "${role_name}"
         kubectl apply -f temp_file.yaml
     popd
     echo "Waiting for controller pod to be Ready"
@@ -174,20 +197,6 @@ function operator_namespace_deploy {
     sleep 60
     echo "Print manager pod status"
     kubectl get pods --all-namespaces | grep sagemaker
-}
-
-# A helper function that generates the namespace-scoped operator installer yaml file with updated namespace and role. 
-# Parameter:
-#    $1: Namespace of CRD
-# TODO:  Investigate if it is possible to overlay values when we build the Kustomize targets instead. 
-function generate_namespace_operator_installer {
-    local crd_namespace="$1"
-    local aws_account=$(aws sts get-caller-identity --query Account --output text)
-
-    kustomize build config/installers/rolebasedcreds/namespaced > temp_file.yaml
-    sed -i "s/PLACEHOLDER-NAMESPACE/$crd_namespace/g" temp_file.yaml
-    sed -i "s/123456789012/$aws_account/g" temp_file.yaml
-    sed -i "s/DELETE_ME/$role_name/g" temp_file.yaml
 }
 
 # Cleanup 
