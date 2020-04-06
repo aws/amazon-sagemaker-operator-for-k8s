@@ -3,6 +3,8 @@ IMG ?= 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-fo
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+INSTALLER_PATH ?= "release"
+
 all: manager
 
 # Run tests
@@ -10,7 +12,7 @@ test: lint generate fmt vet manifests
 	go test -v ./api/... ./controllers/... -coverprofile cover.out
 
 # Build manager binary
-manager: lint generate fmt vet
+manager: lint generate fmt vet create-installers
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config.
@@ -100,6 +102,8 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 create-installers: set-image
-	kustomize build config/installers/rolebasedcreds > release/rolebased/installer.yaml
-	kustomize build config/installers/rolebasedcreds/namespaced > release/rolebased/namespaced/operator.yaml
-	kustomize build config/crd > release/rolebased/namespaced/crd.yaml
+	mkdir -p $(INSTALLER_PATH)/rolebased/namespaced
+
+	kustomize build config/installers/rolebasedcreds > $(INSTALLER_PATH)/rolebased/installer.yaml
+	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/operator.yaml
+	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/crd.yaml
