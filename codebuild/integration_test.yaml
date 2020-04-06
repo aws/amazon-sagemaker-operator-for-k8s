@@ -3,5 +3,6 @@ version: 0.2
 phases:
   build:
     commands:
+       - (bash codebuild/scripts/diff_release_yamls.sh)
        - bash tests/codebuild/run_integtest.sh
 
