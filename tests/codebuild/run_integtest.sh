@@ -34,7 +34,7 @@ function cleanup {
         kustomize build "$path_to_installer/config/default" | kubectl delete -f -
         # Delete the namespaced operator. TODO: This can be cleaner if parameterized
         kustomize build "$path_to_installer/config/crd" | kubectl delete -f -
-        rolebased_operator_installation ${crd_namespace} "config/installers/rolebasedcreds/namespaced" "${role_name}" "delete"  
+        rolebased_operator_install_or_delete ${crd_namespace} "config/installers/rolebasedcreds/namespaced" "${role_name}" "delete"  
     fi
 
     if [ "${existing_fsx}" == "false" ] && [ "$FSX_ID" != "" ]; then
@@ -106,7 +106,7 @@ popd
 #    $3: Name of the IAM Role to use
 #    $4: kubectl action - apply or delete the resources defined in the installer
 # TODO:  Investigate if it is possible to overlay values when we build the Kustomize targets instead. 
-function rolebased_operator_installation {
+function rolebased_operator_install_or_delete {
     local crd_namespace="$1"
     local kustomize_file_path="$2"
     local role="$3"
@@ -134,7 +134,7 @@ if [ "${SKIP_INSTALLATION}" == "true" ]; then
 else
     pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
         echo "Deploying the operator to the default namespace"
-        rolebased_operator_installation "${default_operator_namespace}" "config/installers/rolebasedcreds" "${default_role_name}" "apply"
+        rolebased_operator_install_or_delete "${default_operator_namespace}" "config/installers/rolebasedcreds" "${default_role_name}" "apply"
     popd
     echo "Waiting for controller pod to be Ready"
     # Wait to increase chance that pod is ready
@@ -162,7 +162,7 @@ function operator_namespace_deploy {
     # Goto directory that holds the CRD 
     pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
         kustomize build config/crd | kubectl apply -f -
-        rolebased_operator_installation ${crd_namespace} "config/installers/rolebasedcreds/namespaced" "${role_name}" "apply"
+        rolebased_operator_install_or_delete ${crd_namespace} "config/installers/rolebasedcreds/namespaced" "${role_name}" "apply"
     popd
     echo "Waiting for controller pod to be Ready"
     # Wait to increase chance that pod is ready
