@@ -173,7 +173,7 @@ function operator_namespace_deploy {
 }
 
 # Cleanup 
-echo "[Section] Cleaning the default namespace to test namespace deployment"
+echo "[SECTION] Cleaning the default namespace to test namespace deployment"
 cleanup_default_namespace
 
 # If any command fails, exit the script with an error code.

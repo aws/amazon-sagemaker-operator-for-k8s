@@ -12,7 +12,7 @@ test: lint generate fmt vet manifests
 	go test -v ./api/... ./controllers/... -coverprofile cover.out
 
 # Build manager binary
-manager: lint generate fmt vet create-installers
+manager: lint generate fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config.
@@ -52,7 +52,7 @@ undeploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 # Requires golang development setup for controller-gen.
-manifests: controller-gen
+manifests: controller-gen create-installers
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
