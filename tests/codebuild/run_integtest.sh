@@ -149,7 +149,7 @@ pushd tests/codebuild
 popd
 
 echo "Skipping private link test"
-#cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"
+#pushd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2" && popd
 
 
 echo "[SECTION] Run integration tests for the namespaced operator deployment"
