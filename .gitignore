@@ -15,7 +15,6 @@ awscreds.env
 *.out
 
 # Kubernetes Generated files - skip generated files, except for vendored files
-zz_generated.*.go
 !vendor/**/zz_generated.*
 
 # editor and IDE paraphernalia
