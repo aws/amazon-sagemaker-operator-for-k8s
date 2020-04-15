@@ -143,13 +143,13 @@ else
     kubectl get pods --all-namespaces | grep sagemaker
 fi 
 
-echo "Starting Integ Tests in default namespace"
+echo "[SECTION] Running integration tests in default namespace"
 pushd tests/codebuild
     ./run_all_sample_test.sh "default"
 popd
 
 echo "Skipping private link test"
-#cd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2"
+#pushd private-link-test && ./run_private_link_integration_test "${cluster_name}" "us-west-2" && popd
 
 
 echo "[SECTION] Run integration tests for the namespaced operator deployment"
@@ -173,7 +173,7 @@ function operator_namespace_deploy {
 }
 
 # Cleanup 
-echo "Cleanup the default namespace to test namespace deployment"
+echo "[SECTION] Cleaning the default namespace to test namespace deployment"
 cleanup_default_namespace
 
 # If any command fails, exit the script with an error code.
@@ -193,7 +193,7 @@ else
 fi 
 
 # Run the integration test file
-echo "Starting Integ Tests for namespaced operator deployment"
+echo "[SECTION] Running integration tests for namespace deployment"
 pushd tests/codebuild/ 
     ./run_all_sample_namespace_tests.sh "${crd_namespace}"
 popd

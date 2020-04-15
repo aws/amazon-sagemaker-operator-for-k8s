@@ -3,6 +3,8 @@ IMG ?= 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-fo
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+INSTALLER_PATH ?= "release"
+
 all: manager
 
 # Run tests
@@ -50,7 +52,7 @@ undeploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 # Requires golang development setup for controller-gen.
-manifests: controller-gen
+manifests: controller-gen create-installers
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
@@ -100,6 +102,8 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 create-installers: set-image
-	kustomize build config/installers/rolebasedcreds > release/rolebased/installer.yaml
-	kustomize build config/installers/rolebasedcreds/namespaced > release/rolebased/namespaced/operator.yaml
-	kustomize build config/crd > release/rolebased/namespaced/crd.yaml
+	mkdir -p $(INSTALLER_PATH)/rolebased/namespaced
+
+	kustomize build config/installers/rolebasedcreds > $(INSTALLER_PATH)/rolebased/installer.yaml
+	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/operator.yaml
+	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/crd.yaml
