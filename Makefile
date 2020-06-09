@@ -5,6 +5,9 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 INSTALLER_PATH ?= "release"
 
+GENERATOR_IMAGE_NAME += "operator-generator:latest"
+GO_PROJECT_MODULE ?= "github.com/aws/amazon-sagemaker-operator-for-k8s"
+
 all: manager
 
 # Run tests
@@ -76,7 +79,7 @@ vet:
 	go vet ./...
 
 # Generate code
-generate: controller-gen
+generate: controller-gen group-gen
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
 
 set-image:
@@ -100,6 +103,16 @@ CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
+
+group-gen:
+	docker build --quiet -f "scripts/codegen-Dockerfile" -t "${GENERATOR_IMAGE_NAME}" --build-arg repo="${GO_PROJECT_MODULE}" .
+	docker run --rm -v ${PWD}:/go/src/${GO_PROJECT_MODULE} "${GENERATOR_IMAGE_NAME}" ./informer-gen \
+		--input-dirs "${GO_PROJECT_MODULE}/api/v1/trainingjob" \
+		--versioned-clientset-package "${GO_PROJECT_MODULE}/clientset/versioned" \
+		--listers-package "${GO_PROJECT_MODULE}/pkg/generated/listers" \
+		--output-package "${GO_PROJECT_MODULE}/pkg/generated/informers" \
+		--go-header-file "/go/src/${GO_PROJECT_MODULE}/hack/boilerplate.go.txt"
+	sudo chown ${USER} -R ./pkg
 
 create-installers: set-image
 	mkdir -p $(INSTALLER_PATH)/rolebased/namespaced

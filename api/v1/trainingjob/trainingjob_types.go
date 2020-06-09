@@ -115,6 +115,9 @@ type TrainingJobStatus struct {
 // +kubebuilder:printcolumn:name="Creation-Time",type="string", format="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Sagemaker-Job-Name",type="string", JSONPath=".status.sageMakerTrainingJobName"
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // TrainingJob is the Schema for the trainingjobs API
 type TrainingJob struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -125,6 +128,7 @@ type TrainingJob struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TrainingJobList contains a list of TrainingJob
 type TrainingJobList struct {
