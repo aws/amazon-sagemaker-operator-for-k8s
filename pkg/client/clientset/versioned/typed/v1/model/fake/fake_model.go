@@ -18,8 +18,6 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	model "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -40,7 +38,7 @@ var modelsResource = schema.GroupVersionResource{Group: "v1", Version: "model", 
 var modelsKind = schema.GroupVersionKind{Group: "v1", Version: "model", Kind: "Model"}
 
 // Get takes name of the model, and returns the corresponding model object, and an error if there is any.
-func (c *FakeModels) Get(ctx context.Context, name string, options v1.GetOptions) (result *model.Model, err error) {
+func (c *FakeModels) Get(name string, options v1.GetOptions) (result *model.Model, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(modelsResource, c.ns, name), &model.Model{})
 
@@ -51,7 +49,7 @@ func (c *FakeModels) Get(ctx context.Context, name string, options v1.GetOptions
 }
 
 // List takes label and field selectors, and returns the list of Models that match those selectors.
-func (c *FakeModels) List(ctx context.Context, opts v1.ListOptions) (result *model.ModelList, err error) {
+func (c *FakeModels) List(opts v1.ListOptions) (result *model.ModelList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(modelsResource, modelsKind, c.ns, opts), &model.ModelList{})
 
@@ -73,14 +71,14 @@ func (c *FakeModels) List(ctx context.Context, opts v1.ListOptions) (result *mod
 }
 
 // Watch returns a watch.Interface that watches the requested models.
-func (c *FakeModels) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeModels) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(modelsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a model and creates it.  Returns the server's representation of the model, and an error, if there is any.
-func (c *FakeModels) Create(ctx context.Context, model *model.Model, opts v1.CreateOptions) (result *model.Model, err error) {
+func (c *FakeModels) Create(model *model.Model) (result *model.Model, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(modelsResource, c.ns, model), &model.Model{})
 
@@ -91,7 +89,7 @@ func (c *FakeModels) Create(ctx context.Context, model *model.Model, opts v1.Cre
 }
 
 // Update takes the representation of a model and updates it. Returns the server's representation of the model, and an error, if there is any.
-func (c *FakeModels) Update(ctx context.Context, model *model.Model, opts v1.UpdateOptions) (result *model.Model, err error) {
+func (c *FakeModels) Update(model *model.Model) (result *model.Model, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(modelsResource, c.ns, model), &model.Model{})
 
@@ -103,7 +101,7 @@ func (c *FakeModels) Update(ctx context.Context, model *model.Model, opts v1.Upd
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeModels) UpdateStatus(ctx context.Context, model *model.Model, opts v1.UpdateOptions) (*model.Model, error) {
+func (c *FakeModels) UpdateStatus(model *model.Model) (*model.Model, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(modelsResource, "status", c.ns, model), &model.Model{})
 
@@ -114,7 +112,7 @@ func (c *FakeModels) UpdateStatus(ctx context.Context, model *model.Model, opts 
 }
 
 // Delete takes name of the model and deletes it. Returns an error if one occurs.
-func (c *FakeModels) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *FakeModels) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(modelsResource, c.ns, name), &model.Model{})
 
@@ -122,15 +120,15 @@ func (c *FakeModels) Delete(ctx context.Context, name string, opts v1.DeleteOpti
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeModels) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(modelsResource, c.ns, listOpts)
+func (c *FakeModels) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(modelsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &model.ModelList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched model.
-func (c *FakeModels) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *model.Model, err error) {
+func (c *FakeModels) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *model.Model, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(modelsResource, c.ns, name, pt, data, subresources...), &model.Model{})
 

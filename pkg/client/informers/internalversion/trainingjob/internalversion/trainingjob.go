@@ -18,7 +18,6 @@ limitations under the License.
 package internalversion
 
 import (
-	"context"
 	time "time"
 
 	trainingjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
@@ -61,13 +60,13 @@ func NewFilteredTrainingJobInformer(client internalclientset.Interface, namespac
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Trainingjob().TrainingJobs(namespace).List(context.TODO(), options)
+				return client.Trainingjob().TrainingJobs(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Trainingjob().TrainingJobs(namespace).Watch(context.TODO(), options)
+				return client.Trainingjob().TrainingJobs(namespace).Watch(options)
 			},
 		},
 		&trainingjob.TrainingJob{},

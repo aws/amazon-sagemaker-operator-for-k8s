@@ -18,7 +18,6 @@ limitations under the License.
 package batchtransformjob
 
 import (
-	"context"
 	"time"
 
 	batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
@@ -37,15 +36,15 @@ type BatchTransformJobsGetter interface {
 
 // BatchTransformJobInterface has methods to work with BatchTransformJob resources.
 type BatchTransformJobInterface interface {
-	Create(ctx context.Context, batchTransformJob *batchtransformjob.BatchTransformJob, opts v1.CreateOptions) (*batchtransformjob.BatchTransformJob, error)
-	Update(ctx context.Context, batchTransformJob *batchtransformjob.BatchTransformJob, opts v1.UpdateOptions) (*batchtransformjob.BatchTransformJob, error)
-	UpdateStatus(ctx context.Context, batchTransformJob *batchtransformjob.BatchTransformJob, opts v1.UpdateOptions) (*batchtransformjob.BatchTransformJob, error)
-	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
-	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*batchtransformjob.BatchTransformJob, error)
-	List(ctx context.Context, opts v1.ListOptions) (*batchtransformjob.BatchTransformJobList, error)
-	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *batchtransformjob.BatchTransformJob, err error)
+	Create(*batchtransformjob.BatchTransformJob) (*batchtransformjob.BatchTransformJob, error)
+	Update(*batchtransformjob.BatchTransformJob) (*batchtransformjob.BatchTransformJob, error)
+	UpdateStatus(*batchtransformjob.BatchTransformJob) (*batchtransformjob.BatchTransformJob, error)
+	Delete(name string, options *v1.DeleteOptions) error
+	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(name string, options v1.GetOptions) (*batchtransformjob.BatchTransformJob, error)
+	List(opts v1.ListOptions) (*batchtransformjob.BatchTransformJobList, error)
+	Watch(opts v1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *batchtransformjob.BatchTransformJob, err error)
 	BatchTransformJobExpansion
 }
 
@@ -64,20 +63,20 @@ func newBatchTransformJobs(c *V1BatchtransformjobClient, namespace string) *batc
 }
 
 // Get takes name of the batchTransformJob, and returns the corresponding batchTransformJob object, and an error if there is any.
-func (c *batchTransformJobs) Get(ctx context.Context, name string, options v1.GetOptions) (result *batchtransformjob.BatchTransformJob, err error) {
+func (c *batchTransformJobs) Get(name string, options v1.GetOptions) (result *batchtransformjob.BatchTransformJob, err error) {
 	result = &batchtransformjob.BatchTransformJob{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("batchtransformjobs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of BatchTransformJobs that match those selectors.
-func (c *batchTransformJobs) List(ctx context.Context, opts v1.ListOptions) (result *batchtransformjob.BatchTransformJobList, err error) {
+func (c *batchTransformJobs) List(opts v1.ListOptions) (result *batchtransformjob.BatchTransformJobList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -88,13 +87,13 @@ func (c *batchTransformJobs) List(ctx context.Context, opts v1.ListOptions) (res
 		Resource("batchtransformjobs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested batchTransformJobs.
-func (c *batchTransformJobs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *batchTransformJobs) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -105,90 +104,87 @@ func (c *batchTransformJobs) Watch(ctx context.Context, opts v1.ListOptions) (wa
 		Resource("batchtransformjobs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch(ctx)
+		Watch()
 }
 
 // Create takes the representation of a batchTransformJob and creates it.  Returns the server's representation of the batchTransformJob, and an error, if there is any.
-func (c *batchTransformJobs) Create(ctx context.Context, batchTransformJob *batchtransformjob.BatchTransformJob, opts v1.CreateOptions) (result *batchtransformjob.BatchTransformJob, err error) {
+func (c *batchTransformJobs) Create(batchTransformJob *batchtransformjob.BatchTransformJob) (result *batchtransformjob.BatchTransformJob, err error) {
 	result = &batchtransformjob.BatchTransformJob{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("batchtransformjobs").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(batchTransformJob).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Update takes the representation of a batchTransformJob and updates it. Returns the server's representation of the batchTransformJob, and an error, if there is any.
-func (c *batchTransformJobs) Update(ctx context.Context, batchTransformJob *batchtransformjob.BatchTransformJob, opts v1.UpdateOptions) (result *batchtransformjob.BatchTransformJob, err error) {
+func (c *batchTransformJobs) Update(batchTransformJob *batchtransformjob.BatchTransformJob) (result *batchtransformjob.BatchTransformJob, err error) {
 	result = &batchtransformjob.BatchTransformJob{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("batchtransformjobs").
 		Name(batchTransformJob.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(batchTransformJob).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *batchTransformJobs) UpdateStatus(ctx context.Context, batchTransformJob *batchtransformjob.BatchTransformJob, opts v1.UpdateOptions) (result *batchtransformjob.BatchTransformJob, err error) {
+
+func (c *batchTransformJobs) UpdateStatus(batchTransformJob *batchtransformjob.BatchTransformJob) (result *batchtransformjob.BatchTransformJob, err error) {
 	result = &batchtransformjob.BatchTransformJob{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("batchtransformjobs").
 		Name(batchTransformJob.Name).
 		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(batchTransformJob).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Delete takes name of the batchTransformJob and deletes it. Returns an error if one occurs.
-func (c *batchTransformJobs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *batchTransformJobs) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("batchtransformjobs").
 		Name(name).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *batchTransformJobs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+func (c *batchTransformJobs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("batchtransformjobs").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // Patch applies the patch and returns the patched batchTransformJob.
-func (c *batchTransformJobs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *batchtransformjob.BatchTransformJob, err error) {
+func (c *batchTransformJobs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *batchtransformjob.BatchTransformJob, err error) {
 	result = &batchtransformjob.BatchTransformJob{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("batchtransformjobs").
-		Name(name).
 		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
+		Name(name).
 		Body(data).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }

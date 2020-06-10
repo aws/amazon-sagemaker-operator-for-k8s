@@ -18,7 +18,6 @@ limitations under the License.
 package internalversion
 
 import (
-	"context"
 	time "time"
 
 	batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
@@ -61,13 +60,13 @@ func NewFilteredBatchTransformJobInformer(client internalclientset.Interface, na
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Batchtransformjob().BatchTransformJobs(namespace).List(context.TODO(), options)
+				return client.Batchtransformjob().BatchTransformJobs(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Batchtransformjob().BatchTransformJobs(namespace).Watch(context.TODO(), options)
+				return client.Batchtransformjob().BatchTransformJobs(namespace).Watch(options)
 			},
 		},
 		&batchtransformjob.BatchTransformJob{},

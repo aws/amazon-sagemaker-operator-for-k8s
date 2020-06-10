@@ -18,8 +18,6 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -40,7 +38,7 @@ var hostingdeploymentsResource = schema.GroupVersionResource{Group: "v1", Versio
 var hostingdeploymentsKind = schema.GroupVersionKind{Group: "v1", Version: "hostingdeployment", Kind: "HostingDeployment"}
 
 // Get takes name of the hostingDeployment, and returns the corresponding hostingDeployment object, and an error if there is any.
-func (c *FakeHostingDeployments) Get(ctx context.Context, name string, options v1.GetOptions) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *FakeHostingDeployments) Get(name string, options v1.GetOptions) (result *hostingdeployment.HostingDeployment, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(hostingdeploymentsResource, c.ns, name), &hostingdeployment.HostingDeployment{})
 
@@ -51,7 +49,7 @@ func (c *FakeHostingDeployments) Get(ctx context.Context, name string, options v
 }
 
 // List takes label and field selectors, and returns the list of HostingDeployments that match those selectors.
-func (c *FakeHostingDeployments) List(ctx context.Context, opts v1.ListOptions) (result *hostingdeployment.HostingDeploymentList, err error) {
+func (c *FakeHostingDeployments) List(opts v1.ListOptions) (result *hostingdeployment.HostingDeploymentList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(hostingdeploymentsResource, hostingdeploymentsKind, c.ns, opts), &hostingdeployment.HostingDeploymentList{})
 
@@ -73,14 +71,14 @@ func (c *FakeHostingDeployments) List(ctx context.Context, opts v1.ListOptions) 
 }
 
 // Watch returns a watch.Interface that watches the requested hostingDeployments.
-func (c *FakeHostingDeployments) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeHostingDeployments) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(hostingdeploymentsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a hostingDeployment and creates it.  Returns the server's representation of the hostingDeployment, and an error, if there is any.
-func (c *FakeHostingDeployments) Create(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.CreateOptions) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *FakeHostingDeployments) Create(hostingDeployment *hostingdeployment.HostingDeployment) (result *hostingdeployment.HostingDeployment, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(hostingdeploymentsResource, c.ns, hostingDeployment), &hostingdeployment.HostingDeployment{})
 
@@ -91,7 +89,7 @@ func (c *FakeHostingDeployments) Create(ctx context.Context, hostingDeployment *
 }
 
 // Update takes the representation of a hostingDeployment and updates it. Returns the server's representation of the hostingDeployment, and an error, if there is any.
-func (c *FakeHostingDeployments) Update(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.UpdateOptions) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *FakeHostingDeployments) Update(hostingDeployment *hostingdeployment.HostingDeployment) (result *hostingdeployment.HostingDeployment, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(hostingdeploymentsResource, c.ns, hostingDeployment), &hostingdeployment.HostingDeployment{})
 
@@ -103,7 +101,7 @@ func (c *FakeHostingDeployments) Update(ctx context.Context, hostingDeployment *
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeHostingDeployments) UpdateStatus(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.UpdateOptions) (*hostingdeployment.HostingDeployment, error) {
+func (c *FakeHostingDeployments) UpdateStatus(hostingDeployment *hostingdeployment.HostingDeployment) (*hostingdeployment.HostingDeployment, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(hostingdeploymentsResource, "status", c.ns, hostingDeployment), &hostingdeployment.HostingDeployment{})
 
@@ -114,7 +112,7 @@ func (c *FakeHostingDeployments) UpdateStatus(ctx context.Context, hostingDeploy
 }
 
 // Delete takes name of the hostingDeployment and deletes it. Returns an error if one occurs.
-func (c *FakeHostingDeployments) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *FakeHostingDeployments) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(hostingdeploymentsResource, c.ns, name), &hostingdeployment.HostingDeployment{})
 
@@ -122,15 +120,15 @@ func (c *FakeHostingDeployments) Delete(ctx context.Context, name string, opts v
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeHostingDeployments) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(hostingdeploymentsResource, c.ns, listOpts)
+func (c *FakeHostingDeployments) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(hostingdeploymentsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &hostingdeployment.HostingDeploymentList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched hostingDeployment.
-func (c *FakeHostingDeployments) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *FakeHostingDeployments) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *hostingdeployment.HostingDeployment, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(hostingdeploymentsResource, c.ns, name, pt, data, subresources...), &hostingdeployment.HostingDeployment{})
 

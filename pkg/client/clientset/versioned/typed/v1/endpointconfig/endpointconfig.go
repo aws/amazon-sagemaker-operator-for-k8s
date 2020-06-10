@@ -18,7 +18,6 @@ limitations under the License.
 package endpointconfig
 
 import (
-	"context"
 	"time"
 
 	endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
@@ -37,15 +36,15 @@ type EndpointConfigsGetter interface {
 
 // EndpointConfigInterface has methods to work with EndpointConfig resources.
 type EndpointConfigInterface interface {
-	Create(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.CreateOptions) (*endpointconfig.EndpointConfig, error)
-	Update(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.UpdateOptions) (*endpointconfig.EndpointConfig, error)
-	UpdateStatus(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.UpdateOptions) (*endpointconfig.EndpointConfig, error)
-	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
-	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*endpointconfig.EndpointConfig, error)
-	List(ctx context.Context, opts v1.ListOptions) (*endpointconfig.EndpointConfigList, error)
-	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *endpointconfig.EndpointConfig, err error)
+	Create(*endpointconfig.EndpointConfig) (*endpointconfig.EndpointConfig, error)
+	Update(*endpointconfig.EndpointConfig) (*endpointconfig.EndpointConfig, error)
+	UpdateStatus(*endpointconfig.EndpointConfig) (*endpointconfig.EndpointConfig, error)
+	Delete(name string, options *v1.DeleteOptions) error
+	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(name string, options v1.GetOptions) (*endpointconfig.EndpointConfig, error)
+	List(opts v1.ListOptions) (*endpointconfig.EndpointConfigList, error)
+	Watch(opts v1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *endpointconfig.EndpointConfig, err error)
 	EndpointConfigExpansion
 }
 
@@ -64,20 +63,20 @@ func newEndpointConfigs(c *V1EndpointconfigClient, namespace string) *endpointCo
 }
 
 // Get takes name of the endpointConfig, and returns the corresponding endpointConfig object, and an error if there is any.
-func (c *endpointConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *endpointconfig.EndpointConfig, err error) {
+func (c *endpointConfigs) Get(name string, options v1.GetOptions) (result *endpointconfig.EndpointConfig, err error) {
 	result = &endpointconfig.EndpointConfig{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("endpointconfigs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of EndpointConfigs that match those selectors.
-func (c *endpointConfigs) List(ctx context.Context, opts v1.ListOptions) (result *endpointconfig.EndpointConfigList, err error) {
+func (c *endpointConfigs) List(opts v1.ListOptions) (result *endpointconfig.EndpointConfigList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -88,13 +87,13 @@ func (c *endpointConfigs) List(ctx context.Context, opts v1.ListOptions) (result
 		Resource("endpointconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested endpointConfigs.
-func (c *endpointConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *endpointConfigs) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -105,90 +104,87 @@ func (c *endpointConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch
 		Resource("endpointconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch(ctx)
+		Watch()
 }
 
 // Create takes the representation of a endpointConfig and creates it.  Returns the server's representation of the endpointConfig, and an error, if there is any.
-func (c *endpointConfigs) Create(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.CreateOptions) (result *endpointconfig.EndpointConfig, err error) {
+func (c *endpointConfigs) Create(endpointConfig *endpointconfig.EndpointConfig) (result *endpointconfig.EndpointConfig, err error) {
 	result = &endpointconfig.EndpointConfig{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("endpointconfigs").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(endpointConfig).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Update takes the representation of a endpointConfig and updates it. Returns the server's representation of the endpointConfig, and an error, if there is any.
-func (c *endpointConfigs) Update(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.UpdateOptions) (result *endpointconfig.EndpointConfig, err error) {
+func (c *endpointConfigs) Update(endpointConfig *endpointconfig.EndpointConfig) (result *endpointconfig.EndpointConfig, err error) {
 	result = &endpointconfig.EndpointConfig{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("endpointconfigs").
 		Name(endpointConfig.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(endpointConfig).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *endpointConfigs) UpdateStatus(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.UpdateOptions) (result *endpointconfig.EndpointConfig, err error) {
+
+func (c *endpointConfigs) UpdateStatus(endpointConfig *endpointconfig.EndpointConfig) (result *endpointconfig.EndpointConfig, err error) {
 	result = &endpointconfig.EndpointConfig{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("endpointconfigs").
 		Name(endpointConfig.Name).
 		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(endpointConfig).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Delete takes name of the endpointConfig and deletes it. Returns an error if one occurs.
-func (c *endpointConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *endpointConfigs) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("endpointconfigs").
 		Name(name).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *endpointConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+func (c *endpointConfigs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("endpointconfigs").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // Patch applies the patch and returns the patched endpointConfig.
-func (c *endpointConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *endpointconfig.EndpointConfig, err error) {
+func (c *endpointConfigs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *endpointconfig.EndpointConfig, err error) {
 	result = &endpointconfig.EndpointConfig{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("endpointconfigs").
-		Name(name).
 		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
+		Name(name).
 		Body(data).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }

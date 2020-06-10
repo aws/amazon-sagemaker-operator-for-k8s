@@ -18,7 +18,6 @@ limitations under the License.
 package hostingdeployment
 
 import (
-	"context"
 	"time"
 
 	hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
@@ -37,15 +36,15 @@ type HostingDeploymentsGetter interface {
 
 // HostingDeploymentInterface has methods to work with HostingDeployment resources.
 type HostingDeploymentInterface interface {
-	Create(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.CreateOptions) (*hostingdeployment.HostingDeployment, error)
-	Update(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.UpdateOptions) (*hostingdeployment.HostingDeployment, error)
-	UpdateStatus(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.UpdateOptions) (*hostingdeployment.HostingDeployment, error)
-	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
-	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*hostingdeployment.HostingDeployment, error)
-	List(ctx context.Context, opts v1.ListOptions) (*hostingdeployment.HostingDeploymentList, error)
-	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *hostingdeployment.HostingDeployment, err error)
+	Create(*hostingdeployment.HostingDeployment) (*hostingdeployment.HostingDeployment, error)
+	Update(*hostingdeployment.HostingDeployment) (*hostingdeployment.HostingDeployment, error)
+	UpdateStatus(*hostingdeployment.HostingDeployment) (*hostingdeployment.HostingDeployment, error)
+	Delete(name string, options *v1.DeleteOptions) error
+	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(name string, options v1.GetOptions) (*hostingdeployment.HostingDeployment, error)
+	List(opts v1.ListOptions) (*hostingdeployment.HostingDeploymentList, error)
+	Watch(opts v1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *hostingdeployment.HostingDeployment, err error)
 	HostingDeploymentExpansion
 }
 
@@ -64,20 +63,20 @@ func newHostingDeployments(c *V1HostingdeploymentClient, namespace string) *host
 }
 
 // Get takes name of the hostingDeployment, and returns the corresponding hostingDeployment object, and an error if there is any.
-func (c *hostingDeployments) Get(ctx context.Context, name string, options v1.GetOptions) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *hostingDeployments) Get(name string, options v1.GetOptions) (result *hostingdeployment.HostingDeployment, err error) {
 	result = &hostingdeployment.HostingDeployment{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("hostingdeployments").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of HostingDeployments that match those selectors.
-func (c *hostingDeployments) List(ctx context.Context, opts v1.ListOptions) (result *hostingdeployment.HostingDeploymentList, err error) {
+func (c *hostingDeployments) List(opts v1.ListOptions) (result *hostingdeployment.HostingDeploymentList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -88,13 +87,13 @@ func (c *hostingDeployments) List(ctx context.Context, opts v1.ListOptions) (res
 		Resource("hostingdeployments").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested hostingDeployments.
-func (c *hostingDeployments) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *hostingDeployments) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -105,90 +104,87 @@ func (c *hostingDeployments) Watch(ctx context.Context, opts v1.ListOptions) (wa
 		Resource("hostingdeployments").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch(ctx)
+		Watch()
 }
 
 // Create takes the representation of a hostingDeployment and creates it.  Returns the server's representation of the hostingDeployment, and an error, if there is any.
-func (c *hostingDeployments) Create(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.CreateOptions) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *hostingDeployments) Create(hostingDeployment *hostingdeployment.HostingDeployment) (result *hostingdeployment.HostingDeployment, err error) {
 	result = &hostingdeployment.HostingDeployment{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("hostingdeployments").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(hostingDeployment).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Update takes the representation of a hostingDeployment and updates it. Returns the server's representation of the hostingDeployment, and an error, if there is any.
-func (c *hostingDeployments) Update(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.UpdateOptions) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *hostingDeployments) Update(hostingDeployment *hostingdeployment.HostingDeployment) (result *hostingdeployment.HostingDeployment, err error) {
 	result = &hostingdeployment.HostingDeployment{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("hostingdeployments").
 		Name(hostingDeployment.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(hostingDeployment).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *hostingDeployments) UpdateStatus(ctx context.Context, hostingDeployment *hostingdeployment.HostingDeployment, opts v1.UpdateOptions) (result *hostingdeployment.HostingDeployment, err error) {
+
+func (c *hostingDeployments) UpdateStatus(hostingDeployment *hostingdeployment.HostingDeployment) (result *hostingdeployment.HostingDeployment, err error) {
 	result = &hostingdeployment.HostingDeployment{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("hostingdeployments").
 		Name(hostingDeployment.Name).
 		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(hostingDeployment).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Delete takes name of the hostingDeployment and deletes it. Returns an error if one occurs.
-func (c *hostingDeployments) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *hostingDeployments) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("hostingdeployments").
 		Name(name).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *hostingDeployments) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+func (c *hostingDeployments) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("hostingdeployments").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // Patch applies the patch and returns the patched hostingDeployment.
-func (c *hostingDeployments) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *hostingdeployment.HostingDeployment, err error) {
+func (c *hostingDeployments) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *hostingdeployment.HostingDeployment, err error) {
 	result = &hostingdeployment.HostingDeployment{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("hostingdeployments").
-		Name(name).
 		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
+		Name(name).
 		Body(data).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }

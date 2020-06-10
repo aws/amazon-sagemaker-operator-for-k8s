@@ -18,7 +18,6 @@ limitations under the License.
 package internalversion
 
 import (
-	"context"
 	time "time"
 
 	endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
@@ -61,13 +60,13 @@ func NewFilteredEndpointConfigInformer(client internalclientset.Interface, names
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Endpointconfig().EndpointConfigs(namespace).List(context.TODO(), options)
+				return client.Endpointconfig().EndpointConfigs(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Endpointconfig().EndpointConfigs(namespace).Watch(context.TODO(), options)
+				return client.Endpointconfig().EndpointConfigs(namespace).Watch(options)
 			},
 		},
 		&endpointconfig.EndpointConfig{},

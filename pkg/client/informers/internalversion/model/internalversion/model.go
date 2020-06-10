@@ -18,7 +18,6 @@ limitations under the License.
 package internalversion
 
 import (
-	"context"
 	time "time"
 
 	model "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
@@ -61,13 +60,13 @@ func NewFilteredModelInformer(client internalclientset.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Model().Models(namespace).List(context.TODO(), options)
+				return client.Model().Models(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.Model().Models(namespace).Watch(context.TODO(), options)
+				return client.Model().Models(namespace).Watch(options)
 			},
 		},
 		&model.Model{},

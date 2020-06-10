@@ -18,8 +18,6 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -40,7 +38,7 @@ var hyperparametertuningjobsResource = schema.GroupVersionResource{Group: "v1", 
 var hyperparametertuningjobsKind = schema.GroupVersionKind{Group: "v1", Version: "hyperparametertuningjob", Kind: "HyperparameterTuningJob"}
 
 // Get takes name of the hyperparameterTuningJob, and returns the corresponding hyperparameterTuningJob object, and an error if there is any.
-func (c *FakeHyperparameterTuningJobs) Get(ctx context.Context, name string, options v1.GetOptions) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
+func (c *FakeHyperparameterTuningJobs) Get(name string, options v1.GetOptions) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(hyperparametertuningjobsResource, c.ns, name), &hyperparametertuningjob.HyperparameterTuningJob{})
 
@@ -51,7 +49,7 @@ func (c *FakeHyperparameterTuningJobs) Get(ctx context.Context, name string, opt
 }
 
 // List takes label and field selectors, and returns the list of HyperparameterTuningJobs that match those selectors.
-func (c *FakeHyperparameterTuningJobs) List(ctx context.Context, opts v1.ListOptions) (result *hyperparametertuningjob.HyperparameterTuningJobList, err error) {
+func (c *FakeHyperparameterTuningJobs) List(opts v1.ListOptions) (result *hyperparametertuningjob.HyperparameterTuningJobList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(hyperparametertuningjobsResource, hyperparametertuningjobsKind, c.ns, opts), &hyperparametertuningjob.HyperparameterTuningJobList{})
 
@@ -73,14 +71,14 @@ func (c *FakeHyperparameterTuningJobs) List(ctx context.Context, opts v1.ListOpt
 }
 
 // Watch returns a watch.Interface that watches the requested hyperparameterTuningJobs.
-func (c *FakeHyperparameterTuningJobs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeHyperparameterTuningJobs) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(hyperparametertuningjobsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a hyperparameterTuningJob and creates it.  Returns the server's representation of the hyperparameterTuningJob, and an error, if there is any.
-func (c *FakeHyperparameterTuningJobs) Create(ctx context.Context, hyperparameterTuningJob *hyperparametertuningjob.HyperparameterTuningJob, opts v1.CreateOptions) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
+func (c *FakeHyperparameterTuningJobs) Create(hyperparameterTuningJob *hyperparametertuningjob.HyperparameterTuningJob) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(hyperparametertuningjobsResource, c.ns, hyperparameterTuningJob), &hyperparametertuningjob.HyperparameterTuningJob{})
 
@@ -91,7 +89,7 @@ func (c *FakeHyperparameterTuningJobs) Create(ctx context.Context, hyperparamete
 }
 
 // Update takes the representation of a hyperparameterTuningJob and updates it. Returns the server's representation of the hyperparameterTuningJob, and an error, if there is any.
-func (c *FakeHyperparameterTuningJobs) Update(ctx context.Context, hyperparameterTuningJob *hyperparametertuningjob.HyperparameterTuningJob, opts v1.UpdateOptions) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
+func (c *FakeHyperparameterTuningJobs) Update(hyperparameterTuningJob *hyperparametertuningjob.HyperparameterTuningJob) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(hyperparametertuningjobsResource, c.ns, hyperparameterTuningJob), &hyperparametertuningjob.HyperparameterTuningJob{})
 
@@ -103,7 +101,7 @@ func (c *FakeHyperparameterTuningJobs) Update(ctx context.Context, hyperparamete
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeHyperparameterTuningJobs) UpdateStatus(ctx context.Context, hyperparameterTuningJob *hyperparametertuningjob.HyperparameterTuningJob, opts v1.UpdateOptions) (*hyperparametertuningjob.HyperparameterTuningJob, error) {
+func (c *FakeHyperparameterTuningJobs) UpdateStatus(hyperparameterTuningJob *hyperparametertuningjob.HyperparameterTuningJob) (*hyperparametertuningjob.HyperparameterTuningJob, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(hyperparametertuningjobsResource, "status", c.ns, hyperparameterTuningJob), &hyperparametertuningjob.HyperparameterTuningJob{})
 
@@ -114,7 +112,7 @@ func (c *FakeHyperparameterTuningJobs) UpdateStatus(ctx context.Context, hyperpa
 }
 
 // Delete takes name of the hyperparameterTuningJob and deletes it. Returns an error if one occurs.
-func (c *FakeHyperparameterTuningJobs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *FakeHyperparameterTuningJobs) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(hyperparametertuningjobsResource, c.ns, name), &hyperparametertuningjob.HyperparameterTuningJob{})
 
@@ -122,15 +120,15 @@ func (c *FakeHyperparameterTuningJobs) Delete(ctx context.Context, name string, 
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeHyperparameterTuningJobs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(hyperparametertuningjobsResource, c.ns, listOpts)
+func (c *FakeHyperparameterTuningJobs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(hyperparametertuningjobsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &hyperparametertuningjob.HyperparameterTuningJobList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched hyperparameterTuningJob.
-func (c *FakeHyperparameterTuningJobs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
+func (c *FakeHyperparameterTuningJobs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *hyperparametertuningjob.HyperparameterTuningJob, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(hyperparametertuningjobsResource, c.ns, name, pt, data, subresources...), &hyperparametertuningjob.HyperparameterTuningJob{})
 

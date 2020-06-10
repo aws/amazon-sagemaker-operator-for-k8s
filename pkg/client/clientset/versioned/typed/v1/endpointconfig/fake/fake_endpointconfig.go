@@ -18,8 +18,6 @@ limitations under the License.
 package fake
 
 import (
-	"context"
-
 	endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -40,7 +38,7 @@ var endpointconfigsResource = schema.GroupVersionResource{Group: "v1", Version: 
 var endpointconfigsKind = schema.GroupVersionKind{Group: "v1", Version: "endpointconfig", Kind: "EndpointConfig"}
 
 // Get takes name of the endpointConfig, and returns the corresponding endpointConfig object, and an error if there is any.
-func (c *FakeEndpointConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *endpointconfig.EndpointConfig, err error) {
+func (c *FakeEndpointConfigs) Get(name string, options v1.GetOptions) (result *endpointconfig.EndpointConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(endpointconfigsResource, c.ns, name), &endpointconfig.EndpointConfig{})
 
@@ -51,7 +49,7 @@ func (c *FakeEndpointConfigs) Get(ctx context.Context, name string, options v1.G
 }
 
 // List takes label and field selectors, and returns the list of EndpointConfigs that match those selectors.
-func (c *FakeEndpointConfigs) List(ctx context.Context, opts v1.ListOptions) (result *endpointconfig.EndpointConfigList, err error) {
+func (c *FakeEndpointConfigs) List(opts v1.ListOptions) (result *endpointconfig.EndpointConfigList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(endpointconfigsResource, endpointconfigsKind, c.ns, opts), &endpointconfig.EndpointConfigList{})
 
@@ -73,14 +71,14 @@ func (c *FakeEndpointConfigs) List(ctx context.Context, opts v1.ListOptions) (re
 }
 
 // Watch returns a watch.Interface that watches the requested endpointConfigs.
-func (c *FakeEndpointConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeEndpointConfigs) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(endpointconfigsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a endpointConfig and creates it.  Returns the server's representation of the endpointConfig, and an error, if there is any.
-func (c *FakeEndpointConfigs) Create(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.CreateOptions) (result *endpointconfig.EndpointConfig, err error) {
+func (c *FakeEndpointConfigs) Create(endpointConfig *endpointconfig.EndpointConfig) (result *endpointconfig.EndpointConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(endpointconfigsResource, c.ns, endpointConfig), &endpointconfig.EndpointConfig{})
 
@@ -91,7 +89,7 @@ func (c *FakeEndpointConfigs) Create(ctx context.Context, endpointConfig *endpoi
 }
 
 // Update takes the representation of a endpointConfig and updates it. Returns the server's representation of the endpointConfig, and an error, if there is any.
-func (c *FakeEndpointConfigs) Update(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.UpdateOptions) (result *endpointconfig.EndpointConfig, err error) {
+func (c *FakeEndpointConfigs) Update(endpointConfig *endpointconfig.EndpointConfig) (result *endpointconfig.EndpointConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(endpointconfigsResource, c.ns, endpointConfig), &endpointconfig.EndpointConfig{})
 
@@ -103,7 +101,7 @@ func (c *FakeEndpointConfigs) Update(ctx context.Context, endpointConfig *endpoi
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeEndpointConfigs) UpdateStatus(ctx context.Context, endpointConfig *endpointconfig.EndpointConfig, opts v1.UpdateOptions) (*endpointconfig.EndpointConfig, error) {
+func (c *FakeEndpointConfigs) UpdateStatus(endpointConfig *endpointconfig.EndpointConfig) (*endpointconfig.EndpointConfig, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(endpointconfigsResource, "status", c.ns, endpointConfig), &endpointconfig.EndpointConfig{})
 
@@ -114,7 +112,7 @@ func (c *FakeEndpointConfigs) UpdateStatus(ctx context.Context, endpointConfig *
 }
 
 // Delete takes name of the endpointConfig and deletes it. Returns an error if one occurs.
-func (c *FakeEndpointConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *FakeEndpointConfigs) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(endpointconfigsResource, c.ns, name), &endpointconfig.EndpointConfig{})
 
@@ -122,15 +120,15 @@ func (c *FakeEndpointConfigs) Delete(ctx context.Context, name string, opts v1.D
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeEndpointConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(endpointconfigsResource, c.ns, listOpts)
+func (c *FakeEndpointConfigs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(endpointconfigsResource, c.ns, listOptions)
 
 	_, err := c.Fake.Invokes(action, &endpointconfig.EndpointConfigList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched endpointConfig.
-func (c *FakeEndpointConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *endpointconfig.EndpointConfig, err error) {
+func (c *FakeEndpointConfigs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *endpointconfig.EndpointConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(endpointconfigsResource, c.ns, name, pt, data, subresources...), &endpointconfig.EndpointConfig{})
 
