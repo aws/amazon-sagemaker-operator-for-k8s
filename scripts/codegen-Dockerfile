@@ -3,12 +3,17 @@ FROM golang:1.13
 ENV GO111MODULE=on
 RUN go env -w GOPROXY=direct
 
+RUN go get k8s.io/code-generator/cmd/defaulter-gen
+RUN go get k8s.io/code-generator/cmd/client-gen
+RUN go get k8s.io/code-generator/cmd/lister-gen
 RUN go get k8s.io/code-generator/cmd/informer-gen
+RUN go get k8s.io/code-generator/cmd/deepcopy-gen
 
 ARG repo
 
 RUN mkdir -p "${GOPATH}/src/$repo"
 
 WORKDIR $GOPATH/bin
+COPY scripts/generate-groups.sh .
 
 VOLUME "${GOPATH}/src/$repo"

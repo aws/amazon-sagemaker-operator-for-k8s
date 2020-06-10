@@ -72,6 +72,9 @@ type ModelStatus struct {
 // +kubebuilder:printcolumn:name="Status",type="string", JSONPath=".status.status"
 // +kubebuilder:printcolumn:name="Sage-Maker-Model-Name",type="string", JSONPath=".status.sageMakerModelName"
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // Model is the Schema for the hostingdeployments API
 type Model struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -82,6 +85,7 @@ type Model struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ModelList contains a list of Model
 type ModelList struct {

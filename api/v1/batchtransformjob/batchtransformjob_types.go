@@ -84,6 +84,9 @@ type BatchTransformJobStatus struct {
 // +kubebuilder:printcolumn:name="Sagemaker-Job-Name",type="string", JSONPath=".status.sageMakerTransformJobName"
 // TODO: Add CloudWatch stream URL to the status
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // BatchTransformJob is the Schema for the batchtransformjobs API
 type BatchTransformJob struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -94,6 +97,7 @@ type BatchTransformJob struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // BatchTransformJobList contains a list of BatchTransformJob
 type BatchTransformJobList struct {

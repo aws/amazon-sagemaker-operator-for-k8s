@@ -68,6 +68,9 @@ type EndpointConfigStatus struct {
 // +kubebuilder:printcolumn:name="Status",type="string", JSONPath=".status.status"
 // +kubebuilder:printcolumn:name="Sage-Maker-EndpointConfig-Name",type="string", JSONPath=".status.sageMakerEndpointConfigName"
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // EndpointConfig is the Schema for the hostingdeployments API
 type EndpointConfig struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -78,6 +81,7 @@ type EndpointConfig struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // EndpointConfigList contains a list of EndpointConfig
 type EndpointConfigList struct {

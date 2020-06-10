@@ -87,6 +87,9 @@ type HyperparameterTuningJobStatus struct {
 // +kubebuilder:printcolumn:name="Best-Training-Job",type="string", JSONPath=".status.bestTrainingJob.trainingJobName"
 // +kubebuilder:printcolumn:name="Sagemaker-Job-Name",type="string", JSONPath=".status.sageMakerHyperParameterTuningJobName"
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // HyperparameterTuningJob is the Schema for the hyperparametertuningjobs API
 type HyperparameterTuningJob struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -97,6 +100,7 @@ type HyperparameterTuningJob struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // HyperparameterTuningJobList contains a list of HyperparameterTuningJob
 type HyperparameterTuningJobList struct {

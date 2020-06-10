@@ -5,8 +5,9 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 INSTALLER_PATH ?= "release"
 
-GENERATOR_IMAGE_NAME += "operator-generator:latest"
+GENERATOR_IMAGE_NAME ?= "operator-generator:latest"
 GO_PROJECT_MODULE ?= "github.com/aws/amazon-sagemaker-operator-for-k8s"
+GROUPS_WITH_VERSIONS ?= "v1:trainingjob,batchtransformjob,endpointconfig,hostingdeployment,hyperparametertuningjob,model"
 
 all: manager
 
@@ -106,12 +107,9 @@ endif
 
 group-gen:
 	docker build --quiet -f "scripts/codegen-Dockerfile" -t "${GENERATOR_IMAGE_NAME}" --build-arg repo="${GO_PROJECT_MODULE}" .
-	docker run --rm -v ${PWD}:/go/src/${GO_PROJECT_MODULE} "${GENERATOR_IMAGE_NAME}" ./informer-gen \
-		--input-dirs "${GO_PROJECT_MODULE}/api/v1/trainingjob" \
-		--versioned-clientset-package "${GO_PROJECT_MODULE}/clientset/versioned" \
-		--listers-package "${GO_PROJECT_MODULE}/pkg/generated/listers" \
-		--output-package "${GO_PROJECT_MODULE}/pkg/generated/informers" \
-		--go-header-file "/go/src/${GO_PROJECT_MODULE}/hack/boilerplate.go.txt"
+	docker run --rm -v ${PWD}:/go/src/${GO_PROJECT_MODULE} "${GENERATOR_IMAGE_NAME}" \
+  	./generate-groups.sh all ${GO_PROJECT_MODULE}/pkg/client ${GO_PROJECT_MODULE}/api ${GROUPS_WITH_VERSIONS} --go-header-file "/go/src/${GO_PROJECT_MODULE}/hack/boilerplate.go.txt"
+
 	sudo chown ${USER} -R ./pkg
 
 create-installers: set-image

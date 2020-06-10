@@ -88,6 +88,10 @@ type HostingDeploymentStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Status",type="string", JSONPath=".status.endpointStatus"
 // +kubebuilder:printcolumn:name="Sagemaker-endpoint-name",type="string", JSONPath=".status.endpointName"
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // HostingDeployment is the Schema for the hostingdeployments API
 type HostingDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -98,6 +102,7 @@ type HostingDeployment struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // HostingDeploymentList contains a list of HostingDeployment
 type HostingDeploymentList struct {
