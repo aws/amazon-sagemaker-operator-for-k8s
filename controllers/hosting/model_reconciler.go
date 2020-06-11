@@ -27,9 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
-	hostingv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
-	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
+	hostingv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/hostingdeployment/v1"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/model/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

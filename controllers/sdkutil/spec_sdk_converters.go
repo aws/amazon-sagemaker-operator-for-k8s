@@ -22,12 +22,12 @@ import (
 	"strconv"
 
 	gabs "github.com/Jeffail/gabs/v2"
-	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
-	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
-	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
-	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
-	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/batchtransformjob/v1"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/endpointconfig/v1"
+	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/hyperparametertuningjob/v1"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/model/v1"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/trainingjob/v1"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/pkg/errors"
 )

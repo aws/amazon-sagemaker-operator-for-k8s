@@ -20,12 +20,7 @@ package internalversion
 import (
 	"fmt"
 
-	batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
-	endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
-	hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
-	hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
-	model "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
-	trainingjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	v1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/batchtransformjob/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -56,29 +51,89 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=batchtransformjob, Version=internalVersion
-	case batchtransformjob.SchemeGroupVersion.WithResource("batchtransformjobs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Batchtransformjob().InternalVersion().BatchTransformJobs().Informer()}, nil
+	// Group=v1, Version=internalVersion
+	case v1.SchemeGroupVersion.WithResource("batchtransformjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().BatchTransformJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("endpointconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().EndpointConfigs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hostingdeployments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HostingDeployments().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hyperparametertuningjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HyperparameterTuningJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("models"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().Models().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("trainingjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().TrainingJobs().Informer()}, nil
 
-		// Group=endpointconfig, Version=internalVersion
-	case endpointconfig.SchemeGroupVersion.WithResource("endpointconfigs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Endpointconfig().InternalVersion().EndpointConfigs().Informer()}, nil
+		// Group=v1, Version=internalVersion
+	case v1.SchemeGroupVersion.WithResource("batchtransformjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().BatchTransformJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("endpointconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().EndpointConfigs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hostingdeployments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HostingDeployments().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hyperparametertuningjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HyperparameterTuningJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("models"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().Models().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("trainingjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().TrainingJobs().Informer()}, nil
 
-		// Group=hostingdeployment, Version=internalVersion
-	case hostingdeployment.SchemeGroupVersion.WithResource("hostingdeployments"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Hostingdeployment().InternalVersion().HostingDeployments().Informer()}, nil
+		// Group=v1, Version=internalVersion
+	case v1.SchemeGroupVersion.WithResource("batchtransformjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().BatchTransformJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("endpointconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().EndpointConfigs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hostingdeployments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HostingDeployments().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hyperparametertuningjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HyperparameterTuningJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("models"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().Models().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("trainingjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().TrainingJobs().Informer()}, nil
 
-		// Group=hyperparametertuningjob, Version=internalVersion
-	case hyperparametertuningjob.SchemeGroupVersion.WithResource("hyperparametertuningjobs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Hyperparametertuningjob().InternalVersion().HyperparameterTuningJobs().Informer()}, nil
+		// Group=v1, Version=internalVersion
+	case v1.SchemeGroupVersion.WithResource("batchtransformjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().BatchTransformJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("endpointconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().EndpointConfigs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hostingdeployments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HostingDeployments().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hyperparametertuningjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HyperparameterTuningJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("models"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().Models().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("trainingjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().TrainingJobs().Informer()}, nil
 
-		// Group=model, Version=internalVersion
-	case model.SchemeGroupVersion.WithResource("models"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Model().InternalVersion().Models().Informer()}, nil
+		// Group=v1, Version=internalVersion
+	case v1.SchemeGroupVersion.WithResource("batchtransformjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().BatchTransformJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("endpointconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().EndpointConfigs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hostingdeployments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HostingDeployments().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hyperparametertuningjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HyperparameterTuningJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("models"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().Models().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("trainingjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().TrainingJobs().Informer()}, nil
 
-		// Group=trainingjob, Version=internalVersion
-	case trainingjob.SchemeGroupVersion.WithResource("trainingjobs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Trainingjob().InternalVersion().TrainingJobs().Informer()}, nil
+		// Group=v1, Version=internalVersion
+	case v1.SchemeGroupVersion.WithResource("batchtransformjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().BatchTransformJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("endpointconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().EndpointConfigs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hostingdeployments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HostingDeployments().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("hyperparametertuningjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().HyperparameterTuningJobs().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("models"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().Models().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("trainingjobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.V1().InternalVersion().TrainingJobs().Informer()}, nil
 
 	}
 

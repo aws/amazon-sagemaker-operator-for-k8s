@@ -18,10 +18,10 @@ package hosting
 import (
 	"context"
 
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
-	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
-	hostingv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
-	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/endpointconfig/v1"
+	hostingv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/hostingdeployment/v1"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/model/v1"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	endpointconfigcontroller "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/endpointconfig"
 	modelcontroller "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/model"

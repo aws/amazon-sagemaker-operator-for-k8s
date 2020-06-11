@@ -18,12 +18,12 @@ limitations under the License.
 package scheme
 
 import (
-	v1batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
-	v1endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
-	v1hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
-	v1hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
-	v1model "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
-	v1trainingjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/batchtransformjob/v1"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/endpointconfig/v1"
+	hostingdeploymentv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/hostingdeployment/v1"
+	hyperparametertuningjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/hyperparametertuningjob/v1"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/model/v1"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/trainingjob/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -35,12 +35,12 @@ var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
-	v1trainingjob.AddToScheme,
-	v1batchtransformjob.AddToScheme,
-	v1endpointconfig.AddToScheme,
-	v1hostingdeployment.AddToScheme,
-	v1hyperparametertuningjob.AddToScheme,
-	v1model.AddToScheme,
+	batchtransformjobv1.AddToScheme,
+	endpointconfigv1.AddToScheme,
+	hostingdeploymentv1.AddToScheme,
+	hyperparametertuningjobv1.AddToScheme,
+	modelv1.AddToScheme,
+	trainingjobv1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

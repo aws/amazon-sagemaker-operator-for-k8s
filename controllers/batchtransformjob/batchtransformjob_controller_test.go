@@ -23,11 +23,12 @@ import (
 	"time"
 
 	. "container/list"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/batchtransformjob/v1"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 

@@ -26,8 +26,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
-	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
+	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/hyperparametertuningjob/v1"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"

@@ -22,13 +22,8 @@ import (
 	sync "sync"
 	time "time"
 
-	batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/batchtransformjob"
-	endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/endpointconfig"
-	hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/hostingdeployment"
-	hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/hyperparametertuningjob"
 	internalinterfaces "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/internalinterfaces"
-	model "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/model"
-	trainingjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/trainingjob"
+	internalversionv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/informers/internalversion/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -176,34 +171,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Batchtransformjob() batchtransformjob.Interface
-	Endpointconfig() endpointconfig.Interface
-	Hostingdeployment() hostingdeployment.Interface
-	Hyperparametertuningjob() hyperparametertuningjob.Interface
-	Model() model.Interface
-	Trainingjob() trainingjob.Interface
+	V1() internalversionv1.Interface
 }
 
-func (f *sharedInformerFactory) Batchtransformjob() batchtransformjob.Interface {
-	return batchtransformjob.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Endpointconfig() endpointconfig.Interface {
-	return endpointconfig.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Hostingdeployment() hostingdeployment.Interface {
-	return hostingdeployment.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Hyperparametertuningjob() hyperparametertuningjob.Interface {
-	return hyperparametertuningjob.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Model() model.Interface {
-	return model.New(f, f.namespace, f.tweakListOptions)
-}
-
-func (f *sharedInformerFactory) Trainingjob() trainingjob.Interface {
-	return trainingjob.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) V1() internalversionv1.Interface {
+	return internalversionv1.New(f, f.namespace, f.tweakListOptions)
 }

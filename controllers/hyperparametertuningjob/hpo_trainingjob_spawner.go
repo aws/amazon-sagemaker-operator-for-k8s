@@ -23,8 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
-	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/hyperparametertuningjob/v1"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/trainingjob/v1"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"

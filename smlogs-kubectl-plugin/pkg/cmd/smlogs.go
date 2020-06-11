@@ -40,9 +40,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/spf13/cobra"
 
-	transformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
-	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	transformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/batchtransformjob/v1"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/trainingjob/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/tools/clientcmd"

@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/model/v1"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"

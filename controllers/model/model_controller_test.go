@@ -21,6 +21,7 @@ import (
 	"time"
 
 	. "container/list"
+
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,8 +33,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
-	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/model/v1"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

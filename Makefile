@@ -7,7 +7,7 @@ INSTALLER_PATH ?= "release"
 
 GENERATOR_IMAGE_NAME ?= "operator-generator:latest"
 GO_PROJECT_MODULE ?= "github.com/aws/amazon-sagemaker-operator-for-k8s"
-GROUPS_WITH_VERSIONS ?= "v1:trainingjob,batchtransformjob,endpointconfig,hostingdeployment,hyperparametertuningjob,model"
+GROUPS_WITH_VERSIONS ?= "trainingjob:v1 batchtransformjob:v1 endpointconfig:v1 hostingdeployment:v1 hyperparametertuningjob:v1 model:v1"
 
 all: manager
 
@@ -99,7 +99,7 @@ docker-push:
 # download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-beta.2
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0
 CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)

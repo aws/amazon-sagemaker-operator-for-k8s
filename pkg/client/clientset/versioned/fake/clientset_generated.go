@@ -19,18 +19,18 @@ package fake
 
 import (
 	clientset "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned"
-	v1batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/batchtransformjob"
-	fakev1batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/batchtransformjob/fake"
-	v1endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/endpointconfig"
-	fakev1endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/endpointconfig/fake"
-	v1hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/hostingdeployment"
-	fakev1hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/hostingdeployment/fake"
-	v1hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/hyperparametertuningjob"
-	fakev1hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/hyperparametertuningjob/fake"
-	v1model "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/model"
-	fakev1model "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/model/fake"
-	v1trainingjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/trainingjob"
-	fakev1trainingjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/trainingjob/fake"
+	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/batchtransformjob/v1"
+	fakebatchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/batchtransformjob/v1/fake"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/endpointconfig/v1"
+	fakeendpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/endpointconfig/v1/fake"
+	hostingdeploymentv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/hostingdeployment/v1"
+	fakehostingdeploymentv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/hostingdeployment/v1/fake"
+	hyperparametertuningjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/hyperparametertuningjob/v1"
+	fakehyperparametertuningjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/hyperparametertuningjob/v1/fake"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/model/v1"
+	fakemodelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/model/v1/fake"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/trainingjob/v1"
+	faketrainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/trainingjob/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -80,32 +80,32 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// V1Trainingjob retrieves the V1TrainingjobClient
-func (c *Clientset) V1Trainingjob() v1trainingjob.V1TrainingjobInterface {
-	return &fakev1trainingjob.FakeV1Trainingjob{Fake: &c.Fake}
+// BatchtransformjobV1 retrieves the BatchtransformjobV1Client
+func (c *Clientset) BatchtransformjobV1() batchtransformjobv1.BatchtransformjobV1Interface {
+	return &fakebatchtransformjobv1.FakeBatchtransformjobV1{Fake: &c.Fake}
 }
 
-// V1Batchtransformjob retrieves the V1BatchtransformjobClient
-func (c *Clientset) V1Batchtransformjob() v1batchtransformjob.V1BatchtransformjobInterface {
-	return &fakev1batchtransformjob.FakeV1Batchtransformjob{Fake: &c.Fake}
+// EndpointconfigV1 retrieves the EndpointconfigV1Client
+func (c *Clientset) EndpointconfigV1() endpointconfigv1.EndpointconfigV1Interface {
+	return &fakeendpointconfigv1.FakeEndpointconfigV1{Fake: &c.Fake}
 }
 
-// V1Endpointconfig retrieves the V1EndpointconfigClient
-func (c *Clientset) V1Endpointconfig() v1endpointconfig.V1EndpointconfigInterface {
-	return &fakev1endpointconfig.FakeV1Endpointconfig{Fake: &c.Fake}
+// HostingdeploymentV1 retrieves the HostingdeploymentV1Client
+func (c *Clientset) HostingdeploymentV1() hostingdeploymentv1.HostingdeploymentV1Interface {
+	return &fakehostingdeploymentv1.FakeHostingdeploymentV1{Fake: &c.Fake}
 }
 
-// V1Hostingdeployment retrieves the V1HostingdeploymentClient
-func (c *Clientset) V1Hostingdeployment() v1hostingdeployment.V1HostingdeploymentInterface {
-	return &fakev1hostingdeployment.FakeV1Hostingdeployment{Fake: &c.Fake}
+// HyperparametertuningjobV1 retrieves the HyperparametertuningjobV1Client
+func (c *Clientset) HyperparametertuningjobV1() hyperparametertuningjobv1.HyperparametertuningjobV1Interface {
+	return &fakehyperparametertuningjobv1.FakeHyperparametertuningjobV1{Fake: &c.Fake}
 }
 
-// V1Hyperparametertuningjob retrieves the V1HyperparametertuningjobClient
-func (c *Clientset) V1Hyperparametertuningjob() v1hyperparametertuningjob.V1HyperparametertuningjobInterface {
-	return &fakev1hyperparametertuningjob.FakeV1Hyperparametertuningjob{Fake: &c.Fake}
+// ModelV1 retrieves the ModelV1Client
+func (c *Clientset) ModelV1() modelv1.ModelV1Interface {
+	return &fakemodelv1.FakeModelV1{Fake: &c.Fake}
 }
 
-// V1Model retrieves the V1ModelClient
-func (c *Clientset) V1Model() v1model.V1ModelInterface {
-	return &fakev1model.FakeV1Model{Fake: &c.Fake}
+// TrainingjobV1 retrieves the TrainingjobV1Client
+func (c *Clientset) TrainingjobV1() trainingjobv1.TrainingjobV1Interface {
+	return &faketrainingjobv1.FakeTrainingjobV1{Fake: &c.Fake}
 }

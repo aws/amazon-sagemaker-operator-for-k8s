@@ -21,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/common/v1"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/batchtransformjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/endpointconfig"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/hosting"

@@ -18,12 +18,12 @@ limitations under the License.
 package versioned
 
 import (
-	v1batchtransformjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/batchtransformjob"
-	v1endpointconfig "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/endpointconfig"
-	v1hostingdeployment "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/hostingdeployment"
-	v1hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/hyperparametertuningjob"
-	v1model "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/model"
-	v1trainingjob "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/v1/trainingjob"
+	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/batchtransformjob/v1"
+	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/endpointconfig/v1"
+	hostingdeploymentv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/hostingdeployment/v1"
+	hyperparametertuningjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/hyperparametertuningjob/v1"
+	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/model/v1"
+	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/typed/trainingjob/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -31,54 +31,54 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	V1Trainingjob() v1trainingjob.V1TrainingjobInterface
-	V1Batchtransformjob() v1batchtransformjob.V1BatchtransformjobInterface
-	V1Endpointconfig() v1endpointconfig.V1EndpointconfigInterface
-	V1Hostingdeployment() v1hostingdeployment.V1HostingdeploymentInterface
-	V1Hyperparametertuningjob() v1hyperparametertuningjob.V1HyperparametertuningjobInterface
-	V1Model() v1model.V1ModelInterface
+	BatchtransformjobV1() batchtransformjobv1.BatchtransformjobV1Interface
+	EndpointconfigV1() endpointconfigv1.EndpointconfigV1Interface
+	HostingdeploymentV1() hostingdeploymentv1.HostingdeploymentV1Interface
+	HyperparametertuningjobV1() hyperparametertuningjobv1.HyperparametertuningjobV1Interface
+	ModelV1() modelv1.ModelV1Interface
+	TrainingjobV1() trainingjobv1.TrainingjobV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	v1Trainingjob             *v1trainingjob.V1TrainingjobClient
-	v1Batchtransformjob       *v1batchtransformjob.V1BatchtransformjobClient
-	v1Endpointconfig          *v1endpointconfig.V1EndpointconfigClient
-	v1Hostingdeployment       *v1hostingdeployment.V1HostingdeploymentClient
-	v1Hyperparametertuningjob *v1hyperparametertuningjob.V1HyperparametertuningjobClient
-	v1Model                   *v1model.V1ModelClient
+	batchtransformjobV1       *batchtransformjobv1.BatchtransformjobV1Client
+	endpointconfigV1          *endpointconfigv1.EndpointconfigV1Client
+	hostingdeploymentV1       *hostingdeploymentv1.HostingdeploymentV1Client
+	hyperparametertuningjobV1 *hyperparametertuningjobv1.HyperparametertuningjobV1Client
+	modelV1                   *modelv1.ModelV1Client
+	trainingjobV1             *trainingjobv1.TrainingjobV1Client
 }
 
-// V1Trainingjob retrieves the V1TrainingjobClient
-func (c *Clientset) V1Trainingjob() v1trainingjob.V1TrainingjobInterface {
-	return c.v1Trainingjob
+// BatchtransformjobV1 retrieves the BatchtransformjobV1Client
+func (c *Clientset) BatchtransformjobV1() batchtransformjobv1.BatchtransformjobV1Interface {
+	return c.batchtransformjobV1
 }
 
-// V1Batchtransformjob retrieves the V1BatchtransformjobClient
-func (c *Clientset) V1Batchtransformjob() v1batchtransformjob.V1BatchtransformjobInterface {
-	return c.v1Batchtransformjob
+// EndpointconfigV1 retrieves the EndpointconfigV1Client
+func (c *Clientset) EndpointconfigV1() endpointconfigv1.EndpointconfigV1Interface {
+	return c.endpointconfigV1
 }
 
-// V1Endpointconfig retrieves the V1EndpointconfigClient
-func (c *Clientset) V1Endpointconfig() v1endpointconfig.V1EndpointconfigInterface {
-	return c.v1Endpointconfig
+// HostingdeploymentV1 retrieves the HostingdeploymentV1Client
+func (c *Clientset) HostingdeploymentV1() hostingdeploymentv1.HostingdeploymentV1Interface {
+	return c.hostingdeploymentV1
 }
 
-// V1Hostingdeployment retrieves the V1HostingdeploymentClient
-func (c *Clientset) V1Hostingdeployment() v1hostingdeployment.V1HostingdeploymentInterface {
-	return c.v1Hostingdeployment
+// HyperparametertuningjobV1 retrieves the HyperparametertuningjobV1Client
+func (c *Clientset) HyperparametertuningjobV1() hyperparametertuningjobv1.HyperparametertuningjobV1Interface {
+	return c.hyperparametertuningjobV1
 }
 
-// V1Hyperparametertuningjob retrieves the V1HyperparametertuningjobClient
-func (c *Clientset) V1Hyperparametertuningjob() v1hyperparametertuningjob.V1HyperparametertuningjobInterface {
-	return c.v1Hyperparametertuningjob
+// ModelV1 retrieves the ModelV1Client
+func (c *Clientset) ModelV1() modelv1.ModelV1Interface {
+	return c.modelV1
 }
 
-// V1Model retrieves the V1ModelClient
-func (c *Clientset) V1Model() v1model.V1ModelInterface {
-	return c.v1Model
+// TrainingjobV1 retrieves the TrainingjobV1Client
+func (c *Clientset) TrainingjobV1() trainingjobv1.TrainingjobV1Interface {
+	return c.trainingjobV1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -97,27 +97,27 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.v1Trainingjob, err = v1trainingjob.NewForConfig(&configShallowCopy)
+	cs.batchtransformjobV1, err = batchtransformjobv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
-	cs.v1Batchtransformjob, err = v1batchtransformjob.NewForConfig(&configShallowCopy)
+	cs.endpointconfigV1, err = endpointconfigv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
-	cs.v1Endpointconfig, err = v1endpointconfig.NewForConfig(&configShallowCopy)
+	cs.hostingdeploymentV1, err = hostingdeploymentv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
-	cs.v1Hostingdeployment, err = v1hostingdeployment.NewForConfig(&configShallowCopy)
+	cs.hyperparametertuningjobV1, err = hyperparametertuningjobv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
-	cs.v1Hyperparametertuningjob, err = v1hyperparametertuningjob.NewForConfig(&configShallowCopy)
+	cs.modelV1, err = modelv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
-	cs.v1Model, err = v1model.NewForConfig(&configShallowCopy)
+	cs.trainingjobV1, err = trainingjobv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -133,12 +133,12 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.v1Trainingjob = v1trainingjob.NewForConfigOrDie(c)
-	cs.v1Batchtransformjob = v1batchtransformjob.NewForConfigOrDie(c)
-	cs.v1Endpointconfig = v1endpointconfig.NewForConfigOrDie(c)
-	cs.v1Hostingdeployment = v1hostingdeployment.NewForConfigOrDie(c)
-	cs.v1Hyperparametertuningjob = v1hyperparametertuningjob.NewForConfigOrDie(c)
-	cs.v1Model = v1model.NewForConfigOrDie(c)
+	cs.batchtransformjobV1 = batchtransformjobv1.NewForConfigOrDie(c)
+	cs.endpointconfigV1 = endpointconfigv1.NewForConfigOrDie(c)
+	cs.hostingdeploymentV1 = hostingdeploymentv1.NewForConfigOrDie(c)
+	cs.hyperparametertuningjobV1 = hyperparametertuningjobv1.NewForConfigOrDie(c)
+	cs.modelV1 = modelv1.NewForConfigOrDie(c)
+	cs.trainingjobV1 = trainingjobv1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -147,12 +147,12 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.v1Trainingjob = v1trainingjob.New(c)
-	cs.v1Batchtransformjob = v1batchtransformjob.New(c)
-	cs.v1Endpointconfig = v1endpointconfig.New(c)
-	cs.v1Hostingdeployment = v1hostingdeployment.New(c)
-	cs.v1Hyperparametertuningjob = v1hyperparametertuningjob.New(c)
-	cs.v1Model = v1model.New(c)
+	cs.batchtransformjobV1 = batchtransformjobv1.New(c)
+	cs.endpointconfigV1 = endpointconfigv1.New(c)
+	cs.hostingdeploymentV1 = hostingdeploymentv1.New(c)
+	cs.hyperparametertuningjobV1 = hyperparametertuningjobv1.New(c)
+	cs.modelV1 = modelv1.New(c)
+	cs.trainingjobV1 = trainingjobv1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
