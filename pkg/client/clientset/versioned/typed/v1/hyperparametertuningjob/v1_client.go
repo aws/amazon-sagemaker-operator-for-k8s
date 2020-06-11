@@ -20,6 +20,7 @@ package hyperparametertuningjob
 import (
 	hyperparametertuningjob "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/pkg/client/clientset/versioned/scheme"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -69,7 +70,7 @@ func setConfigDefaults(config *rest.Config) error {
 	gv := hyperparametertuningjob.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()

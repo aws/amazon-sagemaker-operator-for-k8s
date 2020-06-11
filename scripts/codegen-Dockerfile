@@ -3,11 +3,11 @@ FROM golang:1.13
 ENV GO111MODULE=on
 RUN go env -w GOPROXY=direct
 
-RUN go get k8s.io/code-generator/cmd/defaulter-gen@v0.17.0
-RUN go get k8s.io/code-generator/cmd/client-gen@v0.17.0
-RUN go get k8s.io/code-generator/cmd/lister-gen@v0.17.0
-RUN go get k8s.io/code-generator/cmd/informer-gen@v0.17.0
-RUN go get k8s.io/code-generator/cmd/deepcopy-gen@v0.17.0
+RUN go get k8s.io/code-generator/cmd/defaulter-gen@kubernetes-1.14.9
+RUN go get k8s.io/code-generator/cmd/client-gen@kubernetes-1.14.9
+RUN go get k8s.io/code-generator/cmd/lister-gen@kubernetes-1.14.9
+RUN go get k8s.io/code-generator/cmd/informer-gen@kubernetes-1.14.9
+RUN go get k8s.io/code-generator/cmd/deepcopy-gen@kubernetes-1.14.9
 
 ARG repo
 
