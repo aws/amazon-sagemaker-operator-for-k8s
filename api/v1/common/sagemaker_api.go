@@ -516,7 +516,7 @@ type TensorBoardOutputConfig struct {
 	S3OutputPath *string `json:"s3OutputPath"`
 }
 
-// DebugRuleEvalutionStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
+// DebugRuleEvaluationStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
 type DebugRuleEvaluationStatus struct {
 	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
 
@@ -527,4 +527,39 @@ type DebugRuleEvaluationStatus struct {
 	RuleEvaluationStatus *string `json:"ruleEvaluationStatus,omitempty"`
 
 	StatusDetail *string `json:"statusDetail,omitempty"`
+}
+
+// AutoscalingResource TODO: <link>, check validation
+type AutoscalingResource struct {
+	// +kubebuilder:validation:MinLength=1
+	EndpointName *string `json:"endpointName"`
+
+	// +kubebuilder:validation:MinLength=1
+	VariantName *string `json:"variantName"`
+}
+
+// PredefinedMetricSpecification TODO: <link>
+type PredefinedMetricSpecification struct {
+	PredefinedMetricType *string `json:"predefinedMetricType,omitempty"`
+}
+
+// CustomizedMetricSpecification TODO: <link>
+type CustomizedMetricSpecification struct {
+	MetricName *string `json:"metricName,omitempty"`
+	Namespace  *string `json:"namespace,omitempty"`
+	Statistic  *string `json:"statistic,omitempty"`
+	Unit       *string `json:"unit,omitempty"`
+	// TODO: currently reusing the existing struct but this could be changed to match the API
+	Dimensions []AutoscalingResource `json:"dimensions,omitempty"`
+}
+
+// TargetTrackingScalingPolicyConfig TODO: <link>
+type TargetTrackingScalingPolicyConfig struct {
+	TargetValue      *int64 `json:"targetValue,omitempty"`
+	ScaleInCooldown  *int64 `json:"scaleInCooldown,omitempty"`
+	ScaleOutCooldown *int64 `json:"scaleOutCooldown,omitempty"`
+
+	// TODO: only one of the following two should be specified, wrap into another struct ?
+	PredefinedMetricSpecification *PredefinedMetricSpecification `json:"predefinedMetricSpecification,omitempty"`
+	CustomizedMetricSpecification *CustomizedMetricSpecification `json:"customizedMetricSpecification,omitempty"`
 }

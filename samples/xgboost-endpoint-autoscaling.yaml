@@ -1,0 +1,21 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: HostingDeploymentAutoscalingJob
+metadata:
+  name: ep-autoscaling-predefined-5
+spec:
+    resourceId:
+      - endpointName: xgboost-2020-06-01-20-39-37-305
+        variantName: AllTraffic
+      - endpointName: Endpoint-20200410015622-Z0LK
+        variantName: variant-name-1
+    region: us-east-2
+    policyName: "SageMakerEndpointInvocationScalingPolicy" 
+    policyType: "TargetTrackingScaling"
+    minCapacity: 1
+    maxCapacity: 2
+    targetTrackingScalingPolicyConfiguration:
+        targetValue: 70.0 
+        predefinedMetricSpecification: 
+            predefinedMetricType: SageMakerVariantInvocationsPerInstance 
+        scaleInCooldown: 500 
+        scaleOutCooldown: 300
