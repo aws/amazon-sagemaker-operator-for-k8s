@@ -25,6 +25,7 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/batchtransformjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/endpointconfig"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/hosting"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/hostingdeploymentautoscalingjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/hyperparametertuningjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/model"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/trainingjob"
@@ -139,6 +140,17 @@ func main() {
 		SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "BatchTransformJob")
+		os.Exit(1)
+	}
+
+	err = hostingdeploymentautoscalingjob.
+		NewHostingDeploymentAutoscalingJobReconciler(
+			mgr.GetClient(),
+			ctrl.Log.WithName("controllers").WithName("HostingDeploymentAutoscalingJob"),
+			parseDurationOrPanic(jobPollInterval)).
+		SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "HostingDeploymentAutoscalingJob")
 		os.Exit(1)
 	}
 
