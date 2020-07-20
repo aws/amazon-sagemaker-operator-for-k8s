@@ -28,14 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// HostingDeploymentAutoscalingJobSpec defines the desired state of HostingDeploymentAutoscalingJob
+// HostingDeploymentAutoscalingJobSpec defines the desired state of the cluster for HostingDeploymentAutoscalingJob
 type HostingDeploymentAutoscalingJobSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	Region *string `json:"region"`
 
 	MinCapacity *int64 `json:"minCapacity,omitempty"`
@@ -55,23 +49,20 @@ type HostingDeploymentAutoscalingJobSpec struct {
 	// TODO: should this be a pointer instead
 	ResourceID []*commonv1.AutoscalingResource `json:"resourceId,omitempty"`
 
+	ServiceNamespace *string `json:"serviceNamespace,omitempty"`
+
 	// A custom SageMaker endpoint to use when communicating with SageMaker.
 	// +kubebuilder:validation:Pattern=^(https|http)://.*$
-	SageMakerEndpoint *string `json:"sageMakerEndpoint,omitempty"`
-
+	SageMakerEndpoint                        *string                                     `json:"sageMakerEndpoint,omitempty"`
 	TargetTrackingScalingPolicyConfiguration *commonv1.TargetTrackingScalingPolicyConfig `json:"targetTrackingScalingPolicyConfiguration,omitempty"`
 }
 
 // HostingDeploymentAutoscalingJobStatus defines the observed state of HostingDeploymentAutoscalingJob
 type HostingDeploymentAutoscalingJobStatus struct {
-	PolicyName *string `json:"policyName,omitempty"`
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// TODO: Overall Status of the job, eventually this will have to be a list
-	HostingDeploymentAutoscalingJobStatus string `json:"hostingDeploymentAutoscalingJobStatus,omitempty"`
 
-	// TODO: Should this be a list or should it the controller be implemented differently
-	HostingDeploymentAutoscalingJobStatusList []*string `json:"hostingDeploymentAutoscalingJobStatusList,omitempty"`
+	// Review: Do we want to add the resourceIDList here
+	PolicyName                            string `json:"policyName,omitempty"`
+	HostingDeploymentAutoscalingJobStatus string `json:"hostingDeploymentAutoscalingJobStatus,omitempty"`
 
 	// Field to store additional information, for example if
 	// we are unable to check the status we update this.
@@ -79,12 +70,6 @@ type HostingDeploymentAutoscalingJobStatus struct {
 
 	// The last time that we checked the status of the job.
 	LastCheckTime *metav1.Time `json:"lastCheckTime,omitempty"`
-
-	// Status of the RegisterTarget API Call
-	HostingDeploymentAutoscalingTargetStatus string `json:"hostingDeploymentAutoscalingTargetStatus,omitempty"`
-
-	// Status of the Put Scaling Policy API Call
-	HostingDeploymentAutoscalingScalingPolicyStatus string `json:"hostingDeploymentAutoscalingScalingPolicyStatus,omitempty"`
 }
 
 // +kubebuilder:object:root=true

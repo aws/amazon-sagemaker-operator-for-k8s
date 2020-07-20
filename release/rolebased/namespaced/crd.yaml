@@ -781,6 +781,8 @@ spec:
               type: string
             scalableDimension:
               type: string
+            serviceNamespace:
+              type: string
             targetTrackingScalingPolicyConfiguration:
               properties:
                 customizedMetricSpecification:
@@ -837,28 +839,13 @@ spec:
                 are unable to check the status we update this.
               type: string
             hostingDeploymentAutoscalingJobStatus:
-              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                of cluster Important: Run "make" to regenerate code after modifying
-                this file TODO: Overall Status of the job, eventually this will have
-                to be a list'
-              type: string
-            hostingDeploymentAutoscalingJobStatusList:
-              description: 'TODO: Should this be a list or should it the controller
-                be implemented differently'
-              items:
-                type: string
-              type: array
-            hostingDeploymentAutoscalingScalingPolicyStatus:
-              description: Status of the Put Scaling Policy API Call
-              type: string
-            hostingDeploymentAutoscalingTargetStatus:
-              description: Status of the RegisterTarget API Call
               type: string
             lastCheckTime:
               description: The last time that we checked the status of the job.
               format: date-time
               type: string
             policyName:
+              description: 'Review: Do we want to add the resourceIDList here'
               type: string
           type: object
       required:

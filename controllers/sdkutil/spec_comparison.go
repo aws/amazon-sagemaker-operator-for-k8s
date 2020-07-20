@@ -19,9 +19,11 @@ import (
 	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
 	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
+	hostingdeploymentautoscalingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeploymentautoscalingjob"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -149,6 +151,28 @@ var endpointConfigSpecComparisonOptions = []cmp.Option{
 	createIgnoreSageMakerEndpointOption(endpointconfigv1.EndpointConfigSpec{}),
 	createIgnoreTagsOption(endpointconfigv1.EndpointConfigSpec{}),
 	equateEmptySlicesAndMapsToNil,
+	equateNilStringToEmptyString,
+	ignoreKeyValuePairSliceOrder,
+}
+
+// Review: This needs to be reviewed
+// HostingDeploymentAutoscalingSpecMatchesDescription determines if the given HostingDeploymentAutoscalingSpec matches the DescribeScalingPoliciesOutput.
+// This converts description to spec and selectively compares fields
+func HostingDeploymentAutoscalingSpecMatchesDescription(descriptions []applicationautoscaling.DescribeScalingPoliciesOutput, spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec) (Comparison, error) {
+	remoteSpec, err := CreateHostingDeploymentAutoscalingSpecFromDescription(descriptions)
+	if err != nil {
+		return Comparison{}, err
+	}
+	differences := cmp.Diff(remoteSpec, spec, hostingDeploymentAutoscalingSpecComparisonOptions...)
+	return createComparison(differences), nil
+}
+
+// These options configure the equality check for HDASpecs.
+var hostingDeploymentAutoscalingSpecComparisonOptions = []cmp.Option{
+	createIgnoreRegionOption(hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}),
+	createIgnoreSageMakerEndpointOption(hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}),
+	equateEmptySlicesAndMapsToNil,
+	equateNilBoolToFalse,
 	equateNilStringToEmptyString,
 	ignoreKeyValuePairSliceOrder,
 }

@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// TODO: Check if Error Handling similar to SageMaker API errors is needed here
+
 package clientwrapper
 
 import (
@@ -23,24 +25,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
 )
 
-// Provides the prefixes and error codes relating to each endpoint
-const (
-	DescribeAutoscalingJob404Code          = "ValidationException"
-	DescribeAutoscalingJob404MessagePrefix = "Requested resource not found"
-	StopAutoscalingJob404Code              = "ValidationException"
-	StopAutoscalingJob404MessagePrefix     = "Requested resource not found"
-)
-
-// ApplicationAutoscalingClientWrapper wraps the Autoscaling client. "Not Found" errors are handled differently than in the Go SDK;
-// here a method will return a nil pointer and a nil error if there is a 404. TODO Meghna: check if error handling can be normal.
-// Other errors are returned normally.
+// ApplicationAutoscalingClientWrapper interface for ApplicationAutoscalingClient wrapper
 type ApplicationAutoscalingClientWrapper interface {
 	RegisterScalableTarget(ctx context.Context, autoscalingTarget *applicationautoscaling.RegisterScalableTargetInput) (*applicationautoscaling.RegisterScalableTargetOutput, error)
 	PutScalingPolicy(ctx context.Context, autoscalingJob *applicationautoscaling.PutScalingPolicyInput) (*applicationautoscaling.PutScalingPolicyOutput, error)
 	DeleteScalingPolicy(ctx context.Context, autoscalingJob *applicationautoscaling.DeleteScalingPolicyInput) (*applicationautoscaling.DeleteScalingPolicyOutput, error)
 	DeregisterScalableTarget(ctx context.Context, autoscalingJob *applicationautoscaling.DeregisterScalableTargetInput) (*applicationautoscaling.DeregisterScalableTargetOutput, error)
-	//DescribeScalableTargets(ctx context.Context, trainingJobName string) (*applicationautoscaling.StopTrainingJobOutput, error)
-	DescribeScalingPolicies(ctx context.Context, policyName string, resourceId string) (*applicationautoscaling.DescribeScalingPoliciesOutput, error)
+	DescribeScalableTargets(ctx context.Context, resourceID string) (*applicationautoscaling.DescribeScalableTargetsOutput, error)
+	DescribeScalingPolicies(ctx context.Context, policyName string, resourceID string) (*applicationautoscaling.ScalingPolicy, error)
 }
 
 // NewApplicationAutoscalingClientWrapper creates a ApplicationAutoscaling wrapper around an existing client.
@@ -56,8 +48,6 @@ type ApplicationAutoscalingClientWrapperProvider func(aws.Config) ApplicationAut
 // Implementation of ApplicationAutoscaling client wrapper.
 type applicationAutoscalingClientWrapper struct {
 	ApplicationAutoscalingClientWrapper
-
-	// TODO: what does this become
 	innerClient applicationautoscalingiface.ClientAPI
 }
 
@@ -65,16 +55,11 @@ type applicationAutoscalingClientWrapper struct {
 func (c *applicationAutoscalingClientWrapper) RegisterScalableTarget(ctx context.Context, autoscalingTarget *applicationautoscaling.RegisterScalableTargetInput) (*applicationautoscaling.RegisterScalableTargetOutput, error) {
 
 	createRequest := c.innerClient.RegisterScalableTargetRequest(autoscalingTarget)
-
-	// TODO Meghna: Check if this is needed, probably not.
-	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
 		return response.RegisterScalableTargetOutput, nil
 	}
-
 	return nil, err
 }
 
@@ -82,7 +67,6 @@ func (c *applicationAutoscalingClientWrapper) RegisterScalableTarget(ctx context
 func (c *applicationAutoscalingClientWrapper) PutScalingPolicy(ctx context.Context, autoscalingJob *applicationautoscaling.PutScalingPolicyInput) (*applicationautoscaling.PutScalingPolicyOutput, error) {
 
 	createRequest := c.innerClient.PutScalingPolicyRequest(autoscalingJob)
-
 	response, err := createRequest.Send(ctx)
 
 	if response != nil {
@@ -92,10 +76,9 @@ func (c *applicationAutoscalingClientWrapper) PutScalingPolicy(ctx context.Conte
 	return nil, err
 }
 
-// Stops a training job. Returns the response output or nil if error.
+// DeleteScalingPolicy Deletes the scaling policy
 func (c *applicationAutoscalingClientWrapper) DeleteScalingPolicy(ctx context.Context, autoscalingJob *applicationautoscaling.DeleteScalingPolicyInput) (*applicationautoscaling.DeleteScalingPolicyOutput, error) {
 	deleteRequest := c.innerClient.DeleteScalingPolicyRequest(autoscalingJob)
-
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 
 	if deleteError != nil {
@@ -105,10 +88,9 @@ func (c *applicationAutoscalingClientWrapper) DeleteScalingPolicy(ctx context.Co
 	return deleteResponse.DeleteScalingPolicyOutput, deleteError
 }
 
-// Stops a training job. Returns the response output or nil if error.
+// DeregisterScalableTarget deregisters a scalable target
 func (c *applicationAutoscalingClientWrapper) DeregisterScalableTarget(ctx context.Context, autoscalingJob *applicationautoscaling.DeregisterScalableTargetInput) (*applicationautoscaling.DeregisterScalableTargetOutput, error) {
 	deleteRequest := c.innerClient.DeregisterScalableTargetRequest(autoscalingJob)
-
 	deleteResponse, deleteError := deleteRequest.Send(ctx)
 
 	if deleteError != nil {
@@ -118,17 +100,19 @@ func (c *applicationAutoscalingClientWrapper) DeregisterScalableTarget(ctx conte
 	return deleteResponse.DeregisterScalableTargetOutput, deleteError
 }
 
-// Stops a training job. Returns the response output or nil if error.
-func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx context.Context, policyName string, resourceId string) (*applicationautoscaling.DescribeScalingPoliciesOutput, error) {
+// DescribeScalableTargets returns the scalableTarget description filtered on PolicyName and a single ResourceID
+// TODO: change this to return only the ScalableTargetObject for cleaner descriptions
+func (c *applicationAutoscalingClientWrapper) DescribeScalableTargets(ctx context.Context, resourceID string) (*applicationautoscaling.DescribeScalableTargetsOutput, error) {
 
-	var policyNameList []string
-	policyNameList = append(policyNameList, policyName)
+	var resourceIDList []string
+	resourceIDList = append(resourceIDList, resourceID)
+	// Review: This filtered response should be of size 1 by default
 	var maxResults int64 = 1
 
-	describeRequest := c.innerClient.DescribeScalingPoliciesRequest(&applicationautoscaling.DescribeScalingPoliciesInput{
-		PolicyNames:       policyNameList,
+	// TODO: Remove hardcoded values, might need to construct the input object
+	describeRequest := c.innerClient.DescribeScalableTargetsRequest(&applicationautoscaling.DescribeScalableTargetsInput{
+		ResourceIds:       resourceIDList,
 		MaxResults:        &maxResults,
-		ResourceId:        &resourceId,
 		ScalableDimension: "sagemaker:variant:DesiredInstanceCount",
 		ServiceNamespace:  "sagemaker",
 	})
@@ -139,17 +123,40 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeScalingPoliciesOutput, describeError
+	return describeResponse.DescribeScalableTargetsOutput, describeError
 }
 
-/*
-// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
-// to an HTTP 404 not found.
-func (c *autoscalingClientWrapper) isDescribeAutoscalingJob404Error(err error) bool {
-	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DescribeAutoscalingJob404Code && strings.HasPrefix(requestFailure.Message(), DescribeTrainingJob404MessagePrefix)
+// DescribeScalingPolicies returns the scaling policy description filtered on PolicyName and a single ResourceID
+// returns only the scalingPolicy object else the actionDetermination gets messy
+func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx context.Context, policyName string, resourceID string) (*applicationautoscaling.ScalingPolicy, error) {
+
+	var policyNameList []string
+	var scalingPolicyDescription *applicationautoscaling.ScalingPolicy
+	policyNameList = append(policyNameList, policyName)
+	// Review: This filtered response should be of size 1 by default
+	var maxResults int64 = 1
+
+	// TODO: Remove hardcoded values, might need to construct the inputs
+	describeRequest := c.innerClient.DescribeScalingPoliciesRequest(&applicationautoscaling.DescribeScalingPoliciesInput{
+		PolicyNames:       policyNameList,
+		MaxResults:        &maxResults,
+		ResourceId:        &resourceID,
+		ScalableDimension: "sagemaker:variant:DesiredInstanceCount",
+		ServiceNamespace:  "sagemaker",
+	})
+
+	describeResponse, describeError := describeRequest.Send(ctx)
+
+	// Review: Slightly Hacky, but valid
+	if len(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies) == 1 {
+		scalingPolicyDescription = &(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies[0])
+	} else {
+		scalingPolicyDescription = nil
 	}
 
-	return false
+	if describeError != nil {
+		return scalingPolicyDescription, describeError
+	}
+
+	return scalingPolicyDescription, describeError
 }
-*/
