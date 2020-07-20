@@ -88,6 +88,7 @@ func NewHostingDeploymentAutoscalingJobReconciler(client client.Client, log logr
 // +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingdeploymentautoscalingjobs/status,verbs=get;update;patch
 
 // Reconcile attempts to reconcile the SageMaker resource state with the k8s desired state.
+// Review: Clean this up
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := reconcileRequestContext{
 		Context:                         context.Background(),
@@ -113,18 +114,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	return controllers.NoRequeue()
-
-	/* Based on Training
-	switch ctx.HostingDeploymentAutoscalingJob.Status.HostingDeploymentAutoscalingJobStatus {
-	case CompletedAutoscalingJobStatus:
-		fallthrough
-	case FailedAutoscalingJobStatus:
-		return controllers.NoRequeue()
-	default:
-		//Change to Requeue if needed.
-		return controllers.NoRequeue()
-	}*/
-
 }
 
 type reconcileRequestContext struct {
