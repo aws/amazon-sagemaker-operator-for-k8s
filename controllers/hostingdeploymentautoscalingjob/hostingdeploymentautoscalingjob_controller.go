@@ -32,28 +32,41 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	//commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	hostingdeploymentautoscalingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeploymentautoscalingjob"
 )
 
 // All the status used by the controller during reconciliation.
-// Autoscaling Job does not handle statuses similar to SageMaker.
+// This operator includes two steps. For the rest of the file these are - Step1: RegisterTargets; Step2: PutScalingPolicy
 const (
-	//TODO: Change the Strings to be more model like or more application autoscaling like
+	// The process of creation has started and is in-progress.
 	ReconcilingAutoscalingJobStatus = "ReconcilingAutoscalingJob"
-	CreatedAutoscalingJobStatus     = "CreatedAutoscalingJob"
-	FailedAutoscalingJobStatus      = "FailedAutoscalingJob"
-	DeletedAutoscalingJobStatus     = "DeletedAutoscalingJob"
 
-	//TODO: Check
-	MaxPolicyNameLength = 63
+	// This Status signifies that the job has been successfully completed for both steps
+	CreatedAutoscalingJobStatus = "CreatedAutoscalingJob"
+
+	// Only the first step completed, after this it could either go to the Failed, Reconciling or Created Status
+	// TODO this is not being used at the moment, delete if not required
+	RegisteredTargetsJobStatus = "RegisteredTargets"
+
+	// Could have failed either at step1 or step2
+	FailedAutoscalingJobStatus = "FailedAutoscalingJob"
+
+	// This Status will likely not show up, is it needed
+	DeletedAutoscalingJobStatus = "DeletedAutoscalingJob"
+
+	// https://docs.aws.amazon.com/autoscaling/application/APIReference/API_ScalingPolicy.html
+	MaxPolicyNameLength = 256
+
+	// Default values for Autoscaling in the SageMaker Service
+	ScalableDimension            = "sagemaker:variant:DesiredInstanceCount"
+	PolicyType                   = "TargetTrackingScaling"
+	DefaultAutoscalingPolicyName = "SageMakerEndpointInvocationScalingPolicy"
 )
 
-// Reconciler reconciles a TrainingJob object
+// Reconciler reconciles a HostingDeploymentAutoscalingJob object
 type Reconciler struct {
 	client.Client
 	Log                                logr.Logger
-	PollInterval                       time.Duration
 	createApplicationAutoscalingClient clientwrapper.ApplicationAutoscalingClientWrapperProvider
 	awsConfigLoader                    controllers.AwsConfigLoader
 }
@@ -61,9 +74,8 @@ type Reconciler struct {
 // NewHostingDeploymentAutoscalingJobReconciler creates a new reconciler with the default ApplicationAutoscaling client.
 func NewHostingDeploymentAutoscalingJobReconciler(client client.Client, log logr.Logger, pollInterval time.Duration) *Reconciler {
 	return &Reconciler{
-		Client:       client,
-		Log:          log,
-		PollInterval: pollInterval,
+		Client: client,
+		Log:    log,
 		// TODO: Model calls ClientAPI, check
 		createApplicationAutoscalingClient: func(cfg aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
 			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(cfg))
@@ -124,20 +136,18 @@ type reconcileRequestContext struct {
 	// The desired state of the HostingDeploymentAutoscalingJob
 	HostingDeploymentAutoscalingJob *hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJob
 
-	// The 2 HostingDeploymentAutoscalingJobDescription - combine ?
-	//TODO Are both of them needed
-	ScalingPolicyDescription *applicationautoscaling.DescribeScalingPoliciesOutput
-	//ScalableTargetDescription *applicationautoscaling.DescribeScalableTargetOutput
-
-	// The name of the SageMaker TrainingJob.
+	// The name the ScalingPolicy that is applied to the Variants
 	PolicyName string
 
-	// This needs to be updated/initialized
-	// Should not be needed eventually
-	//ResourceIDListfromSpec []*commonv1.AutoscalingResource
-	ResourceIDList []*string
+	// Each endpoint/variant pair in the spec converted to the string format as expected by the API.
+	ResourceIDList []string
+
+	// The current state of the Scaling Policies
+	ScalingPolicyDescriptionList  []*applicationautoscaling.ScalingPolicy
+	ScalableTargetDescriptionList []*applicationautoscaling.DescribeScalableTargetsOutput
 }
 
+// reconcileHostingDeploymentAutoscalingJob initialized the
 func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileRequestContext) error {
 	var err error
 
@@ -149,11 +159,10 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 	}
 
 	if err = r.initializeContext(&ctx); err != nil {
-		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, "", errors.Wrap(err, "Unable to initialize operator"))
+		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to initialize operator"))
 	}
 
 	// Add finalizer if it's not marked for deletion.
-	// TODO: Check if the finalizer should be different for autoscaling vs sagemaker
 	if !controllers.HasDeletionTimestamp(ctx.HostingDeploymentAutoscalingJob.ObjectMeta) {
 		if !controllers.ContainsString(ctx.HostingDeploymentAutoscalingJob.ObjectMeta.GetFinalizers(), controllers.SageMakerResourceFinalizerName) {
 			ctx.HostingDeploymentAutoscalingJob.ObjectMeta.Finalizers = append(ctx.HostingDeploymentAutoscalingJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
@@ -164,56 +173,51 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 		}
 	}
 
-	// Get Descriptions
-	//if ctx.ScalableTargetDescription, err = ctx.ApplicationAutoscalingClient.DescribeScalableTargets(ctx, ctx.PolicyName); err != nil {
-	//	return r.updateStatusAndReturnError(ctx, ReconcilingAutoscalingJobStatus, "", errors.Wrap(err, "Unable to describe Scalable Target"))
-	//}
-
-	if ctx.ScalingPolicyDescription, err = ctx.ApplicationAutoscalingClient.DescribeScalingPolicies(ctx, ctx.PolicyName, *ctx.ResourceIDList[0]); err != nil {
-		return r.updateStatusAndReturnError(ctx, ReconcilingAutoscalingJobStatus, "", errors.Wrap(err, "Unable to describe Scaling Policy"))
+	// Update Descriptions in ctx
+	if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil {
+		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
 	}
-
-	ctx.Log.Info("ScalingPolicyDescription", "err", ctx.ScalingPolicyDescription)
+	ctx.Log.Info("ScalingPolicyDescription", "err", ctx.ScalingPolicyDescriptionList)
 
 	var action controllers.ReconcileAction
 	if action, err = r.determineActionForAutoscaling(ctx); err != nil {
-		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, "", errors.Wrap(err, "Unable to determine action for HostingDeploymentAutoscaling."))
+		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to determine action for HostingDeploymentAutoscaling."))
 	}
-	ctx.Log.Info("Determined action for model", "action", action)
+	ctx.Log.Info("Determined action for AutoscalingJob", "action", action)
 
 	// If update or delete, delete the existing Policy.
-	//TODO: This makes no sense, needsUpdate at both places ?
 	if action == controllers.NeedsDelete || action == controllers.NeedsUpdate {
 		if err = r.deleteAutoscalingPolicy(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, "", errors.Wrap(err, "Unable to deleteAutoscalingPolicy"))
+			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to deleteAutoscalingPolicy"))
 		}
 
-		// Delete succeeded, set ModelDescription to nil.
-		ctx.ScalingPolicyDescription = nil
-		//ctx.ScalableTargetDescription = nil
+		// Delete succeeded, set Description to nil.
+		ctx.ScalingPolicyDescriptionList = nil
+		ctx.ScalableTargetDescriptionList = nil
 	}
 
-	// If update or create, create the desired model.
+	// If update or create, create the desired hostingdeploymentautoscaling.
 	if action == controllers.NeedsCreate || action == controllers.NeedsUpdate {
 		if err = r.applyAutoscalingPolicy(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, "", errors.Wrap(err, "Unable to applyAutoscalingPolicy"))
+			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to applyAutoscalingPolicy"))
 		}
 	}
 
 	// Update the status accordingly.
+	// Review: Deleted Status may be unnecessary
 	status := CreatedAutoscalingJobStatus
-	if ctx.ScalingPolicyDescription == nil {
+	if ctx.ScalingPolicyDescriptionList == nil {
 		status = DeletedAutoscalingJobStatus
 	}
-
-	// TODO: Cleanup this function
-	if err = r.updateStatusWithAdditional(ctx, status, ""); err != nil {
+	if err = r.updateStatus(ctx, status); err != nil {
 		return err
 	}
 
 	// Remove the Finalizer on delete
 	if controllers.HasDeletionTimestamp(ctx.HostingDeploymentAutoscalingJob.ObjectMeta) {
-		r.removeFinalizer(ctx)
+		if err = r.removeFinalizer(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -232,13 +236,13 @@ func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 	return err
 }
 
-// Removes the finalizer held by our controller.
+// getResourceIDListfromInputSpec converts the list of resources into a string list to be used for various API calls
 func (r *Reconciler) getResourceIDListfromInputSpec(ctx *reconcileRequestContext) error {
 
 	resourceIDListfromSpec := ctx.HostingDeploymentAutoscalingJob.Spec.ResourceID
 	for _, resourceIDfromSpec := range resourceIDListfromSpec {
 		ResourceID := sdkutil.ConvertAutoscalingResourceToString(*resourceIDfromSpec)
-		ctx.ResourceIDList = append(ctx.ResourceIDList, ResourceID)
+		ctx.ResourceIDList = append(ctx.ResourceIDList, *ResourceID)
 	}
 
 	// TODO: error handling
@@ -253,21 +257,38 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	if ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName != nil && len(*ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName) > 0 {
 		ctx.PolicyName = *ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName
 	} else {
-		ctx.PolicyName = controllers.GetGeneratedJobName(ctx.HostingDeploymentAutoscalingJob.ObjectMeta.GetUID(), ctx.HostingDeploymentAutoscalingJob.ObjectMeta.GetName(), MaxPolicyNameLength)
+		ctx.PolicyName = DefaultAutoscalingPolicyName
 		ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName = &ctx.PolicyName
 
+		// Review: Is this needed
 		if err := r.Update(ctx, ctx.HostingDeploymentAutoscalingJob); err != nil {
 			ctx.Log.Info("Error while updating HostingDeploymentAutoscalingJob policyName in spec")
 			return err
 		}
 	}
 
-	// TODO: Condition needs to change
+	// Save the ResourceIDs into ctx as usable strings
 	if err = r.getResourceIDListfromInputSpec(ctx); err != nil {
+		ctx.Log.Error(err, "Error reading the ResourceIDs from Spec")
 		return err
 	}
 
-	// TODO: Meghna, Check why the Sagemaker Endpoint is needed.
+	// Initialize other values to defaults if not in Spec
+	if ctx.HostingDeploymentAutoscalingJob.Spec.ScalableDimension == nil {
+		namespace := sdkutil.HostingDeploymentAutoscalingServiceNamespace
+		ctx.HostingDeploymentAutoscalingJob.Spec.ServiceNamespace = &namespace
+	}
+
+	if ctx.HostingDeploymentAutoscalingJob.Spec.ScalableDimension == nil {
+		dimension := ScalableDimension
+		ctx.HostingDeploymentAutoscalingJob.Spec.ScalableDimension = &dimension
+	}
+
+	if ctx.HostingDeploymentAutoscalingJob.Spec.PolicyType == nil {
+		policyType := PolicyType
+		ctx.HostingDeploymentAutoscalingJob.Spec.PolicyType = &policyType
+	}
+
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.HostingDeploymentAutoscalingJob.Spec.Region, ctx.HostingDeploymentAutoscalingJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
@@ -280,20 +301,20 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	return nil
 }
 
-// For a desired model and an actual model, determine the action needed to reconcile the two.
 // ctx.HostingDeploymentAutoscalingJob: desiredAutoscaling
 // ctx.ScalingPolicyDescription: actualAutoscaling
 func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) (controllers.ReconcileAction, error) {
 	var err error
 	if controllers.HasDeletionTimestamp(ctx.HostingDeploymentAutoscalingJob.ObjectMeta) {
-		if ctx.ScalingPolicyDescription != nil {
+		ctx.Log.Info("Object Has Deletion Timestamp")
+		if len(ctx.ScalingPolicyDescriptionList) > 0 {
 			return controllers.NeedsDelete, nil
 		}
 		return controllers.NeedsNoop, nil
 	}
 
-	//TODO This will change for many:1
-	if len(ctx.ScalingPolicyDescription.ScalingPolicies) == 0 {
+	//Review: Second condition is not needed, cleanup after test
+	if ctx.ScalingPolicyDescriptionList == nil || len(ctx.ScalingPolicyDescriptionList) == 0 {
 		return controllers.NeedsCreate, nil
 	}
 
@@ -316,6 +337,35 @@ func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) 
 
 }
 
+// describeAutoscalingPolicy adds current descriptions to the context for each resource in the spec list
+func (r *Reconciler) describeAutoscalingPolicy(ctx reconcileRequestContext) ([]*applicationautoscaling.DescribeScalableTargetsOutput, []*applicationautoscaling.ScalingPolicy, error) {
+	var err error
+
+	var scalingPolicyDescriptionList []*applicationautoscaling.ScalingPolicy
+	var scalableTargetDescriptionList []*applicationautoscaling.DescribeScalableTargetsOutput
+
+	for _, ResourceID := range ctx.ResourceIDList {
+		var scalableTargetDescription *applicationautoscaling.DescribeScalableTargetsOutput
+		var scalingPolicyDescription *applicationautoscaling.ScalingPolicy
+
+		if scalableTargetDescription, err = ctx.ApplicationAutoscalingClient.DescribeScalableTargets(ctx, ResourceID); err != nil {
+			return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, ReconcilingAutoscalingJobStatus, errors.Wrap(err, "Unable to describe ScalableTarget"))
+		}
+
+		if scalingPolicyDescription, err = ctx.ApplicationAutoscalingClient.DescribeScalingPolicies(ctx, ctx.PolicyName, ResourceID); err != nil {
+			return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, ReconcilingAutoscalingJobStatus, errors.Wrap(err, "Unable to describe ScalingPolicy"))
+		}
+
+		if scalableTargetDescription != nil {
+			scalableTargetDescriptionList = append(ctx.ScalableTargetDescriptionList, scalableTargetDescription)
+		}
+		if scalingPolicyDescription != nil {
+			scalingPolicyDescriptionList = append(scalingPolicyDescriptionList, scalingPolicyDescription)
+		}
+	}
+	return scalableTargetDescriptionList, scalingPolicyDescriptionList, nil
+}
+
 // deleteAutoscalingPolicy converts Spec to Input, Registers Target, Creates second input, applies the scalingPolicy
 // same as reconcileCreation of model
 func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error {
@@ -323,14 +373,14 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 	var deleteScalingPolicyInput applicationautoscaling.DeleteScalingPolicyInput
 
 	for _, ResourceID := range ctx.ResourceIDList {
-		deleteScalingPolicyInput = sdkutil.CreateDeleteScalingPolicyInput(*ResourceID, ctx.PolicyName)
+		deleteScalingPolicyInput = sdkutil.CreateDeleteScalingPolicyInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
 		if _, err := ctx.ApplicationAutoscalingClient.DeleteScalingPolicy(ctx, &deleteScalingPolicyInput); err != nil {
 			return errors.Wrap(err, "Unable to DeleteScalingPolicy")
 		}
 	}
 
 	for _, ResourceID := range ctx.ResourceIDList {
-		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(*ResourceID)
+		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
 		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil {
 			return errors.Wrap(err, "Unable DeregisterScalableTarget")
 		}
@@ -339,34 +389,31 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 	return nil
 }
 
-// applyAutoscalingPolicy converts Spec to Input, Registers Target, Creates second input, applies the scalingPolicy
-// same as reconcileCreation of model
+// applyAutoscalingPolicy converts Spec to Input, Registers Target, Creates scalingPolicy input, applies the scalingPolicy
 func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) error {
 	var registerScalableTargetInputList []applicationautoscaling.RegisterScalableTargetInput
 	var putScalingPolicyInputList []applicationautoscaling.PutScalingPolicyInput
 
+	// Review: Is this needed
 	if ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName == nil || len(*ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName) == 0 {
 		ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName = &ctx.PolicyName
 	}
 
-	// TODO: Meghna Add a similar check for endpoints and variants and also error handling for all requests
-
+	// For each resourceID, register the scalableTarget
 	registerScalableTargetInputList = sdkutil.CreateRegisterScalableTargetInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
-
 	for _, registerScalableTargetInput := range registerScalableTargetInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.RegisterScalableTarget(ctx, &registerScalableTargetInput); err != nil {
 			return errors.Wrap(err, "Unable to Register Target")
 		}
 	}
 
+	// For each resourceID, apply the scalingPolicy
 	putScalingPolicyInputList = sdkutil.CreatePutScalingPolicyInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
 	for _, putScalingPolicyInput := range putScalingPolicyInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.PutScalingPolicy(ctx, &putScalingPolicyInput); err != nil {
 			return errors.Wrap(err, "Unable to Put Scaling Policy")
 		}
 	}
-
-	//ctx.Log.Info("Input", "err", putScalingPolicyInput)
 
 	return nil
 }
@@ -375,11 +422,11 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) error {
 // This prevents the case where a terminal status fails to persist to the Kubernetes datastore yet we stop
 // reconciling and thus leave the job in an unfinished state.
 func (r *Reconciler) updateStatus(ctx reconcileRequestContext, hostingDeploymentAutoscalingJobStatus string) error {
-	return r.updateStatusWithAdditional(ctx, hostingDeploymentAutoscalingJobStatus, "AdditionalStatus")
+	return r.updateStatusWithAdditional(ctx, hostingDeploymentAutoscalingJobStatus, "")
 }
 
-func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, trainingJobPrimaryStatus, trainingJobSecondaryStatus string, reconcileErr error) error {
-	if err := r.updateStatusWithAdditional(ctx, trainingJobPrimaryStatus, reconcileErr.Error()); err != nil {
+func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, status string, reconcileErr error) error {
+	if err := r.updateStatusWithAdditional(ctx, status, reconcileErr.Error()); err != nil {
 		return errors.Wrapf(reconcileErr, "Unable to update status with error. Status failure was caused by: '%s'", err.Error())
 	}
 	return reconcileErr
@@ -392,9 +439,7 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, hos
 	// When you call this function, update/refresh all the fields since we overwrite.
 	jobStatus.HostingDeploymentAutoscalingJobStatus = hostingDeploymentAutoscalingJobStatus
 	jobStatus.Additional = additional
-	jobStatus.PolicyName = &ctx.PolicyName
-
-	//TODO: Convert it to tinyurl or even better can we expose CW url via API server proxy UI?
+	jobStatus.PolicyName = ctx.PolicyName
 
 	if err := r.Status().Update(ctx, ctx.HostingDeploymentAutoscalingJob); err != nil {
 		err = errors.Wrap(err, "Unable to update status")

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	gabs "github.com/Jeffail/gabs/v2"
 	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
@@ -33,6 +34,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/pkg/errors"
 )
+
+// HostingDeploymentAutoscalingServiceNamespace is a constant value for using the Autoscaling API in the SageMaker Service
+const HostingDeploymentAutoscalingServiceNamespace = "sagemaker"
 
 // Create a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
 // This panics if json libraries are unable to serialize the description and deserialize the serialization.
@@ -592,11 +596,8 @@ func ConvertMapToKeyValuePairSlice(m map[string]string) []*commonv1.KeyValuePair
 
 // ConvertAutoscalingResourceToString converts a map to a key value pair
 func ConvertAutoscalingResourceToString(resourceIDfromSpec commonv1.AutoscalingResource) *string {
-
-	//TODO: currently uses only a single value and returns a string - Change
 	var resourceString string = "endpoint/" + *resourceIDfromSpec.EndpointName + "/variant/" + *resourceIDfromSpec.VariantName
-	var resourcePointer *string = &resourceString
-	return resourcePointer
+	return &resourceString
 }
 
 // CreateRegisterScalableTargetInputFromSpec from a JobSpec.
@@ -641,11 +642,7 @@ func createRegisterScalableTargetInputFromSpec(spec hostingdeploymentautoscaling
 		return applicationautoscaling.RegisterScalableTargetInput{}, err
 	}
 
-	//TODO: Move constants out
 	output.ResourceId = resourceID
-	output.ServiceNamespace = "sagemaker"
-	// TODO: Check if this could change
-	output.ScalableDimension = "sagemaker:variant:DesiredInstanceCount"
 
 	return output, nil
 }
@@ -693,18 +690,14 @@ func createPutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.
 	}
 
 	output.ResourceId = resourceID
-	output.ServiceNamespace = "sagemaker"
-	output.ScalableDimension = "sagemaker:variant:DesiredInstanceCount"
-	//TODO: this should not be hardcoded
-	output.PolicyType = "TargetTrackingScaling"
 
 	return output, nil
 }
 
 // CreateDeregisterScalableTargetInput creates input
-func CreateDeregisterScalableTargetInput(resourceID string) applicationautoscaling.DeregisterScalableTargetInput {
+func CreateDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) applicationautoscaling.DeregisterScalableTargetInput {
 
-	if input, err := createDeregisterScalableTargetInput(resourceID); err == nil {
+	if input, err := createDeregisterScalableTargetInput(spec, resourceID); err == nil {
 		return input
 	} else {
 		panic("Unable to create CreateDegisterScalableTargetInput " + err.Error())
@@ -712,20 +705,24 @@ func CreateDeregisterScalableTargetInput(resourceID string) applicationautoscali
 }
 
 // createDeregisterScalableTargetInput request input from a Kubernetes spec.
-func createDeregisterScalableTargetInput(resourceID string) (applicationautoscaling.DeregisterScalableTargetInput, error) {
+func createDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) (applicationautoscaling.DeregisterScalableTargetInput, error) {
 	var output applicationautoscaling.DeregisterScalableTargetInput
 
+	marshalledScalableDimension, err := json.Marshal(spec.ScalableDimension)
+	if err = json.Unmarshal(marshalledScalableDimension, &output.ScalableDimension); err != nil {
+		return applicationautoscaling.DeregisterScalableTargetInput{}, err
+	}
+
 	output.ResourceId = &resourceID
-	output.ScalableDimension = "sagemaker:variant:DesiredInstanceCount"
-	output.ServiceNamespace = "sagemaker"
+	output.ServiceNamespace = HostingDeploymentAutoscalingServiceNamespace
 
 	return output, nil
 }
 
 // CreateDeleteScalingPolicyInput creates input
-func CreateDeleteScalingPolicyInput(resourceID string, policyName string) applicationautoscaling.DeleteScalingPolicyInput {
+func CreateDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) applicationautoscaling.DeleteScalingPolicyInput {
 
-	if input, err := createDeleteScalingPolicyInput(resourceID, policyName); err == nil {
+	if input, err := createDeleteScalingPolicyInput(spec, resourceID); err == nil {
 		return input
 	} else {
 		panic("Unable to create CreateDegisterScalableTargetInput " + err.Error())
@@ -733,13 +730,64 @@ func CreateDeleteScalingPolicyInput(resourceID string, policyName string) applic
 }
 
 // createDeleteScalingPolicyInput request input from a Kubernetes spec.
-func createDeleteScalingPolicyInput(resourceID string, policyName string) (applicationautoscaling.DeleteScalingPolicyInput, error) {
+func createDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) (applicationautoscaling.DeleteScalingPolicyInput, error) {
 	var output applicationautoscaling.DeleteScalingPolicyInput
 
-	output.PolicyName = &policyName
+	marshalledScalableDimension, err := json.Marshal(spec.ScalableDimension)
+	if err = json.Unmarshal(marshalledScalableDimension, &output.ScalableDimension); err != nil {
+		return applicationautoscaling.DeleteScalingPolicyInput{}, err
+	}
+
+	output.PolicyName = spec.PolicyName
 	output.ResourceId = &resourceID
-	output.ScalableDimension = "sagemaker:variant:DesiredInstanceCount"
-	output.ServiceNamespace = "sagemaker"
+
+	// TODO: This should not be hardcoded here
+	output.ServiceNamespace = HostingDeploymentAutoscalingServiceNamespace
 
 	return output, nil
+}
+
+// ConvertAutoscalingResourceToString converts a map to a key value pair
+func getResourceIDListfromDescriptions(descriptions []applicationautoscaling.DescribeScalingPoliciesOutput) []*commonv1.AutoscalingResource {
+	var resourceIDListforSpec []*commonv1.AutoscalingResource
+
+	for _, description := range descriptions {
+		var resourceIDforSpec *commonv1.AutoscalingResource
+		resourceID := strings.Split(*description.ScalingPolicies[0].ResourceId, "/")
+		*resourceIDforSpec.EndpointName = resourceID[1]
+		*resourceIDforSpec.VariantName = resourceID[3]
+		resourceIDListforSpec = append(resourceIDListforSpec, resourceIDforSpec)
+	}
+
+	return resourceIDListforSpec
+
+}
+
+// CreateHostingDeploymentAutoscalingSpecFromDescription creates a Kubernetes spec from a List of Descriptions
+// Review: Needs a major review and also update if additional fields are added/removed from spec
+func CreateHostingDeploymentAutoscalingSpecFromDescription(descriptions []applicationautoscaling.DescribeScalingPoliciesOutput) (hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, error) {
+	transformedResourceIDs := getResourceIDListfromDescriptions(descriptions)
+
+	// Using the first one because other than the resource ID, everything else is exactly the same
+	marshalled, err := json.Marshal(descriptions[0])
+	if err != nil {
+		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+	}
+
+	// Replace map of hyperparameters with list of hyperparameters.
+	obj, err := gabs.ParseJSON(marshalled)
+	if err != nil {
+		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+	}
+
+	if _, err := obj.Set(transformedResourceIDs, "ResourceIds"); err != nil {
+		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+	}
+
+	var unmarshalled hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec
+	if err := json.Unmarshal(obj.Bytes(), &unmarshalled); err != nil {
+		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+	}
+
+	return unmarshalled, nil
 }
