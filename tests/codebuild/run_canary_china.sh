@@ -1,49 +1,96 @@
-DEPLOYMENT_NAME="ephemeral-operator-canary-china-"$(date '+%Y-%m-%d-%H-%M-%S')""
+#!/usr/bin/env bash
+
+# Env variables that need to be set before running this script
+# These vaiables are passed to SageMaker
+# ROLE_ARN : SageMaker executor role arn
+# DATA_BUCKET : S3 data bucket where input data is stored
+
+if [[ -z "${ROLE_ARN}" ]]; then
+  echo "ROLE_ARN environment variable not found"
+  exit 1
+fi
+if [[ -z "${DATA_BUCKET}" ]]; then
+  echo "DATA_BUCKET environment variable not found"
+  exit 1
+fi
+
+
+# local variables
+DEPLOYMENT_NAME="ephemeral-operator-canary-"$(date '+%Y-%m-%d-%H-%M-%S')""
 CLUSTER_NAME=${DEPLOYMENT_NAME}-cluster
-CLUSTER_REGION=cn-northwest-1
-AWS_ACC_NUM=585062646586
+CLUSTER_REGION=${CLUSTER_REGION:-cn-northwest-1}
+OIDC_ROLE_NAME=pod-role-$DEPLOYMENT_NAME
+AWS_ACC_NUM=$(aws sts get-caller-identity --region $CLUSTER_REGION   --query Account --output text)
 
 
-eksctl create cluster --name $CLUSTER_NAME --region $CLUSTER_REGION--auto-kubeconfig --timeout=30m --managed --node-type=c5.xlarge --nodes=2
-aws --region $CLUSTER_REGION eks update-kubeconfig --name $CLUSTER_NAME
-eksctl utils associate-iam-oidc-provider --cluster $CLUSTER_NAME --region $CLUSTER_REGION --approve
+function create_eks_cluster() {
+  eksctl create cluster --name $CLUSTER_NAME --region $CLUSTER_REGION --auto-kubeconfig --timeout=30m --managed --node-type=c5.xlarge --nodes=1
+}
 
-OIDC_URL=$(aws eks describe-cluster --region $CLUSTER_REGION --name $CLUSTER_NAME --query "cluster.identity.oidc.issuer" --output text | cut -c9-)
+function install_k8s_operators() {
+  echo installing SageMaker operators
+  aws --region $CLUSTER_REGION eks update-kubeconfig --name $CLUSTER_NAME
+  eksctl utils associate-iam-oidc-provider --cluster $CLUSTER_NAME --region $CLUSTER_REGION --approve
 
-cat <<EOF > trust.json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::$AWS_ACC_NUM:oidc-provider/$OIDC_URL"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "$OIDC_URL:aud": "sts.amazonaws.com",
-          "$OIDC_URL:sub": "system:serviceaccount:kubeflow:pipeline-runner"
+  OIDC_URL=$(aws eks describe-cluster --region $CLUSTER_REGION --name $CLUSTER_NAME --query "cluster.identity.oidc.issuer" --output text | cut -c9-)
+
+  printf '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "Federated": "arn:aws-cn:iam::'$AWS_ACC_NUM':oidc-provider/'$OIDC_URL'"
+        },
+        "Action": "sts:AssumeRoleWithWebIdentity",
+        "Condition": {
+          "StringEquals": {
+            "'$OIDC_URL':aud": "sts.amazonaws.com",
+            "'$OIDC_URL':sub": "system:serviceaccount:sagemaker-k8s-operator-system:sagemaker-k8s-operator-default"
+          }
         }
       }
-    }
-  ]
+    ]
+  }
+  ' > ./trust.json
+
+  aws --region $CLUSTER_REGION iam create-role --role-name $OIDC_ROLE_NAME --assume-role-policy-document file://trust.json
+  aws --region $CLUSTER_REGION iam attach-role-policy --role-name $OIDC_ROLE_NAME --policy-arn arn:aws-cn:iam::aws:policy/AmazonSageMakerFullAccess
+  OIDC_ROLE_ARN=$(aws --region $CLUSTER_REGION iam get-role --role-name $OIDC_ROLE_NAME --output text --query 'Role.Arn')
+
+  wget --retry-connrefused --waitretry=30 --read-timeout=20 --timeout=15 -t 30 \
+       -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/installer_china.yaml
+  FIND_STR=$(yq r -d'*' installer_china.yaml 'metadata.annotations."eks.amazonaws.com/role-arn"')
+  sed -i "s#$FIND_STR#$OIDC_ROLE_ARN#g" installer_china.yaml
+  kubectl apply -f installer_china.yaml
+
+  echo "Waiting for controller pod to be Ready"
+  # Wait to increase chance that pod is ready
+  # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
+  sleep 60
+
 }
-EOF
 
-aws --region $CLUSTER_REGION iam create-role --role-name kfp-example-pod-role-$CLUSTER_NAME --assume-role-policy-document file://trust.json
-aws --region $CLUSTER_REGION iam attach-role-policy --role-name kfp-example-pod-role-$CLUSTER_NAME --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+function delete_generated_oidc_role {
+    echo deleting generated OIDC role
+    aws iam detach-role-policy --region $CLUSTER_REGION  --role-name ${OIDC_ROLE_NAME} --policy-arn arn:aws-cn:iam::aws:policy/AmazonSageMakerFullAccess
+    aws iam delete-role --region $CLUSTER_REGION --role-name ${OIDC_ROLE_NAME}
+}
 
-OIDC_ROLE_ARN=$(aws --region $CLUSTER_REGION iam get-role --role-name kfp-example-pod-role-$CLUSTER_NAME --output text --query 'Role.Arn')
+function delete_generated_cluster {
+  echo deleting cluster
+  eksctl delete cluster --region $CLUSTER_REGION $CLUSTER_NAME
+}
 
-wget -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/installer_china.yaml
+function cleanup() {
+  set +e
 
-FIND_STR=$(yq r -d'*' installer_china.yaml 'metadata.annotations."eks.amazonaws.com/role-arn"')
+  delete_generated_oidc_role
+  delete_generated_cluster
+}
 
-sed -i "s#$FIND_STR#$OIDC_ROLE_ARN#g" installer_china.yaml
+trap cleanup EXIT
 
-kubectl apply -f installer_china.yaml
-
-wget https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/samples/xgboost-mnist-trainingjob.yaml
-
-kubectl apply -f xgboost-mnist-trainingjob.yaml
+create_eks_cluster
+install_k8s_operators
+./run_all_sample_canary_tests_china.sh

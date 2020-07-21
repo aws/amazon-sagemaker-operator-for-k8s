@@ -1,0 +1,7 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - cd tests
+      - docker build -f images/Dockerfile.china.canary . -t amazon/k8s_sm_operator:china --build-arg ROLE_ARN=$ROLE_ARN --build-arg CLUSTER_REGION=$CLUSTER_REGION --build-arg DATA_BUCKET=$DATA_BUCKET --quiet
+      - docker run --name operator-canary-china $(env | cut -f1 -d= | sed 's/^/-e /') amazon/k8s_sm_operator:china

@@ -1,5 +1,14 @@
 FROM ubuntu:18.04
 
+ARG CLUSTER_REGION
+ENV CLUSTER_REGION=$CLUSTER_REGION
+
+ARG ROLE_ARN
+ENV ROLE_ARN=$ROLE_ARN
+
+ARG DATA_BUCKET
+ENV DATA_BUCKET=$DATA_BUCKET
+
 RUN apt-get update && apt-get install -y curl \
     wget \
     git \
@@ -15,7 +24,7 @@ RUN pip install awscli
 RUN apt-get update && apt install -y software-properties-common && sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
 
 # Install kubectl
-RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06-21/bin/linux/amd64/kubectl \
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/linux/amd64/kubectl \
       && chmod +x ./kubectl && cp ./kubectl /bin
 
 # Install eksctl
@@ -23,4 +32,4 @@ RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/down
 
 COPY ./codebuild/ .
 
-CMD ["./run_canarytest.sh"]
+CMD ["./run_canary_china.sh"]

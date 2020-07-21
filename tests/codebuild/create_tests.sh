@@ -26,6 +26,20 @@ function run_canary_tests
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
+# Applies each of the resources needed for the canary tests.
+# Parameter:
+#    $1: Namespace of the CRD
+function run_canary_tests_china
+{
+  local crd_namespace="$1"
+
+  echo "Injecting variables into tests"
+  inject_all_variables
+
+  echo "Starting Canary Tests China"
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-china.yaml
+}
+
 # Applies each of the resources needed for the integration tests.
 # Parameter:
 #    $1: Namespace of the CRD
@@ -60,9 +74,19 @@ function verify_canary_tests
   echo "Verifying canary tests"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist 20m Completed
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
-  verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
+  verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed
   verify_test "${crd_namespace}" HostingDeployment hosting 40m InService
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
+}
+
+# Verifies that all resources were created and are running/completed for the canary tests.
+# Parameter:
+#    $1: Namespace of the CRD
+function verify_canary_tests_china
+{
+  local crd_namespace="$1"
+  echo "Verifying canary tests"
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-china 20m Completed
 }
 
 # Verifies that all resources were created and are running/completed for the integration tests.
