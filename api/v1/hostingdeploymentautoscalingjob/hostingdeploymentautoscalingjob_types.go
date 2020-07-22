@@ -51,6 +51,8 @@ type HostingDeploymentAutoscalingJobSpec struct {
 
 	ServiceNamespace *string `json:"serviceNamespace,omitempty"`
 
+	SuspendedState *commonv1.HAPSuspendedState `json:"suspendedState,omitempty"`
+
 	// A custom SageMaker endpoint to use when communicating with SageMaker.
 	// +kubebuilder:validation:Pattern=^(https|http)://.*$
 	SageMakerEndpoint                        *string                                     `json:"sageMakerEndpoint,omitempty"`

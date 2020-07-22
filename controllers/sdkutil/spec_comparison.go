@@ -155,11 +155,10 @@ var endpointConfigSpecComparisonOptions = []cmp.Option{
 	ignoreKeyValuePairSliceOrder,
 }
 
-// Review: This needs to be reviewed
 // HostingDeploymentAutoscalingSpecMatchesDescription determines if the given HostingDeploymentAutoscalingSpec matches the DescribeScalingPoliciesOutput.
 // This converts description to spec and selectively compares fields
-func HostingDeploymentAutoscalingSpecMatchesDescription(descriptions []applicationautoscaling.DescribeScalingPoliciesOutput, spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec) (Comparison, error) {
-	remoteSpec, err := CreateHostingDeploymentAutoscalingSpecFromDescription(descriptions)
+func HostingDeploymentAutoscalingSpecMatchesDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy, spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec) (Comparison, error) {
+	remoteSpec, err := CreateHostingDeploymentAutoscalingSpecFromDescription(targetDescriptions, descriptions)
 	if err != nil {
 		return Comparison{}, err
 	}

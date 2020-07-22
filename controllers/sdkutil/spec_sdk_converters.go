@@ -748,15 +748,14 @@ func createDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.Hosti
 }
 
 // ConvertAutoscalingResourceToString converts a map to a key value pair
-func getResourceIDListfromDescriptions(descriptions []applicationautoscaling.DescribeScalingPoliciesOutput) []*commonv1.AutoscalingResource {
+func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.ScalingPolicy) []*commonv1.AutoscalingResource {
 	var resourceIDListforSpec []*commonv1.AutoscalingResource
 
 	for _, description := range descriptions {
-		var resourceIDforSpec *commonv1.AutoscalingResource
-		resourceID := strings.Split(*description.ScalingPolicies[0].ResourceId, "/")
-		*resourceIDforSpec.EndpointName = resourceID[1]
-		*resourceIDforSpec.VariantName = resourceID[3]
-		resourceIDListforSpec = append(resourceIDListforSpec, resourceIDforSpec)
+		resourceID := strings.Split(*description.ResourceId, "/")
+		endpointName, variantName := resourceID[1], resourceID[3]
+		resourceIDforSpec := commonv1.AutoscalingResource{EndpointName: &endpointName, VariantName: &variantName}
+		resourceIDListforSpec = append(resourceIDListforSpec, &resourceIDforSpec)
 	}
 
 	return resourceIDListforSpec
@@ -765,22 +764,32 @@ func getResourceIDListfromDescriptions(descriptions []applicationautoscaling.Des
 
 // CreateHostingDeploymentAutoscalingSpecFromDescription creates a Kubernetes spec from a List of Descriptions
 // Review: Needs a major review and also update if additional fields are added/removed from spec
-func CreateHostingDeploymentAutoscalingSpecFromDescription(descriptions []applicationautoscaling.DescribeScalingPoliciesOutput) (hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, error) {
+func CreateHostingDeploymentAutoscalingSpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy) (hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, error) {
 	transformedResourceIDs := getResourceIDListfromDescriptions(descriptions)
+	minCapacity := targetDescriptions[0].ScalableTargets[0].MinCapacity
+	maxCapacity := targetDescriptions[0].ScalableTargets[0].MaxCapacity
 
-	// Using the first one because other than the resource ID, everything else is exactly the same
 	marshalled, err := json.Marshal(descriptions[0])
 	if err != nil {
 		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
 	}
 
-	// Replace map of hyperparameters with list of hyperparameters.
 	obj, err := gabs.ParseJSON(marshalled)
 	if err != nil {
 		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
 	}
 
-	if _, err := obj.Set(transformedResourceIDs, "ResourceIds"); err != nil {
+	if _, err := obj.Set(transformedResourceIDs, "ResourceId"); err != nil {
+		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+	}
+
+	// TODO: Add suspended state too
+
+	if _, err := obj.Set(minCapacity, "MinCapacity"); err != nil {
+		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+	}
+
+	if _, err := obj.Set(maxCapacity, "MaxCapacity"); err != nil {
 		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
 	}
 

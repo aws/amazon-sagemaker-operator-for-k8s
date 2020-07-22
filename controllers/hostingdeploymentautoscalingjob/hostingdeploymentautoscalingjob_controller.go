@@ -166,7 +166,6 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 	if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil {
 		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
 	}
-	ctx.Log.Info("ScalingPolicyDescription", "err", ctx.ScalingPolicyDescriptionList)
 
 	var action controllers.ReconcileAction
 	if action, err = r.determineActionForAutoscaling(ctx); err != nil {
@@ -187,7 +186,7 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 
 	// If update or create, create the desired hostingdeploymentautoscaling.
 	if action == controllers.NeedsCreate || action == controllers.NeedsUpdate {
-		if err = r.applyAutoscalingPolicy(ctx); err != nil {
+		if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.applyAutoscalingPolicy(ctx); err != nil {
 			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to applyAutoscalingPolicy"))
 		}
 	}
@@ -294,6 +293,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 // ctx.ScalingPolicyDescription: actualAutoscaling
 func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) (controllers.ReconcileAction, error) {
 	var err error
+	// Review: Should you add a check based on status too, for controller restarts
 	if controllers.HasDeletionTimestamp(ctx.HostingDeploymentAutoscalingJob.ObjectMeta) {
 		ctx.Log.Info("Object Has Deletion Timestamp")
 		if len(ctx.ScalingPolicyDescriptionList) > 0 {
@@ -307,23 +307,19 @@ func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) 
 		return controllers.NeedsCreate, nil
 	}
 
-	/* TODO: Fix this part to update the autoscaling as needed
 	var comparison sdkutil.Comparison
-	var err error
-	if comparison, err = sdkutil.ModelSpecMatchesDescription(*actualModel, desiredModel.Spec); err != nil {
-		return NeedsNoop, err
+
+	if comparison, err = sdkutil.HostingDeploymentAutoscalingSpecMatchesDescription(ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, ctx.HostingDeploymentAutoscalingJob.Spec); err != nil {
+		return controllers.NeedsNoop, err
 	}
 
 	r.Log.Info("Compared existing model to actual model to determine if model needs to be updated.", "differences", comparison.Differences, "equal", comparison.Equal)
 
 	if comparison.Equal {
-		return NeedsNoop, nil
+		return controllers.NeedsNoop, nil
 	}
 
-	return NeedsUpdate, nil */
-
-	return controllers.NeedsNoop, err
-
+	return controllers.NeedsUpdate, nil
 }
 
 // describeAutoscalingPolicy adds current descriptions to the context for each resource in the spec list
@@ -379,9 +375,14 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 }
 
 // applyAutoscalingPolicy converts Spec to Input, Registers Target, Creates scalingPolicy input, applies the scalingPolicy
-func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) error {
+// This method needs to be broken down
+func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*applicationautoscaling.DescribeScalableTargetsOutput, []*applicationautoscaling.ScalingPolicy, error) {
 	var registerScalableTargetInputList []applicationautoscaling.RegisterScalableTargetInput
 	var putScalingPolicyInputList []applicationautoscaling.PutScalingPolicyInput
+
+	// For describe
+	var scalableTargetDescriptionList []*applicationautoscaling.DescribeScalableTargetsOutput
+	var scalingPolicyDescriptionList []*applicationautoscaling.ScalingPolicy
 
 	// Review: Is this needed
 	if ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName == nil || len(*ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName) == 0 {
@@ -392,7 +393,7 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) error {
 	registerScalableTargetInputList = sdkutil.CreateRegisterScalableTargetInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
 	for _, registerScalableTargetInput := range registerScalableTargetInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.RegisterScalableTarget(ctx, &registerScalableTargetInput); err != nil {
-			return errors.Wrap(err, "Unable to Register Target")
+			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to Register Target")
 		}
 	}
 
@@ -400,11 +401,16 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) error {
 	putScalingPolicyInputList = sdkutil.CreatePutScalingPolicyInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
 	for _, putScalingPolicyInput := range putScalingPolicyInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.PutScalingPolicy(ctx, &putScalingPolicyInput); err != nil {
-			return errors.Wrap(err, "Unable to Put Scaling Policy")
+			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to Put Scaling Policy")
 		}
 	}
 
-	return nil
+	var err error
+	if scalableTargetDescriptionList, scalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil {
+		return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
+	}
+
+	return scalableTargetDescriptionList, scalingPolicyDescriptionList, nil
 }
 
 // If this function returns an error, the status update has failed, and the reconciler should always requeue.
