@@ -134,6 +134,11 @@ func (in *HostingDeploymentAutoscalingJobSpec) DeepCopyInto(out *HostingDeployme
 		*out = new(string)
 		**out = **in
 	}
+	if in.SuspendedState != nil {
+		in, out := &in.SuspendedState, &out.SuspendedState
+		*out = new(common.HAPSuspendedState)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.SageMakerEndpoint != nil {
 		in, out := &in.SageMakerEndpoint, &out.SageMakerEndpoint
 		*out = new(string)

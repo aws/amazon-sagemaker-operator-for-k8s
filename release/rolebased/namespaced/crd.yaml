@@ -783,6 +783,15 @@ spec:
               type: string
             serviceNamespace:
               type: string
+            suspendedState:
+              properties:
+                dynamicScalingInSuspended:
+                  type: boolean
+                dynamicScalingOutSuspended:
+                  type: boolean
+                scheduledScalingSuspended:
+                  type: boolean
+              type: object
             targetTrackingScalingPolicyConfiguration:
               properties:
                 customizedMetricSpecification:

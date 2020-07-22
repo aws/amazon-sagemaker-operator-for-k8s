@@ -12,10 +12,10 @@ spec:
     policyName: SageMakerEndpointInvocationScalingPolicy
     policyType: TargetTrackingScaling
     minCapacity: 1
-    maxCapacity: 2
+    maxCapacity: 1
     targetTrackingScalingPolicyConfiguration:
-        targetValue: 80.0 
+        targetValue: 60.0 
         predefinedMetricSpecification: 
             predefinedMetricType: SageMakerVariantInvocationsPerInstance 
-        scaleInCooldown: 500 
+        scaleInCooldown: 700 
         scaleOutCooldown: 300

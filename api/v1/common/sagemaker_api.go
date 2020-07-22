@@ -563,3 +563,10 @@ type TargetTrackingScalingPolicyConfig struct {
 	PredefinedMetricSpecification *PredefinedMetricSpecification `json:"predefinedMetricSpecification,omitempty"`
 	CustomizedMetricSpecification *CustomizedMetricSpecification `json:"customizedMetricSpecification,omitempty"`
 }
+
+// SuspendedState https://docs.aws.amazon.com/autoscaling/application/APIReference/API_SuspendedState.html
+type HAPSuspendedState struct {
+	DynamicScalingInSuspended  *bool `json:"dynamicScalingInSuspended,omitempty"`
+	DynamicScalingOutSuspended *bool `json:"dynamicScalingOutSuspended,omitempty"`
+	ScheduledScalingSuspended  *bool `json:"scheduledScalingSuspended,omitempty"`
+}
