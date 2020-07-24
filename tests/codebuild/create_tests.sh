@@ -23,6 +23,7 @@ function run_canary_tests
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
+  run_hap_test "${crd_namespace}" xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
@@ -61,7 +62,8 @@ function verify_canary_tests
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist 20m Completed
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
-  verify_test "${crd_namespace}" HostingDeployment hosting 40m InService
+  verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
+  verify_hap_test "${crd_namespace}" HostingDeploymentAutoscalingJob hap-predefined 2m CreatedAutoscalingJob
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
@@ -83,6 +85,66 @@ function verify_integration_tests
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
   verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
+}
+
+
+# Replaces the names of the endpoint generated in the previous test into the hap spec file. 
+# Parameter:
+#    $1: Target namespace
+#    $2: K8s Name of the hostingdeployment to apply autoscaling 
+#    $3: Filename of the hap test to run
+function run_hap_test()
+{
+  local target_namespace="$1"
+  local hosting_deployment_1="$2"
+  local file_name="$3"
+  local hosting_deployment_2="${hosting_deployment_1}-2"
+  local hostingdeployment_type="hostingdeployment"
+
+  # Create the second Endpoint
+  sed -i "s/$hosting_deployment_1/$hosting_deployment_2/g" testfiles/xgboost-hosting-deployment.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
+
+  # Endpoints must be created before autoscaling can be applied, one is already created
+  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_1}" 40m InService
+  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_2}" 40m InService
+
+  # Get the sagemaker names of the two hostingdeployment endpoints and replace in hap yaml
+  local endpoint_name_1="$(kubectl get -n "$target_namespace" "$hostingdeployment_type" "$hosting_deployment_1" -o=custom-columns=SAGEMAKER_ENDPOINT-NAME:.status.endpointArn | tail -1 | cut -d'/' -f2)"
+  local endpoint_name_2="$(kubectl get -n "$target_namespace" "$hostingdeployment_type" "$hosting_deployment_2" -o=custom-columns=SAGEMAKER_ENDPOINT-NAME:.status.endpointArn | tail -1 | cut -d'/' -f2)"
+
+  sed -i "s/PLACEHOLDER-ENDPOINT-1/$endpoint_name_1/g" "$file_name"
+  sed -i "s/PLACEHOLDER-ENDPOINT-2/$endpoint_name_2/g" "$file_name"
+  run_test "$target_namespace" "$file_name"
+
+  kubectl describe hostingdeploymentautoscalingjob 
+}
+
+# This function verifies that the hostingdeploymentautoscalingjob is applied as expected, and checks using awscli
+# Parameter:
+#    $1: Namespace of the CRD
+#    $2: Kind of CRD
+#    $3: Instance of CRD
+#    $4: Timeout to complete the test
+#    $5: The status that verifies the job has succeeded.
+# e.g. verify_test default trainingjobs xgboost-mnist
+function verify_hap_test()
+{
+  local crd_namespace="$1"
+  local crd_type="$2"
+  local crd_instance="$3"
+  local timeout="$4"
+  local desired_status="$5"
+
+  verify_test "${crd_namespace}" "${crd_type}" "${crd_instance}" "${timeout}" "${desired_status}"
+  scaling_policy="$(aws application-autoscaling describe-scaling-policies --region us-west-2 --service-namespace sagemaker | jq .ScalingPolicies[0])"
+
+  if [ "${scaling_policy}"=="null" ]; then
+    echo "[FAILED] No Scaling Policy was applied in the given context, test failed" 
+  else
+    echo "[PASSED] A Scaling Policy was successfully applied to the specified endpoints" 
+  fi
+
 }
 
 # This function verifies that a given debug job has specific status
