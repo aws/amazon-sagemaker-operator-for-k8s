@@ -88,7 +88,7 @@ function verify_integration_tests
 }
 
 
-# Replaces the names of the endpoint generated in the previous test into the hap spec file. 
+# Replaces the names of the endpoint generated in the previous test into the hap spec file and runs the test. 
 # Parameter:
 #    $1: Target namespace
 #    $2: K8s Name of the hostingdeployment to apply autoscaling 
@@ -116,8 +116,6 @@ function run_hap_test()
   sed -i "s/PLACEHOLDER-ENDPOINT-1/$endpoint_name_1/g" "$file_name"
   sed -i "s/PLACEHOLDER-ENDPOINT-2/$endpoint_name_2/g" "$file_name"
   run_test "$target_namespace" "$file_name"
-
-  kubectl describe hostingdeploymentautoscalingjob 
 }
 
 # This function verifies that the hostingdeploymentautoscalingjob is applied as expected, and checks using awscli
