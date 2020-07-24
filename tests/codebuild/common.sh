@@ -63,6 +63,7 @@ function delete_all_resources()
   kubectl delete -n "$crd_namespace" batchtransformjob --all
   kubectl delete -n "$crd_namespace" hostingdeployment --all 
   kubectl delete -n "$crd_namespace" model --all 
+  kubectl delete -n "$crd_namespace" hostingdeploymentautoscalingjobs --all 
 }
 
 # A helper function to generate an IAM Role name for the current cluster and specified namespace

@@ -1,7 +1,7 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: HostingDeployment
 metadata:
-  name: hosting
+  name: xgboost-hosting
 spec:
   region: us-west-2
   productionVariants:
