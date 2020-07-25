@@ -1,0 +1,21 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: BatchTransformJob
+metadata:
+  name: xgboost-batch
+spec:
+  region: cn-northwest-1
+  modelName: xgboost-model
+  transformInput:
+    contentType: text/csv
+    dataSource:
+      s3DataSource:
+        s3DataType: S3Prefix
+        s3Uri: s3://{DATA_BUCKET}/batch-transform/mnist-1000-samples
+  transformOutput:
+    s3OutputPath: s3://{DATA_BUCKET}/batch-model 
+  transformResources:
+    instanceCount: 2
+    instanceType: ml.m4.xlarge
+  tags:
+    - key: test-key
+      value: test-value

@@ -1,0 +1,109 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: HyperparameterTuningJob
+metadata:
+  name: xgboost-mnist-hpo
+spec:
+    region: cn-northwest-1
+    tags:
+      - key: test-key
+        value: test-value
+    hyperParameterTuningJobConfig:
+      strategy: Bayesian
+      hyperParameterTuningJobObjective:
+        type: Minimize
+        metricName: validation:error
+      resourceLimits:
+        maxNumberOfTrainingJobs: 10
+        maxParallelTrainingJobs: 5
+      parameterRanges:
+        integerParameterRanges:
+        - name: num_round
+          minValue: '10'
+          maxValue: '20'
+          scalingType: Linear
+        continuousParameterRanges: []
+        categoricalParameterRanges: []
+      trainingJobEarlyStoppingType: Auto
+    trainingJobDefinition:
+      staticHyperParameters:
+        - name: base_score
+          value: '0.5'
+        - name: booster
+          value: gbtree
+        - name: csv_weights
+          value: '0'
+        - name: dsplit
+          value: row
+        - name: grow_policy
+          value: depthwise
+        - name: lambda_bias
+          value: '0.0'
+        - name: max_bin
+          value: '256'
+        - name: max_leaves
+          value: '0'
+        - name: normalize_type
+          value: tree
+        - name: objective
+          value: reg:linear
+        - name: one_drop
+          value: '0'
+        - name: prob_buffer_row
+          value: '1.0'
+        - name: process_type
+          value: default
+        - name: rate_drop
+          value: '0.0'
+        - name: refresh_leaf
+          value: '1'
+        - name: sample_type
+          value: uniform
+        - name: scale_pos_weight
+          value: '1.0'
+        - name: silent
+          value: '0'
+        - name: sketch_eps
+          value: '0.03'
+        - name: skip_drop
+          value: '0.0'
+        - name: tree_method
+          value: auto
+        - name: tweedie_variance_power
+          value: '1.5'
+        - name: updater
+          value: grow_colmaker,prune
+      algorithmSpecification:
+        trainingImage: 387376663083.dkr.ecr.cn-northwest-1.amazonaws.com.cn/xgboost:1
+        trainingInputMode: File
+      roleArn: {ROLE_ARN}
+      inputDataConfig:
+      - channelName: train
+        dataSource:
+          s3DataSource:
+            s3DataType: S3Prefix
+            s3Uri: s3://{DATA_BUCKET}/train/
+            s3DataDistributionType: FullyReplicated
+        contentType: text/csv
+        compressionType: None
+        recordWrapperType: None
+        inputMode: File
+      - channelName: validation
+        dataSource:
+          s3DataSource:
+            s3DataType: S3Prefix
+            s3Uri: s3://{DATA_BUCKET}/validation/
+            s3DataDistributionType: FullyReplicated
+        contentType: text/csv
+        compressionType: None
+        recordWrapperType: None
+        inputMode: File
+      outputDataConfig:
+        s3OutputPath: s3://{DATA_BUCKET}/xgboost
+      resourceConfig:
+        instanceType: ml.m4.xlarge
+        instanceCount: 1
+        volumeSizeInGB: 25
+      stoppingCondition:
+        maxRuntimeInSeconds: 3600
+      enableNetworkIsolation: true
+      enableInterContainerTrafficEncryption: false

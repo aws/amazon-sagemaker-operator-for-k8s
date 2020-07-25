@@ -38,6 +38,13 @@ function run_canary_tests_china
 
   echo "Starting Canary Tests China"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-china.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-china.yaml
+  # Special code for batch transform till we fix issue-59
+  run_test "${crd_namespace}" testfiles/xgboost-model-china.yaml
+  # We need to get sagemaker model before running batch transform
+  verify_test "${crd_namespace}" Model xgboost-model-china 1m Created
+  yq w -i testfiles/xgboost-mnist-batchtransform-china.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model-china)"
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform-china.yaml
 }
 
 # Applies each of the resources needed for the integration tests.
