@@ -1,7 +1,7 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: HyperparameterTuningJob
 metadata:
-  name: xgboost-mnist-hpo
+  name: xgboost-mnist-hpo-china
 spec:
     region: cn-northwest-1
     tags:

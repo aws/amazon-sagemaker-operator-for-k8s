@@ -3,14 +3,12 @@ kind: Kustomization
 
 # This template does not include the packaging of the CRDs.
 
-patchesStrategicMerge:
-- manager_auth_proxy_patch.yaml
 # Add other common files from base dir if you need to
 
 # This is set by `make docker-build` but not when you build helm chart
 images:
 - name: controller
-  newName: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s
+  newName: 099223943020.dkr.ecr.cn-northwest-1.amazonaws.com.cn/amazon-sagemaker-operator-for-k8s
   newTag: v1
 resources:
 - ../manager

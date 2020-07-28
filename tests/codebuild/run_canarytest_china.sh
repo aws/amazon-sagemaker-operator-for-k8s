@@ -27,7 +27,7 @@ function create_eks_cluster() {
 }
 
 function install_k8s_operators() {
-  echo installing SageMaker operators
+  echo "Installing SageMaker operators"
   aws --region $CLUSTER_REGION eks update-kubeconfig --name $CLUSTER_NAME
   eksctl utils associate-iam-oidc-provider --cluster $CLUSTER_NAME --region $CLUSTER_REGION --approve
 
@@ -71,13 +71,13 @@ function install_k8s_operators() {
 }
 
 function delete_generated_oidc_role {
-    echo deleting generated OIDC role
+    echo "Deleting generated OIDC role"
     aws iam detach-role-policy --region $CLUSTER_REGION  --role-name ${OIDC_ROLE_NAME} --policy-arn arn:aws-cn:iam::aws:policy/AmazonSageMakerFullAccess
     aws iam delete-role --region $CLUSTER_REGION --role-name ${OIDC_ROLE_NAME}
 }
 
 function delete_generated_cluster {
-  echo deleting cluster
+  echo "Deleting cluster"
   eksctl delete cluster --region $CLUSTER_REGION $CLUSTER_NAME
 }
 

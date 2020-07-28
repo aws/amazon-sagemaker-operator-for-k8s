@@ -1,7 +1,7 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: BatchTransformJob
 metadata:
-  name: xgboost-batch
+  name: xgboost-batch-china
 spec:
   region: cn-northwest-1
   modelName: xgboost-model

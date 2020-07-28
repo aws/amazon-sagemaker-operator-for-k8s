@@ -94,6 +94,8 @@ function verify_canary_tests_china
   local crd_namespace="$1"
   echo "Verifying canary tests"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-china 20m Completed
+  verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo-china 20m Completed
+  verify_test "${crd_namespace}" BatchTransformJob xgboost-batch-china 20m Completed
 }
 
 # Verifies that all resources were created and are running/completed for the integration tests.
