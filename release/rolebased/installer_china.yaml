@@ -4090,13 +4090,13 @@ spec:
     spec:
       containers:
       - args:
-        - --metrics-addr=127.0.0.1:8080
+        - --enable-leader-election
         command:
         - /manager
         env:
         - name: AWS_DEFAULT_SAGEMAKER_ENDPOINT
           value: ""
-        image: akartsky/test:v1
+        image: 099223943020.dkr.ecr.cn-northwest-1.amazonaws.com.cn/amazon-sagemaker-operator-for-k8s:v1
         imagePullPolicy: Always
         name: manager
         resources:

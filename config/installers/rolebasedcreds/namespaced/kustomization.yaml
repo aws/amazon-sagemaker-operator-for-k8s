@@ -57,6 +57,18 @@ patchesJson6902:
     - op: replace
       path: "/subjects/0/name"
       value: sagemaker-k8s-operator-default
+# Hacky solution so that its possible to add --namespace for both China and US region with this one file
+# change the position of pods so that manager pod is first pod in both US and China
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    namespace: system
+    name: controller-manager
+  patch: |-
+    - op: move
+      from: "/spec/template/spec/containers/0"
+      path: "/spec/template/spec/containers/-"
 # Add --namespace option to the manager pod
 - target:
     group: apps
@@ -66,5 +78,5 @@ patchesJson6902:
     name: controller-manager
   patch: |-
     - op: add
-      path: "/spec/template/spec/containers/1/args/-"
+      path: "/spec/template/spec/containers/0/args/-"
       value: --namespace=PLACEHOLDER-NAMESPACE
