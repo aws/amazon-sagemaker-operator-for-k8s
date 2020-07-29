@@ -64,7 +64,7 @@ function install_k8s_operators() {
       -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/installer_china.yaml \
       && break
     n=$((n+1))
-    sleep 15
+    sleep $((60*2*n))
   done
 
   FIND_STR=$(yq r -d'*' installer_china.yaml 'metadata.annotations."eks.amazonaws.com/role-arn"')
