@@ -38,8 +38,8 @@ function download_installer_china(){
       && break
     n=$((n+1))
     if [[ "$n" -ge 3 ]]; then
-      echo "Download Failed"
-      break
+      echo "Failed to download installer_china.yaml"
+      exit 1
     fi
     echo "Sleeping for" $((60*2*n)) s
     sleep $((60*2*n))
