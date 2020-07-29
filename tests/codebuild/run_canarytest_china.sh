@@ -21,6 +21,30 @@ CLUSTER_REGION=${CLUSTER_REGION:-cn-northwest-1}
 OIDC_ROLE_NAME=pod-role-$DEPLOYMENT_NAME
 AWS_ACC_NUM=$(aws sts get-caller-identity --region $CLUSTER_REGION   --query Account --output text)
 
+function download_installer_china(){
+  if [ -f ./installer_china.yaml ]; then
+    echo "installer_china.yaml found in current path"
+    return 0
+  fi
+
+  echo "installer_china.yaml not found in current path"
+  echo "Trying to download it from github"
+
+  n=0
+  until [ "$n" -ge 3 ]
+  do
+    wget --retry-connrefused --waitretry=30 --read-timeout=20 --timeout=15 -t 3 \
+      -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/installer_china.yaml \
+      && break
+    n=$((n+1))
+    if [[ "$n" -ge 3 ]]; then
+      echo "Download Failed"
+      break
+    fi
+    echo "Sleeping for" $((60*2*n)) s
+    sleep $((60*2*n))
+  done
+}
 
 function create_eks_cluster() {
   eksctl create cluster --name $CLUSTER_NAME --region $CLUSTER_REGION --auto-kubeconfig --timeout=30m --managed --node-type=c5.xlarge --nodes=1
@@ -57,15 +81,7 @@ function install_k8s_operators() {
   aws --region $CLUSTER_REGION iam attach-role-policy --role-name $OIDC_ROLE_NAME --policy-arn arn:aws-cn:iam::aws:policy/AmazonSageMakerFullAccess
   OIDC_ROLE_ARN=$(aws --region $CLUSTER_REGION iam get-role --role-name $OIDC_ROLE_NAME --output text --query 'Role.Arn')
 
-  n=0
-  until [ "$n" -ge 3 ]
-  do
-    wget --retry-connrefused --waitretry=30 --read-timeout=20 --timeout=15 -t 3 \
-      -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/installer_china.yaml \
-      && break
-    n=$((n+1))
-    sleep $((60*2*n))
-  done
+  download_installer_china
 
   FIND_STR=$(yq r -d'*' installer_china.yaml 'metadata.annotations."eks.amazonaws.com/role-arn"')
   sed -i "s#$FIND_STR#$OIDC_ROLE_ARN#g" installer_china.yaml
