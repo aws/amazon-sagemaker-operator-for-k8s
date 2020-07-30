@@ -6,6 +6,6 @@ phases:
       - cd tests
       - aws ecr get-login-password --region $CLUSTER_REGION | docker login --username AWS --password-stdin $ECR_CACHE_URI || true
       - docker pull ${ECR_CACHE_URI}:latest || true
-      - docker build -f images/Dockerfile.canary.china . -t ${ECR_CACHE_URI}:latest --build-arg ROLE_ARN=$ROLE_ARN --build-arg CLUSTER_REGION=$CLUSTER_REGION --build-arg DATA_BUCKET=$DATA_BUCKET --quiet
+      - docker build -f images/Dockerfile.canary.china . -t ${ECR_CACHE_URI}:latest --build-arg ROLE_ARN=$ROLE_ARN --build-arg CLUSTER_REGION=$CLUSTER_REGION --build-arg DATA_BUCKET=$DATA_BUCKET --quiet || true
       - docker run --name operator-canary-china $(env | cut -f1 -d= | sed 's/^/-e /') ${ECR_CACHE_URI}:latest
       - docker push ${ECR_CACHE_URI}:latest || true
