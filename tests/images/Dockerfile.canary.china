@@ -23,4 +23,5 @@ RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/down
 
 COPY ./codebuild/ ./app/
 
-CMD ["./app/run_canarytest_china.sh"]
+WORKDIR /app/
+CMD ["./run_canarytest_china.sh"]
