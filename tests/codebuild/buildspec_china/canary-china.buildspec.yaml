@@ -2,7 +2,7 @@ version: 0.2
 phases:
   build:
     commands:
-      - cp release/rolebased/installer_china.yaml tests/codebuild/
+      - cp release/rolebased/china/installer_china.yaml tests/codebuild/
       - cd tests
       - aws ecr get-login-password --region $CLUSTER_REGION | docker login --username AWS --password-stdin $ECR_CACHE_URI || true
       - docker pull ${ECR_CACHE_URI}:latest || true

@@ -112,8 +112,12 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 create-installers-china: modify-base-kustomize-china
-	kustomize build config/installers/rolebasedcreds > $(INSTALLER_PATH)/rolebased/installer_china.yaml
-	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/operator_china.yaml
+	mkdir -p $(INSTALLER_PATH)/rolebased/china
+	mkdir -p $(INSTALLER_PATH)/rolebased/namespaced/china
+
+	kustomize build config/installers/rolebasedcreds > $(INSTALLER_PATH)/rolebased/china/installer_china.yaml
+	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/china/operator_china.yaml
+	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/china/crd.yaml
 
 create-installers-us: modify-base-kustomize-us
 	mkdir -p $(INSTALLER_PATH)/rolebased/namespaced

@@ -23,6 +23,7 @@ AWS_ACC_NUM=$(aws sts get-caller-identity --region $CLUSTER_REGION   --query Acc
 
 function download_installer_china(){
   if [ -f ./installer_china.yaml ]; then
+    # codebuild spec copies this file from release/rolebased/china/installer_china.yaml to here
     echo "installer_china.yaml found in current path"
     return 0
   fi
@@ -34,7 +35,7 @@ function download_installer_china(){
   until [ "$n" -ge 3 ]
   do
     wget --retry-connrefused --waitretry=30 --read-timeout=20 --timeout=15 -t 3 \
-      -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/installer_china.yaml \
+      -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/china/installer_china.yaml \
       && break
     n=$((n+1))
     if [[ "$n" -ge 3 ]]; then
