@@ -14,7 +14,7 @@ spec:
   transformOutput:
     s3OutputPath: s3://{DATA_BUCKET}/batch-model 
   transformResources:
-    instanceCount: 2
+    instanceCount: 1
     instanceType: ml.m4.xlarge
   tags:
     - key: test-key
