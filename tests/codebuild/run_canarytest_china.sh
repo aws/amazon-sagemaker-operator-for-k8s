@@ -35,7 +35,7 @@ function download_installer_china(){
   until [ "$n" -ge 3 ]
   do
     wget --retry-connrefused --waitretry=30 --read-timeout=20 --timeout=15 -t 3 \
-      -O installer_china.yaml https://raw.githubusercontent.com/akartsky/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/china/installer_china.yaml \
+      -O installer_china.yaml https://github.com/aws/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/china/installer_china.yaml \
       && break
     n=$((n+1))
     if [[ "$n" -ge 3 ]]; then
