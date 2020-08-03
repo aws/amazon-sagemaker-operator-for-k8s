@@ -126,4 +126,4 @@ create-installers-us: modify-base-kustomize-us
 	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/operator.yaml
 	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/crd.yaml
 
-create-installers: create-installers-us create-installers-china
+create-installers: create-installers-china create-installers-us
