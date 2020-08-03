@@ -21,6 +21,7 @@ import (
 	"math/rand"
 
 	. "container/list"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -74,6 +75,7 @@ func createSageMakerJob(name string) sagemaker.DescribeTrainingJobOutput {
 
 // Create a Kubernetes job description.
 func createKubernetesJob(withFinalizer bool, name, namespace string) *trainingjobv1.TrainingJob {
+	CreateMockNamespace(context.Background(), k8sClient, namespace)
 	return &trainingjobv1.TrainingJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

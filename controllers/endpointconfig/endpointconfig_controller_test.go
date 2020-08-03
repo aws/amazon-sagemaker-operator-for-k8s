@@ -21,6 +21,7 @@ import (
 	"time"
 
 	. "container/list"
+
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -313,12 +314,14 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 func createEndpointConfigWithGeneratedNames() *endpointconfigv1.EndpointConfig {
 	k8sName := "endpointconfig-" + uuid.New().String()
 	k8sNamespace := "namespace-" + uuid.New().String()
+	CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 	return createEndpointConfig(false, k8sName, k8sNamespace)
 }
 
 func createEndpointConfigWithFinalizer() *endpointconfigv1.EndpointConfig {
 	k8sName := "endpointconfig-" + uuid.New().String()
 	k8sNamespace := "namespace-" + uuid.New().String()
+	CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 	return createEndpointConfig(true, k8sName, k8sNamespace)
 }
 

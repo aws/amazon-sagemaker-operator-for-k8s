@@ -306,10 +306,14 @@ var _ = Describe("Update EndpointConfigReconciler.Reconcile", func() {
 			},
 		}
 
+		k8sName := "k8s-name-" + uuid.New().String()
+		k8sNamespace := "k8s-namespace-" + uuid.New().String()
+		CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
+
 		desired = &hostingv1.HostingDeployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "k8s-name-" + uuid.New().String(),
-				Namespace: "k8s-namespace-" + uuid.New().String(),
+				Name:      k8sName,
+				Namespace: k8sNamespace,
 				UID:       types.UID(uuid.New().String()),
 			},
 			Spec: hostingv1.HostingDeploymentSpec{
@@ -422,7 +426,6 @@ func createCreatedModelWithSageMakerName(namespacedName types.NamespacedName, de
 
 // Create a K8s EndpointConfig that would have been created by EndpointConfigReconciler.
 func createCreatedEndpointConfig(namespacedName types.NamespacedName, deployment hostingv1.HostingDeployment, sageMakerName string) error {
-
 	err := k8sClient.Create(context.Background(), &endpointconfigv1.EndpointConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      namespacedName.Name,
@@ -469,7 +472,10 @@ func createHostingDeploymentWithBasicProductionVariant() hostingv1.HostingDeploy
 }
 
 func createHostingDeploymentWithGeneratedNames() hostingv1.HostingDeployment {
-	return createHostingDeployment("endpointconfig-"+uuid.New().String(), "namespace-"+uuid.New().String())
+	k8sName := "endpointconfig-" + uuid.New().String()
+	k8sNamespace := "namespace-" + uuid.New().String()
+	CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
+	return createHostingDeployment(k8sName, k8sNamespace)
 }
 
 func createHostingDeployment(k8sName, k8sNamespace string) hostingv1.HostingDeployment {

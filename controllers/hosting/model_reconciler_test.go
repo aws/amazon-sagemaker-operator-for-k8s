@@ -274,6 +274,7 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 
 			k8sName = "k8s-deployment-name"
 			k8sNamespace = "k8s-namespace"
+			CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 
 			modelDataUrl = "s3://bucket/model.tar.gz"
 			region = "us-east-2"
@@ -407,6 +408,7 @@ var _ = Describe("Delete ModelReconciler.Reconcile", func() {
 		reconciler = NewModelReconciler(k8sClient, ctrl.Log)
 		k8sName = "k8s-deployment-name"
 		k8sNamespace = "k8s-namespace"
+		CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 
 		modelDataUrl = "s3://bucket/model.tar.gz"
 		region = "us-east-2"
@@ -495,6 +497,7 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 		modelName = "model-name-" + uuid.New().String()
 		k8sName = "k8s-name-" + uuid.New().String()
 		k8sNamespace = "k8s-namespace-" + uuid.New().String()
+		CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 
 		containers := []*commonv1.ContainerDefinition{
 			{
@@ -580,6 +583,7 @@ var _ = Describe("Update ModelReconciler.Reconcile", func() {
 	BeforeEach(func() {
 		k8sName := "k8s-name-" + uuid.New().String()
 		k8sNamespace = "k8s-namespace-" + uuid.New().String()
+		CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 
 		modelName := "model-name"
 

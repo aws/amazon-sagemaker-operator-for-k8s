@@ -655,6 +655,7 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 func createHyperParameterTuningJobWithGeneratedNames() *hpojobv1.HyperparameterTuningJob {
 	k8sName := "hyperparameter-tuning-job-" + uuid.New().String()
 	k8sNamespace := "namespace-" + uuid.New().String()
+	CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 	return createHyperParameterTuningJob(k8sName, k8sNamespace)
 }
 

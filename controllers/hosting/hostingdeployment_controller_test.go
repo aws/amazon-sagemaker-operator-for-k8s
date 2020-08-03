@@ -22,6 +22,7 @@ import (
 	"time"
 
 	. "container/list"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -905,6 +906,7 @@ func (r *subreconcilerCallTracker) GetNthReconcileCall(index int) (*hostingv1.Ho
 func createDeploymentWithGeneratedNames() *hostingv1.HostingDeployment {
 	k8sName := "endpoint-" + uuid.New().String()
 	k8sNamespace := "namespace-" + uuid.New().String()
+	CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
 	return createDeployment(k8sName, k8sNamespace)
 }
 
