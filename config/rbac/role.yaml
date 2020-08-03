@@ -11,158 +11,118 @@ rules:
   resources:
   - batchtransformjobs
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - batchtransformjobs/status
   verbs:
   - get
-  - update
   - patch
+  - update
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - endpointconfigs
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - endpointconfigs/status
   verbs:
   - get
-  - update
   - patch
+  - update
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - hostingdeployments
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - hostingdeployments/status
   verbs:
   - get
-  - update
   - patch
-- apiGroups:
-  - sagemaker.aws.amazon.com
-  resources:
-  - models
-  verbs:
-  - get
-  - list
-  - watch
-  - create
   - update
-  - patch
-  - delete
-- apiGroups:
-  - sagemaker.aws.amazon.com
-  resources:
-  - models/status
-  verbs:
-  - get
-  - update
-  - patch
-- apiGroups:
-  - sagemaker.aws.amazon.com
-  resources:
-  - endpointconfigs
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - sagemaker.aws.amazon.com
-  resources:
-  - endpointconfigs/status
-  verbs:
-  - get
-  - update
-  - patch
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - hyperparametertuningjobs
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - hyperparametertuningjobs/status
   verbs:
   - get
-  - update
   - patch
+  - update
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - models
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - models/status
   verbs:
   - get
-  - update
   - patch
+  - update
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - trainingjobs
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
   - trainingjobs/status
   verbs:
   - get
-  - update
   - patch
+  - update

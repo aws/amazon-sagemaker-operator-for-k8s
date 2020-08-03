@@ -79,7 +79,7 @@ type S3DataSource struct {
 	// +kubebuilder:validation:Enum=S3Prefix;ManifestFile;AugmentedManifestFile
 	S3DataType string `json:"s3DataType"`
 
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3Uri *string `json:"s3Uri"`
 }
 
@@ -100,14 +100,14 @@ type ShuffleConfig struct {
 type OutputDataConfig struct {
 	KmsKeyId *string `json:"kmsKeyId,omitempty"`
 
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3OutputPath *string `json:"s3OutputPath"`
 }
 
 type CheckpointConfig struct {
 	LocalPath *string `json:"localPath,omitempty"`
 
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3Uri *string `json:"s3Uri"`
 }
 
@@ -447,7 +447,7 @@ type TransformS3DataSource struct {
 	// +kubebuilder:validation:Enum=S3Prefix;ManifestFile;AugmentedManifestFile
 	S3DataType S3DataType `json:"s3DataType"`
 
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3Uri *string `json:"s3Uri"`
 }
 
@@ -463,7 +463,7 @@ type TransformOutput struct {
 
 	KmsKeyId *string `json:"kmsKeyId,omitempty"`
 
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3OutputPath *string `json:"s3OutputPath"`
 }
 
@@ -485,7 +485,7 @@ type TransformResources struct {
 type DebugRuleConfiguration struct {
 	RuleConfigurationName *string `json:"ruleConfigurationName"`
 	LocalPath             *string `json:"localPath,omitempty"`
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3OutputPath       *string `json:"s3OutputPath,omitempty"`
 	RuleEvaluatorImage *string `json:"ruleEvaluatorImage"`
 	// +kubebuilder:validation:Minimum=1
@@ -497,7 +497,7 @@ type DebugRuleConfiguration struct {
 // DebugHookConfig https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugHookConfig.html
 type DebugHookConfig struct {
 	LocalPath *string `json:"localPath,omitempty"`
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3OutputPath             *string                    `json:"s3OutputPath"`
 	HookParameters           []*KeyValuePair            `json:"ruleParameters,omitempty"`
 	CollectionConfigurations []*CollectionConfiguration `json:"collectionConfigurations,omitempty"`
@@ -512,7 +512,7 @@ type CollectionConfiguration struct {
 // TensorBoardOutputConfig https://docs.aws.amazon.com/sagemaker/latest/dg/API_TensorBoardOutputConfig.html
 type TensorBoardOutputConfig struct {
 	LocalPath *string `json:"localPath,omitempty"`
-	// +kubebuilder:validation:Pattern=^(https|s3)://([^/]+)/?(.*)$
+	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3OutputPath *string `json:"s3OutputPath"`
 }
 

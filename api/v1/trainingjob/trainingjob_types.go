@@ -56,7 +56,7 @@ type TrainingJobSpec struct {
 	Region *string `json:"region"`
 
 	// A custom SageMaker endpoint to use when communicating with SageMaker.
-	// +kubebuilder:validation:Pattern=^(https|http)://.*$
+	// +kubebuilder:validation:Pattern="^(https|http)://.*$"
 	SageMakerEndpoint *string `json:"sageMakerEndpoint,omitempty"`
 
 	StoppingCondition *commonv1.StoppingCondition `json:"stoppingCondition"`
