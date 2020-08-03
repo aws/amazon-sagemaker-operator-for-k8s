@@ -33,4 +33,8 @@ function inject_all_variables
   inject_variables testfiles/failing-xgboost-mnist-hpo.yaml
   inject_variables testfiles/xgboost-mnist-trainingjob-debugger.yaml
   inject_variables testfiles/xgboost-mnist-trainingjob-namespaced.yaml
+  inject_variables testfiles/xgboost-mnist-trainingjob-china.yaml
+  inject_variables testfiles/xgboost-mnist-hpo-china.yaml
+  inject_variables testfiles/xgboost-model-china.yaml
+  inject_variables testfiles/xgboost-mnist-batchtransform-china.yaml
 }

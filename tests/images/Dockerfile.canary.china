@@ -1,0 +1,27 @@
+FROM ubuntu:18.04
+
+RUN apt-get update && apt-get install -y curl \
+    wget \
+    git \
+    python \
+    python-pip \
+    vim \
+    sudo \
+    jq
+
+RUN pip install awscli
+
+# Add yq repository and install yq
+RUN apt-get update && apt install -y software-properties-common && sudo add-apt-repository ppa:rmescandon/yq && apt update && apt install -y yq
+
+# Install kubectl
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/linux/amd64/kubectl \
+      && chmod +x ./kubectl && cp ./kubectl /bin
+
+# Install eksctl
+RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && mv /tmp/eksctl /bin
+
+COPY ./codebuild/ ./app/
+
+WORKDIR /app/
+CMD ["./run_canarytest_china.sh"]

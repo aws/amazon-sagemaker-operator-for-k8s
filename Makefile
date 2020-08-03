@@ -1,5 +1,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s:v1
+IMG_CHINA ?= 099223943020.dkr.ecr.cn-northwest-1.amazonaws.com.cn/amazon-sagemaker-operator-for-k8s:v1
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -79,9 +81,17 @@ vet:
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
 
-set-image:
+modify-base-kustomize-us:
 	@echo "Updating controller image"
 	cd config/base && kustomize edit set image controller=${IMG}
+	@echo "Adding patch manager_auth_proxy_patch.yaml"
+	cd config/base && kustomize edit add patch manager_auth_proxy_patch.yaml
+
+modify-base-kustomize-china:
+	@echo "Updating controller image china"
+	cd config/base && kustomize edit set image controller=${IMG_CHINA}
+	@echo "Removing patch manager_auth_proxy_patch.yaml"
+	cd config/base && kustomize edit remove patch manager_auth_proxy_patch.yaml
 
 # Build the docker image
 docker-build: lint generate fmt vet manifests
@@ -101,9 +111,19 @@ else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
-create-installers: set-image
+create-installers-china: modify-base-kustomize-china
+	mkdir -p $(INSTALLER_PATH)/rolebased/china
+	mkdir -p $(INSTALLER_PATH)/rolebased/namespaced/china
+
+	kustomize build config/installers/rolebasedcreds > $(INSTALLER_PATH)/rolebased/china/installer_china.yaml
+	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/china/operator_china.yaml
+	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/china/crd.yaml
+
+create-installers-us: modify-base-kustomize-us
 	mkdir -p $(INSTALLER_PATH)/rolebased/namespaced
 
 	kustomize build config/installers/rolebasedcreds > $(INSTALLER_PATH)/rolebased/installer.yaml
 	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/operator.yaml
 	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/crd.yaml
+
+create-installers: create-installers-us create-installers-china
