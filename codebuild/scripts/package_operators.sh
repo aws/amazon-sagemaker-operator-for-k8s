@@ -79,7 +79,7 @@ function package_operator()
 
   # Build, push and update the CRD with controller image and current git SHA, create the tarball and extract it to pack
   local ecr_image=${account_id}.dkr.ecr.${account_region}.amazonaws.com/${image_repository}
-  make set-image IMG=${ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  make modify-base-kustomize-us IMG=${ecr_image}:$CODEBUILD_RESOLVED_SOURCE_VERSION
   make build-release-tarball
   pushd bin
     tar -xf sagemaker-k8s-operator-install-scripts.tar.gz
