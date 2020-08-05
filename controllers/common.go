@@ -24,6 +24,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -67,6 +68,9 @@ const (
 
 // SageMakerClientProvider is a Type for function that returns a SageMaker client. Used for mocking.
 type SageMakerClientProvider func(aws.Config) sagemakeriface.ClientAPI
+
+// ApplicationAutoscalingClientProvider is a Type for function that returns a ApplicationAutoscaling client. Used for mocking.
+type ApplicationAutoscalingClientProvider func(aws.Config) applicationautoscalingiface.ClientAPI
 
 // RequeueIfError requeues if an error is found.
 func RequeueIfError(err error) (ctrl.Result, error) {

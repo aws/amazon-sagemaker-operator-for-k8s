@@ -360,7 +360,7 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 	for _, ResourceID := range ctx.ResourceIDList {
 		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
 		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil {
-			return errors.Wrap(err, "Unable DeregisterScalableTarget")
+			return errors.Wrap(err, "Unable to DeregisterScalableTarget")
 		}
 	}
 
