@@ -103,7 +103,7 @@ function cleanup_default_namespace {
     set +e
     get_manager_logs
     delete_all_resources "default"
-    rolebased_operator_installation "${default_operator_namespace}" "config/installers/rolebasedcreds" "${default_role_name}" "delete"
+    rolebased_operator_install_or_delete "${default_operator_namespace}" "config/installers/rolebasedcreds" "${default_role_name}" "delete"
 }
 
 
