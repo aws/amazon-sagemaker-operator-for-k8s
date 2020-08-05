@@ -12,27 +12,14 @@ if [[ -z "${DATA_BUCKET}" ]]; then
   echo "DATA_BUCKET environment variable not found"
   exit 1
 fi
-if [[ -z "${CLUSTER_REGION}" ]]; then
-  echo "CLUSTER_REGION environment variable not found"
-  exit 1
-fi
+
 
 # local variables
 DEPLOYMENT_NAME="ephemeral-operator-canary-"$(date '+%Y-%m-%d-%H-%M-%S')""
 CLUSTER_NAME=${DEPLOYMENT_NAME}-cluster
+CLUSTER_REGION=${CLUSTER_REGION:-cn-northwest-1}
 OIDC_ROLE_NAME=pod-role-$DEPLOYMENT_NAME
-AWS_ACC_NUM=$(aws sts get-caller-identity --region $CLUSTER_REGION   --query Account --output text)
-INSTALLER_FILE_NAME=""
-INSTALLER_GITHUB_LINK=""
-
-if is_china_region; then
-  INSTALLER_FILE_NAME="installer_china.yaml"
-  INSTALLER_GITHUB_LINK="https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/release/rolebased/china/installer_china.yaml"
-else
-  INSTALLER_FILE_NAME="installer.yaml"
-  INSTALLER_GITHUB_LINK="https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/release/rolebased/installer.yaml"
-fi
-
+#AWS_ACC_NUM=$(aws sts get-caller-identity --region $CLUSTER_REGION   --query Account --output text)
 
 function is_china_region(){
   [ "${CLUSTER_REGION:0:2}" = "cn" ]
@@ -44,25 +31,25 @@ function china_string(){
   fi
 }
 
-function download_installer(){
-  if [ -f $INSTALLER_FILE_NAME ]; then
-    # codebuild spec copies this file to this dir
-    echo "$INSTALLER_FILE_NAME found in current path"
+function download_installer_china(){
+  if [ -f ./installer_china.yaml ]; then
+    # codebuild spec copies this file from release/rolebased/china/installer_china.yaml to here
+    echo "installer_china.yaml found in current path"
     return 0
   fi
 
-  echo "$INSTALLER_FILE_NAME not found in current path"
+  echo "installer_china.yaml not found in current path"
   echo "Trying to download it from github"
 
   n=0
   until [ "$n" -ge 3 ]
   do
     wget --retry-connrefused --waitretry=30 --read-timeout=20 --timeout=15 -t 3 \
-      -O $INSTALLER_FILE_NAME $INSTALLER_GITHUB_LINK \
+      -O installer_china.yaml https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/china/installer_china.yaml \
       && break
     n=$((n+1))
     if [[ "$n" -ge 3 ]]; then
-      echo "Failed to download $INSTALLER_FILE_NAME"
+      echo "Failed to download installer_china.yaml"
       exit 1
     fi
     echo "Sleeping for" $((60*2*n)) s
@@ -87,7 +74,7 @@ function install_k8s_operators() {
       {
         "Effect": "Allow",
         "Principal": {
-	  "Federated": "arn:aws'$(china_string -)':iam::'$AWS_ACC_NUM':oidc-provider/'$OIDC_URL'"
+          "Federated": "arn:aws-cn:iam::'$AWS_ACC_NUM':oidc-provider/'$OIDC_URL'"
         },
         "Action": "sts:AssumeRoleWithWebIdentity",
         "Condition": {
@@ -102,14 +89,14 @@ function install_k8s_operators() {
   ' > ./trust.json
 
   aws --region $CLUSTER_REGION iam create-role --role-name $OIDC_ROLE_NAME --assume-role-policy-document file://trust.json
-  aws --region $CLUSTER_REGION iam attach-role-policy --role-name $OIDC_ROLE_NAME --policy-arn arn:aws$(china_string -):iam::aws:policy/AmazonSageMakerFullAccess
+  aws --region $CLUSTER_REGION iam attach-role-policy --role-name $OIDC_ROLE_NAME --policy-arn arn:aws-cn:iam::aws:policy/AmazonSageMakerFullAccess
   OIDC_ROLE_ARN=$(aws --region $CLUSTER_REGION iam get-role --role-name $OIDC_ROLE_NAME --output text --query 'Role.Arn')
 
-  download_installer
+  download_installer_china
 
-  FIND_STR=$(yq r -d'*' $INSTALLER_FILE_NAME 'metadata.annotations."eks.amazonaws.com/role-arn"')
-  sed -i "s#$FIND_STR#$OIDC_ROLE_ARN#g" $INSTALLER_FILE_NAME
-  kubectl apply -f $INSTALLER_FILE_NAME
+  FIND_STR=$(yq r -d'*' installer_china.yaml 'metadata.annotations."eks.amazonaws.com/role-arn"')
+  sed -i "s#$FIND_STR#$OIDC_ROLE_ARN#g" installer_china.yaml
+  kubectl apply -f installer_china.yaml
 
   echo "Waiting for controller pod to be Ready"
   # Wait to increase chance that pod is ready
@@ -120,7 +107,7 @@ function install_k8s_operators() {
 
 function delete_generated_oidc_role {
     echo "Deleting generated OIDC role"
-    aws iam detach-role-policy --region $CLUSTER_REGION  --role-name ${OIDC_ROLE_NAME} --policy-arn arn:aws$(china_string -):iam::aws:policy/AmazonSageMakerFullAccess
+    aws iam detach-role-policy --region $CLUSTER_REGION  --role-name ${OIDC_ROLE_NAME} --policy-arn arn:aws-cn:iam::aws:policy/AmazonSageMakerFullAccess
     aws iam delete-role --region $CLUSTER_REGION --role-name ${OIDC_ROLE_NAME}
 }
 
@@ -138,8 +125,8 @@ function cleanup() {
 
 #trap cleanup EXIT
 
-create_eks_cluster
-install_k8s_operators
-
+#create_eks_cluster
+#install_k8s_operators
+echo $(china_string)
 set -e
 #./run_all_sample_canary_tests_china.sh
