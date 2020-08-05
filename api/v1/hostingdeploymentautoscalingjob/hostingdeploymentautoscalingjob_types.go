@@ -39,13 +39,14 @@ type HostingDeploymentAutoscalingJobSpec struct {
 
 	// The autoscaling policy name. This is optional for the SageMaker K8s operator. If it is empty,
 	// the operator will populate it with a generated name.
-	// +kubebuilder:validation:MaxLength=63
+	// +kubebuilder:validation:MaxLength=256
 	PolicyName *string `json:"policyName,omitempty"`
 
 	// The autoscaling policy type. This is optional for the SageMaker K8s operator. If it is empty,
 	// the operator will populate it with TargetTrackingScaling
 	PolicyType *string `json:"policyType,omitempty"`
 
+	// +kubebuilder:validation:MinItems=1
 	ResourceID []*commonv1.AutoscalingResource `json:"resourceId,omitempty"`
 
 	ServiceNamespace *string `json:"serviceNamespace,omitempty"`
