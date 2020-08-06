@@ -17,13 +17,13 @@ limitations under the License.
 package controllertest
 
 import (
-	"fmt"
 	. "container/list"
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
 )
@@ -49,44 +49,44 @@ type MockAutoscalingClientBuilder struct {
 
 // Helper data structure that represents a single describeScalableTargetsResponse.
 type describeScalableTargetsResponse struct {
-	err  awserr.RequestFailure
+	err        awserr.RequestFailure
 	targetData *applicationautoscaling.DescribeScalableTargetsOutput
 }
 
 // Helper data structure that represents a single registerScalableTargetResponse.
 type registerScalableTargetResponse struct {
-	err  awserr.RequestFailure
+	err        awserr.RequestFailure
 	targetData *applicationautoscaling.RegisterScalableTargetOutput
 }
 
 // Helper data structure that represents a single describeScalingPolicyResponse from the innerClient
 type describeScalingPolicyResponse struct {
-	err  awserr.RequestFailure
+	err        awserr.RequestFailure
 	policyData *applicationautoscaling.DescribeScalingPoliciesOutput
 }
 
 // Helper data structure that represents a single putScalingPolicyResponse.
 type putScalingPolicyResponse struct {
-	err  awserr.RequestFailure
+	err        awserr.RequestFailure
 	policyData *applicationautoscaling.PutScalingPolicyOutput
 }
 
 // Helper data structure that represents a single putScalingPolicyResponse.
 type deleteScalingPolicyResponse struct {
-	err  awserr.RequestFailure
+	err        awserr.RequestFailure
 	policyData *applicationautoscaling.DeleteScalingPolicyOutput
 }
 
 // Helper data structure that represents a single putScalingPolicyResponse.
 type deregisterScalableTargetResponse struct {
-	err  awserr.RequestFailure
+	err        awserr.RequestFailure
 	targetData *applicationautoscaling.DeregisterScalableTargetOutput
 }
 
 // AddDescribeScalingPoliciesErrorResponse Add a DescribeScalingPolicy error response to the client.
 func (m *MockAutoscalingClientBuilder) AddDescribeScalingPoliciesErrorResponse(code string, message string, statusCode int, reqID string) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(describeScalingPolicyResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
+		err:        awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
 		policyData: nil,
 	})
 	return m
@@ -95,7 +95,7 @@ func (m *MockAutoscalingClientBuilder) AddDescribeScalingPoliciesErrorResponse(c
 // AddDescribeScalingPoliciesResponse Add a DescribeScalingPolicy response to the client.
 func (m *MockAutoscalingClientBuilder) AddDescribeScalingPoliciesResponse(data applicationautoscaling.DescribeScalingPoliciesOutput) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(describeScalingPolicyResponse{
-		err:  nil,
+		err:        nil,
 		policyData: &data,
 	})
 
@@ -112,7 +112,7 @@ func (m *MockAutoscalingClientBuilder) AddDescribeScalingPoliciesEmptyResponse()
 // AddPutScalingPolicyErrorResponse Add a PutScalingPolicy error response to the client.
 func (m *MockAutoscalingClientBuilder) AddPutScalingPolicyErrorResponse(code string, message string, statusCode int, reqID string) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(putScalingPolicyResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
+		err:        awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
 		policyData: nil,
 	})
 	return m
@@ -121,7 +121,7 @@ func (m *MockAutoscalingClientBuilder) AddPutScalingPolicyErrorResponse(code str
 // AddPutScalingPolicyResponse Add a PutScalingPolicy response to the client.
 func (m *MockAutoscalingClientBuilder) AddPutScalingPolicyResponse(data applicationautoscaling.PutScalingPolicyOutput) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(putScalingPolicyResponse{
-		err:  nil,
+		err:        nil,
 		policyData: &data,
 	})
 
@@ -131,7 +131,7 @@ func (m *MockAutoscalingClientBuilder) AddPutScalingPolicyResponse(data applicat
 // AddDeleteScalingPolicyErrorResponse Add a PutScalingPolicy error response to the client.
 func (m *MockAutoscalingClientBuilder) AddDeleteScalingPolicyErrorResponse(code string, message string, statusCode int, reqID string) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(putScalingPolicyResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
+		err:        awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
 		policyData: nil,
 	})
 	return m
@@ -140,7 +140,7 @@ func (m *MockAutoscalingClientBuilder) AddDeleteScalingPolicyErrorResponse(code 
 // AddDeleteScalingPolicyResponse Add a PutScalingPolicy response to the client.
 func (m *MockAutoscalingClientBuilder) AddDeleteScalingPolicyResponse(data applicationautoscaling.DeleteScalingPolicyOutput) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(deleteScalingPolicyResponse{
-		err:  nil,
+		err:        nil,
 		policyData: &data,
 	})
 	return m
@@ -149,7 +149,7 @@ func (m *MockAutoscalingClientBuilder) AddDeleteScalingPolicyResponse(data appli
 // AddDescribeScalableTargetsErrorResponse Add a DescribeScalingPolicy error response to the client.
 func (m *MockAutoscalingClientBuilder) AddDescribeScalableTargetsErrorResponse(code string, message string, statusCode int, reqID string) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(describeScalableTargetsResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
+		err:        awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
 		targetData: nil,
 	})
 	return m
@@ -158,7 +158,7 @@ func (m *MockAutoscalingClientBuilder) AddDescribeScalableTargetsErrorResponse(c
 // AddDescribeScalableTargetsResponse Add a DescribeScalingPolicy response to the client.
 func (m *MockAutoscalingClientBuilder) AddDescribeScalableTargetsResponse(data applicationautoscaling.DescribeScalableTargetsOutput) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(describeScalableTargetsResponse{
-		err:  nil,
+		err:        nil,
 		targetData: &data,
 	})
 
@@ -168,7 +168,7 @@ func (m *MockAutoscalingClientBuilder) AddDescribeScalableTargetsResponse(data a
 // AddRegisterScalableTargetsErrorResponse Add a PutScalingPolicy error response to the client.
 func (m *MockAutoscalingClientBuilder) AddRegisterScalableTargetsErrorResponse(code string, message string, statusCode int, reqID string) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(registerScalableTargetResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
+		err:        awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
 		targetData: nil,
 	})
 	return m
@@ -177,7 +177,7 @@ func (m *MockAutoscalingClientBuilder) AddRegisterScalableTargetsErrorResponse(c
 // AddRegisterScalableTargetsResponse Add a PutScalingPolicy response to the client.
 func (m *MockAutoscalingClientBuilder) AddRegisterScalableTargetsResponse(data applicationautoscaling.RegisterScalableTargetOutput) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(registerScalableTargetResponse{
-		err:  nil,
+		err:        nil,
 		targetData: &data,
 	})
 
@@ -187,7 +187,7 @@ func (m *MockAutoscalingClientBuilder) AddRegisterScalableTargetsResponse(data a
 // AddDeregisterScalableTargetsErrorResponse Add a PutScalingPolicy error response to the client.
 func (m *MockAutoscalingClientBuilder) AddDeregisterScalableTargetsErrorResponse(code string, message string, statusCode int, reqID string) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(deregisterScalableTargetResponse{
-		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
+		err:        awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqID),
 		targetData: nil,
 	})
 	return m
@@ -196,7 +196,7 @@ func (m *MockAutoscalingClientBuilder) AddDeregisterScalableTargetsErrorResponse
 // AddDeregisterScalableTargetsResponse Add a PutScalingPolicy response to the client.
 func (m *MockAutoscalingClientBuilder) AddDeregisterScalableTargetsResponse(data applicationautoscaling.DeregisterScalableTargetOutput) *MockAutoscalingClientBuilder {
 	m.responses.PushBack(deregisterScalableTargetResponse{
-		err:  nil,
+		err:        nil,
 		targetData: &data,
 	})
 

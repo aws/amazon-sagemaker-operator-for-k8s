@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
+	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"

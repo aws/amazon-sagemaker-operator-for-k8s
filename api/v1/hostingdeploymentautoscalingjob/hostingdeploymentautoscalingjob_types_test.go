@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
+	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,16 +65,16 @@ var _ = Describe("HostingAutoscalingPolicy", func() {
 				Spec: HostingDeploymentAutoscalingJobSpec{
 					ResourceID: []*commonv1.AutoscalingResource{
 						{
-							EndpointName:	ToStringPtr("endpoint-xyz"),
-							VariantName:	ToStringPtr("variant-xyz"),
+							EndpointName: ToStringPtr("endpoint-xyz"),
+							VariantName:  ToStringPtr("variant-xyz"),
 						},
 					},
 					TargetTrackingScalingPolicyConfiguration: &commonv1.TargetTrackingScalingPolicyConfig{
 						PredefinedMetricSpecification: &commonv1.PredefinedMetricSpecification{},
 					},
-					Region:			ToStringPtr("region-xyz"),
-					MinCapacity:	ToInt64Ptr(1),
-					MaxCapacity:	ToInt64Ptr(2),	
+					Region:      ToStringPtr("region-xyz"),
+					MinCapacity: ToInt64Ptr(1),
+					MaxCapacity: ToInt64Ptr(2),
 				},
 			}
 
