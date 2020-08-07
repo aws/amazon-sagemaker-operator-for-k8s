@@ -46,7 +46,6 @@ type HostingDeploymentAutoscalingJobSpec struct {
 	// the operator will populate it with TargetTrackingScaling
 	PolicyType *string `json:"policyType,omitempty"`
 
-	// TODO: should this be a pointer instead
 	ResourceID []*commonv1.AutoscalingResource `json:"resourceId,omitempty"`
 
 	ServiceNamespace *string `json:"serviceNamespace,omitempty"`

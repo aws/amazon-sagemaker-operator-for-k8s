@@ -1339,7 +1339,7 @@ func (in *TargetTrackingScalingPolicyConfig) DeepCopyInto(out *TargetTrackingSca
 	*out = *in
 	if in.TargetValue != nil {
 		in, out := &in.TargetValue, &out.TargetValue
-		*out = new(int64)
+		*out = new(string)
 		**out = **in
 	}
 	if in.ScaleInCooldown != nil {
@@ -1350,6 +1350,11 @@ func (in *TargetTrackingScalingPolicyConfig) DeepCopyInto(out *TargetTrackingSca
 	if in.ScaleOutCooldown != nil {
 		in, out := &in.ScaleOutCooldown, &out.ScaleOutCooldown
 		*out = new(int64)
+		**out = **in
+	}
+	if in.DisableScaleIn != nil {
+		in, out := &in.DisableScaleIn, &out.DisableScaleIn
+		*out = new(bool)
 		**out = **in
 	}
 	if in.PredefinedMetricSpecification != nil {

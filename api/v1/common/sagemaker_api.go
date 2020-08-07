@@ -529,41 +529,50 @@ type DebugRuleEvaluationStatus struct {
 	StatusDetail *string `json:"statusDetail,omitempty"`
 }
 
-// AutoscalingResource TODO: <link>, check validation
+// AutoscalingResource is used to create the string representing the resourceID
+// in the format endpoint/my-end-point/variant/my-variant
 type AutoscalingResource struct {
 	// +kubebuilder:validation:MinLength=1
-	EndpointName *string `json:"endpointName"`
+	EndpointName *string `json:"endpointName,omitempty"`
 
 	// +kubebuilder:validation:MinLength=1
-	VariantName *string `json:"variantName"`
+	VariantName *string `json:"variantName,omitempty"`
 }
 
-// PredefinedMetricSpecification TODO: <link>
+// PredefinedMetricSpecification https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
 type PredefinedMetricSpecification struct {
 	PredefinedMetricType *string `json:"predefinedMetricType,omitempty"`
 }
 
-// CustomizedMetricSpecification TODO: <link>
+// CustomizedMetricSpecification https://docs.aws.amazon.com/autoscaling/application/APIReference/API_CustomizedMetricSpecification.html
 type CustomizedMetricSpecification struct {
-	MetricName *string         `json:"metricName,omitempty"`
-	Namespace  *string         `json:"namespace,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+	MetricName *string `json:"metricName,omitempty"`
+
+	// +kubebuilder:validation:MinLength=1
+	Namespace *string `json:"namespace,omitempty"`
+
+	// +kubebuilder:validation:MinLength=1
 	Statistic  *string         `json:"statistic,omitempty"`
 	Unit       *string         `json:"unit,omitempty"`
 	Dimensions []*KeyValuePair `json:"dimensions,omitempty"`
 }
 
-// TargetTrackingScalingPolicyConfig TODO: <link>
+// TargetTrackingScalingPolicyConfig https://docs.aws.amazon.com/autoscaling/application/APIReference/API_TargetTrackingScalingPolicyConfiguration.html
+// TODO: test the targetValue works as expected.
 type TargetTrackingScalingPolicyConfig struct {
-	TargetValue      *int64 `json:"targetValue,omitempty"`
-	ScaleInCooldown  *int64 `json:"scaleInCooldown,omitempty"`
-	ScaleOutCooldown *int64 `json:"scaleOutCooldown,omitempty"`
+	// +kubebuilder:validation:MinLength=1
+	TargetValue      *string `json:"targetValue,omitempty"`
+	ScaleInCooldown  *int64  `json:"scaleInCooldown,omitempty"`
+	ScaleOutCooldown *int64  `json:"scaleOutCooldown,omitempty"`
+	DisableScaleIn   *bool   `json:"disableScaleIn,omitempty"`
 
-	// TODO: only one of the following two should be specified, wrap into another struct ?
+	// Ideally Predefined metric should not need a value but this is for consistency with API usage
 	PredefinedMetricSpecification *PredefinedMetricSpecification `json:"predefinedMetricSpecification,omitempty"`
 	CustomizedMetricSpecification *CustomizedMetricSpecification `json:"customizedMetricSpecification,omitempty"`
 }
 
-// SuspendedState https://docs.aws.amazon.com/autoscaling/application/APIReference/API_SuspendedState.html
+// HAPSuspendedState https://docs.aws.amazon.com/autoscaling/application/APIReference/API_SuspendedState.html
 type HAPSuspendedState struct {
 	DynamicScalingInSuspended  *bool `json:"dynamicScalingInSuspended,omitempty"`
 	DynamicScalingOutSuspended *bool `json:"dynamicScalingOutSuspended,omitempty"`
