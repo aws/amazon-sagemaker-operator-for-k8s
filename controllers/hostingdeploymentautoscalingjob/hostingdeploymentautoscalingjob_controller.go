@@ -399,6 +399,7 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 
 	// For each resourceID, apply the scalingPolicy
 	putScalingPolicyInputList = sdkutil.CreatePutScalingPolicyInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
+	r.Log.Info("putScalingPolicyInputList", "putScalingPolicyInputList", putScalingPolicyInputList)
 	for _, putScalingPolicyInput := range putScalingPolicyInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.PutScalingPolicy(ctx, &putScalingPolicyInput); err != nil {
 			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to Put Scaling Policy")
