@@ -17,7 +17,13 @@ limitations under the License.
 package controllertest
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo"
+	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"fmt"
 	"time"
@@ -52,4 +58,17 @@ func ParseDurationOrFail(str string) time.Duration {
 	}
 
 	return dur
+}
+
+func CreateMockNamespace(ctx context.Context, k8sClient client.Client, k8sNamespace string) error {
+	err := k8sClient.Create(ctx, &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sNamespace,
+		},
+	})
+
+	if err != nil && !apierrs.IsAlreadyExists(err) {
+		return err
+	}
+	return nil
 }

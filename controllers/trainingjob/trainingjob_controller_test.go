@@ -936,6 +936,9 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 func createTrainingJobWithGeneratedNames() *trainingjobv1.TrainingJob {
 	k8sName := "training-job-" + uuid.New().String()
 	k8sNamespace := "namespace-" + uuid.New().String()
+
+	CreateMockNamespace(context.Background(), k8sClient, k8sNamespace)
+
 	return createTrainingJob(k8sName, k8sNamespace)
 }
 

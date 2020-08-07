@@ -3,8 +3,6 @@ kind: Kustomization
 
 # This template does not include the packaging of the CRDs.
 
-patchesStrategicMerge:
-- manager_auth_proxy_patch.yaml
 # Add other common files from base dir if you need to
 
 # This is set by `make docker-build` but not when you build helm chart
@@ -14,3 +12,5 @@ images:
   newTag: v1
 resources:
 - ../manager
+patchesStrategicMerge:
+- manager_auth_proxy_patch.yaml

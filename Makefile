@@ -105,7 +105,7 @@ docker-push:
 # download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-beta.2
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0
 CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
@@ -126,4 +126,4 @@ create-installers-us: modify-base-kustomize-us
 	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/operator.yaml
 	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/crd.yaml
 
-create-installers: create-installers-us create-installers-china
+create-installers: create-installers-china create-installers-us
