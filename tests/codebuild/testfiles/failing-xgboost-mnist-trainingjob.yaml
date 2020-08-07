@@ -25,10 +25,10 @@ spec:
     - name: num_round
       value: "10"
   algorithmSpecification:
-    trainingImage: 763104351884.dkr.ecr.us-west-2.amazonaws.com/tensorflow-training:2.0.1-gpu-py36-cu100-ubuntu18.04
+    trainingImage: {FAKE_IMAGE}
     trainingInputMode: File
   roleArn: {ROLE_ARN}
-  region: us-west-2
+  region: {REGION}
   outputDataConfig:
     s3OutputPath: s3://{DATA_BUCKET}/xgboost/
   resourceConfig:

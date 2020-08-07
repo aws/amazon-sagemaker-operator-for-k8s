@@ -6,8 +6,8 @@ spec:
   primaryContainer:
     containerHostname: xgboost
     modelDataUrl: s3://{DATA_BUCKET}/batch-transform/xgboost-mnist/model.tar.gz
-    image: 387376663083.dkr.ecr.cn-northwest-1.amazonaws.com.cn/xgboost:latest
-  region: cn-northwest-1
+    image: {XGBOOST_IMAGE}
+  region: {REGION}
   executionRoleArn: {ROLE_ARN}
   tags:
     - key: key 

@@ -21,10 +21,10 @@ spec:
         - name: num_round
           value: "51"
     algorithmSpecification:
-        trainingImage: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:0.90-2-cpu-py3
+        trainingImage: {SAGEMAKER_XGBOOST_IMAGE}
         trainingInputMode: File
     roleArn: {ROLE_ARN}
-    region: us-west-2
+    region: {REGION}
     outputDataConfig:
         s3OutputPath: s3://{DATA_BUCKET}/xgboost-debugger/output
     resourceConfig:
@@ -71,7 +71,7 @@ spec:
               value: "5" 
     debugRuleConfigurations:
       - ruleConfigurationName: LossNotDecreasing
-        ruleEvaluatorImage: 895741380848.dkr.ecr.us-west-2.amazonaws.com/sagemaker-debugger-rules:latest
+        ruleEvaluatorImage: {SAGEMAKER_DEBUGGER_RULES_IMAGE}
         ruleParameters:
           - name: collection_names
             value: metrics

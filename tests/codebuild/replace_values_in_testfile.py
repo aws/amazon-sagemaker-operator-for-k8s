@@ -27,8 +27,12 @@ def main(argv):
     args = parser.parse_args(argv)
     replace_values = [
         ('{ROLE_ARN}', args.sagemaker_role),
+        ('{REGION}', args.sagemaker_region),
         ('{DATA_BUCKET}', args.bucket_name),
-        ('{XGBOOST_IMAGE}', image_uris.retrieve(framework='xgboost', region=args.sagemaker_region, version='1'))
+        ('{XGBOOST_IMAGE}', image_uris.retrieve(framework='xgboost', region=args.sagemaker_region, version='1')),
+        ('{SAGEMAKER_XGBOOST_IMAGE}', image_uris.retrieve(framework='xgboost', region=args.sagemaker_region, version='0.90-2')),
+        ('{SAGEMAKER_DEBUGGER_RULES_IMAGE}', image_uris.retrieve(framework='debugger', region=args.sagemaker_region, version='latest')),
+        ('{FAKE_IMAGE}', 'ubuntu:latest')
     ]
     for file in args.testfile_path:
         replace_in_file(file, replace_values)

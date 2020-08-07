@@ -3,8 +3,8 @@ kind: HyperparameterTuningJob
 metadata:
   name: xgboost-mnist-hpo-custom-endpoint
 spec:
-  region: us-west-2
-  sageMakerEndpoint: https://sagemaker.us-west-2.amazonaws.com
+  region: {REGION}
+  sageMakerEndpoint: https://sagemaker.{REGION}.amazonaws.com
   hyperParameterTuningJobConfig:
     strategy: Bayesian
     hyperParameterTuningJobObjective:

@@ -18,23 +18,9 @@ function inject_variables()
 # specific to the account they are run within.
 function inject_all_variables
 {
-  inject_variables testfiles/xgboost-mnist-trainingjob.yaml
-  inject_variables testfiles/spot-xgboost-mnist-trainingjob.yaml
-  inject_variables testfiles/xgboost-mnist-custom-endpoint.yaml
-  # inject_variables testfiles/efs-xgboost-mnist-trainingjob.yaml
-  # inject_variables testfiles/fsx-kmeans-mnist-trainingjob.yaml
-  inject_variables testfiles/xgboost-mnist-hpo.yaml
-  inject_variables testfiles/spot-xgboost-mnist-hpo.yaml
-  inject_variables testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
-  inject_variables testfiles/xgboost-model.yaml
-  inject_variables testfiles/xgboost-mnist-batchtransform.yaml
-  inject_variables testfiles/xgboost-hosting-deployment.yaml
-  inject_variables testfiles/failing-xgboost-mnist-trainingjob.yaml
-  inject_variables testfiles/failing-xgboost-mnist-hpo.yaml
-  inject_variables testfiles/xgboost-mnist-trainingjob-debugger.yaml
-  inject_variables testfiles/xgboost-mnist-trainingjob-namespaced.yaml
-  inject_variables testfiles/xgboost-mnist-trainingjob-china.yaml
-  inject_variables testfiles/xgboost-mnist-hpo-china.yaml
-  inject_variables testfiles/xgboost-model-china.yaml
-  inject_variables testfiles/xgboost-mnist-batchtransform-china.yaml
+  python3 replace_values_in_testfile.py \
+    --testfile_path ./testfiles/* \
+    --sagemaker_region ${CLUSTER_REGION} \
+    --sagemaker_role ${ROLE_ARN} \
+    --bucket_name ${DATA_BUCKET}
 }

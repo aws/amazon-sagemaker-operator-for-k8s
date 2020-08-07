@@ -3,6 +3,7 @@
 # Env variables that need to be set before running this script
 # ROLE_ARN : SageMaker executor role arn
 # DATA_BUCKET : S3 bucket name where input data is stored
+# CLUSTER_REGION : AWS region where cluster will be created and tests will be run
 
 if [[ -z "${ROLE_ARN}" ]]; then
   echo "ROLE_ARN environment variable not found"
@@ -142,4 +143,4 @@ create_eks_cluster
 install_k8s_operators
 
 set -e
-#./run_all_sample_canary_tests_china.sh
+./run_all_sample_canary_tests.sh

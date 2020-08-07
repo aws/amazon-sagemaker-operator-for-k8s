@@ -3,7 +3,7 @@ kind: HyperparameterTuningJob
 metadata:
   name: xgboost-mnist-hpo-china
 spec:
-    region: cn-northwest-1
+    region: {REGION}
     tags:
       - key: test-key
         value: test-value

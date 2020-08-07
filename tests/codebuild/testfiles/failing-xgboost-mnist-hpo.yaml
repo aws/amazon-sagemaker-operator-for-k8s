@@ -7,7 +7,7 @@ kind: HyperparameterTuningJob
 metadata:
   name: failing-xgboost-mnist-hpo
 spec:
-  region: us-west-2
+  region: {REGION}
   tags:
   - key: test-key
     value: test-value
@@ -77,7 +77,7 @@ spec:
     - name: updater
       value: grow_colmaker,prune
     algorithmSpecification:
-      trainingImage: 763104351884.dkr.ecr.us-west-2.amazonaws.com/tensorflow-training:2.0.1-gpu-py36-cu100-ubuntu18.04
+      trainingImage: {FAKE_IMAGE}
       trainingInputMode: File
       metricDefinitions:
       - name: validation:error

@@ -3,7 +3,7 @@ kind: HostingDeployment
 metadata:
   name: hosting
 spec:
-  region: us-west-2
+  region: {REGION}
   productionVariants:
     - variantName: AllTraffic
       modelName: xgboost-model
@@ -16,7 +16,7 @@ spec:
       containers:
         - containerHostname: xgboost
           modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
-          image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest
+          image: {XGBOOST_IMAGE}
           environment:
             - name: my_env_key
               value: my_env_value

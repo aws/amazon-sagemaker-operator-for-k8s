@@ -3,7 +3,7 @@ kind: BatchTransformJob
 metadata:
   name: xgboost-batch-china
 spec:
-  region: cn-northwest-1
+  region: {REGION}
   modelName: xgboost-model
   transformInput:
     contentType: text/csv

@@ -24,7 +24,7 @@ spec:
     trainingImage: {XGBOOST_IMAGE}
     trainingInputMode: File
   roleArn: {ROLE_ARN}
-  region: cn-northwest-1
+  region: {REGION}
   outputDataConfig:
     s3OutputPath: s3://{DATA_BUCKET}/xgboost/
   resourceConfig:

@@ -3,14 +3,14 @@ kind: BatchTransformJob
 metadata:
   name: xgboost-batch
 spec:
-  region: us-west-2
+  region: {REGION}
   modelName: xgboost-model
   transformInput:
     contentType: text/csv
     dataSource:
       s3DataSource:
         s3DataType: S3Prefix
-        s3Uri: s3://sagemaker-sample-data-us-west-2/batch-transform/mnist-1000-samples 
+        s3Uri: s3://sagemaker-sample-data-{REGION}/batch-transform/mnist-1000-samples
   transformOutput:
     s3OutputPath: s3://{DATA_BUCKET}/batch-model 
   transformResources:
