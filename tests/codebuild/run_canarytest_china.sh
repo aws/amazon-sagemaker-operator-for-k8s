@@ -25,14 +25,6 @@ AWS_ACC_NUM=$(aws sts get-caller-identity --region $CLUSTER_REGION   --query Acc
 INSTALLER_FILE_NAME=""
 INSTALLER_GITHUB_LINK=""
 
-if is_china_region; then
-  INSTALLER_FILE_NAME="installer_china.yaml"
-  INSTALLER_GITHUB_LINK="https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/release/rolebased/china/installer_china.yaml"
-else
-  INSTALLER_FILE_NAME="installer.yaml"
-  INSTALLER_GITHUB_LINK="https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/release/rolebased/installer.yaml"
-fi
-
 
 function is_china_region(){
   [ "${CLUSTER_REGION:0:2}" = "cn" ]
@@ -43,6 +35,14 @@ function china_string(){
     echo $1"cn"
   fi
 }
+
+if is_china_region; then
+  INSTALLER_FILE_NAME="installer_china.yaml"
+  INSTALLER_GITHUB_LINK="https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/release/rolebased/china/installer_china.yaml"
+else
+  INSTALLER_FILE_NAME="installer.yaml"
+  INSTALLER_GITHUB_LINK="https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/release/rolebased/installer.yaml"
+fi
 
 function download_installer(){
   if [ -f $INSTALLER_FILE_NAME ]; then
