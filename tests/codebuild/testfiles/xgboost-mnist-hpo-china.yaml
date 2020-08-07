@@ -73,7 +73,7 @@ spec:
         - name: updater
           value: grow_colmaker,prune
       algorithmSpecification:
-        trainingImage: 387376663083.dkr.ecr.cn-northwest-1.amazonaws.com.cn/xgboost:1
+        trainingImage: {XGBOOST_IMAGE}
         trainingInputMode: File
       roleArn: {ROLE_ARN}
       inputDataConfig:

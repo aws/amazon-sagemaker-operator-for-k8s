@@ -21,7 +21,7 @@ spec:
     - name: num_round
       value: "10"
   algorithmSpecification:
-    trainingImage: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
+    trainingImage: {XGBOOST_IMAGE}
     trainingInputMode: File
   roleArn: {ROLE_ARN}
   region: us-west-2
