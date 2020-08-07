@@ -44,10 +44,6 @@ const (
 	// This Status signifies that the job has been successfully completed for both steps
 	CreatedAutoscalingJobStatus = "CreatedAutoscalingJob"
 
-	// Only the first step completed, after this it could either go to the Failed, Reconciling or Created Status
-	// TODO this is not being used at the moment, delete if not required
-	RegisteredTargetsJobStatus = "RegisteredTargets"
-
 	// Could have failed either at step1 or step2
 	FailedAutoscalingJobStatus = "FailedAutoscalingJob"
 
@@ -76,7 +72,6 @@ func NewHostingDeploymentAutoscalingJobReconciler(client client.Client, log logr
 	return &Reconciler{
 		Client: client,
 		Log:    log,
-		// TODO: Model calls ClientAPI, check
 		createApplicationAutoscalingClient: func(cfg aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
 			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(cfg))
 		},
@@ -229,11 +224,10 @@ func (r *Reconciler) getResourceIDListfromInputSpec(ctx *reconcileRequestContext
 
 	resourceIDListfromSpec := ctx.HostingDeploymentAutoscalingJob.Spec.ResourceID
 	for _, resourceIDfromSpec := range resourceIDListfromSpec {
-		ResourceID := sdkutil.ConvertAutoscalingResourceToString(*resourceIDfromSpec)
-		ctx.ResourceIDList = append(ctx.ResourceIDList, *ResourceID)
+		resourceID := sdkutil.ConvertAutoscalingResourceToString(*resourceIDfromSpec)
+		ctx.ResourceIDList = append(ctx.ResourceIDList, *resourceID)
 	}
 
-	// TODO: error handling
 	return nil
 }
 
@@ -313,7 +307,7 @@ func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) 
 		return controllers.NeedsNoop, err
 	}
 
-	r.Log.Info("Compared existing model to actual model to determine if model needs to be updated.", "differences", comparison.Differences, "equal", comparison.Equal)
+	r.Log.Info("Compared existing HAP to actual HAP to determine if HAP needs to be updated.", "differences", comparison.Differences, "is-equal", comparison.Equal)
 
 	if comparison.Equal {
 		return controllers.NeedsNoop, nil
@@ -352,7 +346,6 @@ func (r *Reconciler) describeAutoscalingPolicy(ctx reconcileRequestContext) ([]*
 }
 
 // deleteAutoscalingPolicy converts Spec to Input, Registers Target, Creates second input, applies the scalingPolicy
-// same as reconcileCreation of model
 func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error {
 	var deregisterScalableTargetInput applicationautoscaling.DeregisterScalableTargetInput
 	var deleteScalingPolicyInput applicationautoscaling.DeleteScalingPolicyInput
@@ -399,7 +392,6 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 
 	// For each resourceID, apply the scalingPolicy
 	putScalingPolicyInputList = sdkutil.CreatePutScalingPolicyInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
-	r.Log.Info("putScalingPolicyInputList", "putScalingPolicyInputList", putScalingPolicyInputList)
 	for _, putScalingPolicyInput := range putScalingPolicyInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.PutScalingPolicy(ctx, &putScalingPolicyInput); err != nil {
 			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to Put Scaling Policy")

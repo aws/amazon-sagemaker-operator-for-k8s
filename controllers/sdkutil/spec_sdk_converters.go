@@ -38,7 +38,7 @@ import (
 // HostingDeploymentAutoscalingServiceNamespace is a constant value for using the Autoscaling API in the SageMaker Service
 const HostingDeploymentAutoscalingServiceNamespace = "sagemaker"
 
-// Create a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
+// CreateHyperParameterTuningJobSpecFromDescription creates a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
 // This panics if json libraries are unable to serialize the description and deserialize the serialization.
 func CreateHyperParameterTuningJobSpecFromDescription(description sagemaker.DescribeHyperParameterTuningJobOutput) hpojobv1.HyperparameterTuningJobSpec {
 	if spec, err := createHyperParameterTuningJobSpecFromDescription(description); err == nil {
@@ -48,7 +48,7 @@ func CreateHyperParameterTuningJobSpecFromDescription(description sagemaker.Desc
 	}
 }
 
-// Create a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
+// createHyperParameterTuningJobSpecFromDescription creates a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
 func createHyperParameterTuningJobSpecFromDescription(description sagemaker.DescribeHyperParameterTuningJobOutput) (hpojobv1.HyperparameterTuningJobSpec, error) {
 
 	transformedHyperParameters := []*commonv1.KeyValuePair{}
@@ -83,7 +83,7 @@ func createHyperParameterTuningJobSpecFromDescription(description sagemaker.Desc
 	return unmarshalled, nil
 }
 
-// Create a TrainingJobSpec from a SageMaker description. This uses JSON to do the assignment. It also transforms the hyperparameter
+// CreateTrainingJobSpecFromDescription creates a TrainingJobSpec from a SageMaker description. This uses JSON to do the assignment. It also transforms the hyperparameter
 // list from map to list of key,value pairs.
 func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) (trainingjobv1.TrainingJobSpec, error) {
 
@@ -112,7 +112,7 @@ func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTraining
 	return unmarshalled, nil
 }
 
-// Create a CreateTrainingJobInput from a TrainingJobSpec.
+// CreateCreateTrainingJobInputFromSpec creates a CreateTrainingJobInput from a TrainingJobSpec.
 // This panics if json libraries are unable to serialize the spec or deserialize the serialization.
 func CreateCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) sagemaker.CreateTrainingJobInput {
 	if input, err := createCreateTrainingJobInputFromSpec(spec); err == nil {
@@ -122,7 +122,7 @@ func CreateCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) sa
 	}
 }
 
-// Create a CreateTrainingJob request input from a Kubernetes spec.
+// createCreateTrainingJobInputFromSpec creates a CreateTrainingJob request input from a Kubernetes spec.
 // TODO Implement tests or find an alternative method.
 // This approach was done as part of a proof of concept. It escapes the Go type system via json to convert
 // between trainingjobv1.and sdk struct types. There are a few other ways to do it (see alternatives).
@@ -290,7 +290,7 @@ func CreateTrainingJobStatusCountersFromDescription(sageMakerDescription *sagema
 	return &commonv1.TrainingJobStatusCounters{}
 }
 
-// Create a CreateModel request input from a Kubernetes Model spec.
+// CreateCreateModelInputFromSpec creates a CreateModel request input from a Kubernetes Model spec.
 func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) (*sagemaker.CreateModelInput, error) {
 
 	var primaryContainerEnvironment []*commonv1.KeyValuePair
@@ -335,7 +335,7 @@ func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) 
 	return &output, nil
 }
 
-// Create a DeleteModel request input from a ModelName.
+// CreateDeleteModelInput creates a DeleteModel request input from a ModelName.
 func CreateDeleteModelInput(modelName *string) (*sagemaker.DeleteModelInput, error) {
 	var output sagemaker.DeleteModelInput
 	output.ModelName = modelName
@@ -343,7 +343,7 @@ func CreateDeleteModelInput(modelName *string) (*sagemaker.DeleteModelInput, err
 	return &output, nil
 }
 
-// Create a Kubernetes Model spec from a SageMaker model description.
+// CreateModelSpecFromDescription creates a Kubernetes Model spec from a SageMaker model description.
 func CreateModelSpecFromDescription(description *sagemaker.DescribeModelOutput) (*modelv1.ModelSpec, error) {
 
 	transformedContainersEnvironment := [][]*commonv1.KeyValuePair{}
@@ -396,7 +396,7 @@ func CreateModelSpecFromDescription(description *sagemaker.DescribeModelOutput) 
 	return &unmarshalled, nil
 }
 
-// Creates a CreateTrainingJobInput from a BatchTransformJobSpec
+// CreateCreateBatchTransformJobInputFromSpec creates a CreateTrainingJobInput from a BatchTransformJobSpec
 func CreateCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTransformJobSpec) sagemaker.CreateTransformJobInput {
 	input, err := createCreateBatchTransformJobInputFromSpec(spec)
 	if err == nil {
@@ -405,6 +405,7 @@ func CreateCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTr
 	panic("Unable to create CreateHyperParameterTuningJobInput from spec : " + err.Error())
 }
 
+//createCreateBatchTransformJobInputFromSpec creates a BatchTransformJobInput From Spec
 func createCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTransformJobSpec) (sagemaker.CreateTransformJobInput, error) {
 	var target sagemaker.CreateTransformJobInput
 
@@ -420,7 +421,7 @@ func createCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTr
 	return target, nil
 }
 
-// Create a BatchTransformJobSpec from a DescribeTrainingJobOutput.
+// CreateTransformJobSpecFromDescription creates a BatchTransformJobSpec from a DescribeTrainingJobOutput.
 // This panics if json libraries are unable to serialize the description and deserialize the serialization.
 func CreateTransformJobSpecFromDescription(description sagemaker.DescribeTransformJobOutput) batchtransformjobv1.BatchTransformJobSpec {
 	if spec, err := createTransformJobSpecFromDescription(description); err == nil {
@@ -430,7 +431,7 @@ func CreateTransformJobSpecFromDescription(description sagemaker.DescribeTransfo
 	}
 }
 
-// Create a BatchTransformJobSpec from a SageMaker description. This uses JSON to do the assignment.
+// createTransformJobSpecFromDescription creates a BatchTransformJobSpec from a SageMaker description. This uses JSON to do the assignment.
 func createTransformJobSpecFromDescription(description sagemaker.DescribeTransformJobOutput) (batchtransformjobv1.BatchTransformJobSpec, error) {
 
 	marshalled, err := json.Marshal(description)
@@ -469,7 +470,7 @@ func CreateCreateEndpointConfigInputFromSpec(endpointconfig *endpointconfigv1.En
 	return &output, nil
 }
 
-// CreateDeleteEndpointConfigInput create a DeleteEndpointConfigRequest input from a EndpointConfigName.
+// CreateDeleteEndpointConfigInput creates a DeleteEndpointConfigRequest input from a EndpointConfigName.
 func CreateDeleteEndpointConfigInput(endpointConfigName *string) (*sagemaker.DeleteEndpointConfigInput, error) {
 	var output sagemaker.DeleteEndpointConfigInput
 	output.EndpointConfigName = endpointConfigName
@@ -546,7 +547,7 @@ func replaceFloat64WithInt64(obj *gabs.Container, path string, toConvert float64
 	return nil
 }
 
-// ConvertProductionVariantSummarySlice Creates a []*commonv1.ProductionVariantSummary from the equivalent SageMaker type.
+// ConvertProductionVariantSummarySlice creates a []*commonv1.ProductionVariantSummary from the equivalent SageMaker type.
 func ConvertProductionVariantSummarySlice(pvs []sagemaker.ProductionVariantSummary) ([]*commonv1.ProductionVariantSummary, error) {
 	productionVariants := []*commonv1.ProductionVariantSummary{}
 	for _, pv := range pvs {
@@ -708,7 +709,7 @@ func createPutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.
 	return output, nil
 }
 
-// CreateDeregisterScalableTargetInput creates input
+// CreateDeregisterScalableTargetInput creates DeregisterScalableTargetInput from spec
 func CreateDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) applicationautoscaling.DeregisterScalableTargetInput {
 
 	if input, err := createDeregisterScalableTargetInput(spec, resourceID); err == nil {
@@ -718,7 +719,7 @@ func CreateDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.
 	}
 }
 
-// createDeregisterScalableTargetInput request input from a Kubernetes spec.
+// createDeregisterScalableTargetInput creates DeregisterScalableTargetInput from spec.
 func createDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) (applicationautoscaling.DeregisterScalableTargetInput, error) {
 	var output applicationautoscaling.DeregisterScalableTargetInput
 
@@ -733,7 +734,7 @@ func createDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.
 	return output, nil
 }
 
-// CreateDeleteScalingPolicyInput creates input
+// CreateDeleteScalingPolicyInput creates DeleteScalingPolicyInput from spec
 func CreateDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) applicationautoscaling.DeleteScalingPolicyInput {
 
 	if input, err := createDeleteScalingPolicyInput(spec, resourceID); err == nil {
@@ -743,7 +744,7 @@ func CreateDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.Hosti
 	}
 }
 
-// createDeleteScalingPolicyInput request input from a Kubernetes spec.
+// createDeleteScalingPolicyInput creates DeleteScalingPolicyInput from spec
 func createDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) (applicationautoscaling.DeleteScalingPolicyInput, error) {
 	var output applicationautoscaling.DeleteScalingPolicyInput
 
@@ -760,7 +761,7 @@ func createDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.Hosti
 	return output, nil
 }
 
-// ConvertAutoscalingResourceToString converts a map to a key value pair
+// getResourceIDListfromDescriptions converts a map to a key value pair
 func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.ScalingPolicy) []*commonv1.AutoscalingResource {
 	var resourceIDListforSpec []*commonv1.AutoscalingResource
 
@@ -795,7 +796,7 @@ func CreateHostingDeploymentAutoscalingSpecFromDescription(targetDescriptions []
 		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
 	}
 
-	// TODO: Add suspended state too
+	// TODO: Test suspended state, custom metric too and add if needed
 
 	if _, err := obj.Set(minCapacity, "MinCapacity"); err != nil {
 		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
