@@ -545,12 +545,11 @@ type PredefinedMetricSpecification struct {
 
 // CustomizedMetricSpecification TODO: <link>
 type CustomizedMetricSpecification struct {
-	MetricName *string `json:"metricName,omitempty"`
-	Namespace  *string `json:"namespace,omitempty"`
-	Statistic  *string `json:"statistic,omitempty"`
-	Unit       *string `json:"unit,omitempty"`
-	// TODO: currently reusing the existing struct but this could be changed to match the API
-	Dimensions []AutoscalingResource `json:"dimensions,omitempty"`
+	MetricName *string         `json:"metricName,omitempty"`
+	Namespace  *string         `json:"namespace,omitempty"`
+	Statistic  *string         `json:"statistic,omitempty"`
+	Unit       *string         `json:"unit,omitempty"`
+	Dimensions []*KeyValuePair `json:"dimensions,omitempty"`
 }
 
 // TargetTrackingScalingPolicyConfig TODO: <link>

@@ -1486,19 +1486,12 @@ spec:
                 customizedMetricSpecification:
                   properties:
                     dimensions:
-                      description: 'TODO: currently reusing the existing struct but
-                        this could be changed to match the API'
                       items:
                         properties:
-                          endpointName:
-                            minLength: 1
+                          name:
                             type: string
-                          variantName:
-                            minLength: 1
+                          value:
                             type: string
-                        required:
-                        - endpointName
-                        - variantName
                         type: object
                       type: array
                     metricName:

@@ -298,9 +298,13 @@ func (in *CustomizedMetricSpecification) DeepCopyInto(out *CustomizedMetricSpeci
 	}
 	if in.Dimensions != nil {
 		in, out := &in.Dimensions, &out.Dimensions
-		*out = make([]AutoscalingResource, len(*in))
+		*out = make([]*KeyValuePair, len(*in))
 		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(KeyValuePair)
+				**out = **in
+			}
 		}
 	}
 }

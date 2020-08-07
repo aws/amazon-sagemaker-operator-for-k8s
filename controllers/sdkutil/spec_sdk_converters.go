@@ -680,6 +680,13 @@ func createPutScalingPolicyInputListFromSpec(spec hostingdeploymentautoscalingjo
 func createPutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID *string) (applicationautoscaling.PutScalingPolicyInput, error) {
 	var output applicationautoscaling.PutScalingPolicyInput
 
+	// clear out the CustomizedMetricSpecification KVPs from spec and init to empty struct
+	customizedMetricSpecificationDimensions := []*commonv1.KeyValuePair{}
+	if spec.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification != nil {
+		customizedMetricSpecificationDimensions = spec.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification.Dimensions
+		spec.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification.Dimensions = []*commonv1.KeyValuePair{}
+	}
+
 	marshalledPutScalingPolicyInputInput, err := json.Marshal(spec)
 	if err != nil {
 		return applicationautoscaling.PutScalingPolicyInput{}, err
@@ -690,6 +697,13 @@ func createPutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.
 	}
 
 	output.ResourceId = resourceID
+
+	if output.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification != nil {
+		marshalledDimensions, err := json.Marshal(customizedMetricSpecificationDimensions)
+		if err = json.Unmarshal(marshalledDimensions, &output.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification.Dimensions); err != nil {
+			return applicationautoscaling.PutScalingPolicyInput{}, err
+		}
+	}
 
 	return output, nil
 }
@@ -741,7 +755,6 @@ func createDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.Hosti
 	output.PolicyName = spec.PolicyName
 	output.ResourceId = &resourceID
 
-	// TODO: This should not be hardcoded here
 	output.ServiceNamespace = HostingDeploymentAutoscalingServiceNamespace
 
 	return output, nil
@@ -759,7 +772,6 @@ func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.Sc
 	}
 
 	return resourceIDListforSpec
-
 }
 
 // CreateHostingDeploymentAutoscalingSpecFromDescription creates a Kubernetes spec from a List of Descriptions
