@@ -16,6 +16,7 @@ def get_parser():
 
 def replace_in_file(file_path, replace_values):
     print("Replacing values in file " + file_path)
+    # Everything printed to stdout will be stored to file
     with fileinput.FileInput(file_path, inplace=True) as file:
         for line in file:
             for find_value, replace_value in replace_values:
