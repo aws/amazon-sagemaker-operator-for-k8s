@@ -19,7 +19,7 @@ package hostingdeploymentautoscalingjob
 import (
 	"context"
 	"time"
-
+	"fmt"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
@@ -102,12 +102,10 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return controllers.RequeueImmediately()
 	}
 
-	if err := r.reconcileHostingDeploymentAutoscalingJob(ctx); err != nil {
+	if err := r.reconcileHostingDeploymentAutoscalingJob(ctx); err != nil && !clientwrapper.IsHAP500Error(err) {
 		ctx.Log.Info("Got error while reconciling, will retry", "err", err)
-		//return controllers.RequeueImmediately()
-		return controllers.NoRequeue()
+		return controllers.RequeueImmediately()
 	}
-
 	return controllers.NoRequeue()
 }
 
@@ -158,7 +156,7 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 	}
 
 	// Update Descriptions in ctx
-	if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil {
+	if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil && !clientwrapper.IsDescribeHAP404Error(err){
 		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
 	}
 
@@ -216,7 +214,7 @@ func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 	}
 	ctx.Log.Info("Finalizer has been removed")
 
-	return err
+	return nil
 }
 
 // getResourceIDListfromInputSpec converts the list of resources into a string list to be used for various API calls
@@ -328,11 +326,11 @@ func (r *Reconciler) describeAutoscalingPolicy(ctx reconcileRequestContext) ([]*
 		var scalingPolicyDescription *applicationautoscaling.ScalingPolicy
 
 		if scalableTargetDescription, err = ctx.ApplicationAutoscalingClient.DescribeScalableTargets(ctx, ResourceID); err != nil {
-			return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, ReconcilingAutoscalingJobStatus, errors.Wrap(err, "Unable to describe ScalableTarget"))
+			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to describe ScalableTarget")
 		}
 
 		if scalingPolicyDescription, err = ctx.ApplicationAutoscalingClient.DescribeScalingPolicies(ctx, ctx.PolicyName, ResourceID); err != nil {
-			return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, ReconcilingAutoscalingJobStatus, errors.Wrap(err, "Unable to describe ScalingPolicy"))
+			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to describe ScalingPolicy")
 		}
 
 		if scalableTargetDescription != nil {
@@ -352,14 +350,14 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 
 	for _, ResourceID := range ctx.ResourceIDList {
 		deleteScalingPolicyInput = sdkutil.CreateDeleteScalingPolicyInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
-		if _, err := ctx.ApplicationAutoscalingClient.DeleteScalingPolicy(ctx, &deleteScalingPolicyInput); err != nil {
+		if _, err := ctx.ApplicationAutoscalingClient.DeleteScalingPolicy(ctx, &deleteScalingPolicyInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err){
 			return errors.Wrap(err, "Unable to DeleteScalingPolicy")
 		}
 	}
 
 	for _, ResourceID := range ctx.ResourceIDList {
 		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
-		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil {
+		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err){
 			return errors.Wrap(err, "Unable to DeregisterScalableTarget")
 		}
 	}
@@ -401,6 +399,11 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 	var err error
 	if scalableTargetDescriptionList, scalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil {
 		return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
+	}
+
+	// TODO mbaijal: This check is not needed since the first describe is handled differently
+	if len(scalableTargetDescriptionList) == 0 || len(scalingPolicyDescriptionList) == 0 {
+		return nil, nil, fmt.Errorf("hosting autoscaling policy was not applied, description is empty")
 	}
 
 	return scalableTargetDescriptionList, scalingPolicyDescriptionList, nil

@@ -131,8 +131,8 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result.Requeue).To(Equal(false))
 
-		// Review
-		// Expect(result.RequeueAfter).ToNot(Equal(time.Duration(0)))
+		// TODO mbaijal: Review
+		//Expect(result.RequeueAfter).ToNot(Equal(time.Duration(0)))
 	})
 
 	It("should put the scalingPolicy", func() {
@@ -225,6 +225,7 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 		Expect(receivedRequests.Len()).To(Equal(6))
 		Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(CreatedAutoscalingJobStatus))
 		Expect(hostingdeploymentautoscalingjob.Status.PolicyName).To(Equal(policyName))
+		// TODO mbaijal: Add PolicyARN ?
 		//Expect(hostingdeploymentautoscalingjob.Status.policyArn).To(Equal(policyArn))
 	})
 
@@ -333,14 +334,14 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 		})
 	})
 
-	Context("When the delete fails", func() {
+	Context("When the delete fails with a server error", func() {
 		BeforeEach(func() {
 			receivedRequests = List{}
 			mockAutoscalingClientBuilder = NewMockAutoscalingClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
 			applicationAutoscalingClient := mockAutoscalingClientBuilder.
 				AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
 				AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
-				AddDeleteScalingPolicyErrorResponse("ValidationException", "server error", 500, "request id").
+				AddDeleteScalingPolicyErrorResponse("InternalServiceException", "Server Error", 500, "request-id").
 				Build()
 			controller = createReconciler(k8sClient, applicationAutoscalingClient)
 			request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
@@ -355,8 +356,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			result, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
-			// TODO: Handle server errors in implementation
-			// Expect(result.Requeue).To(Equal(true))
+			Expect(result.Requeue).To(Equal(true))
 			Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 		})
 
@@ -371,8 +371,6 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(a.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(FailedAutoscalingJobStatus))
 			Expect(a.Status.Additional).To(ContainSubstring("Unable to DeleteScalingPolicy"))
-			// TODO
-			//Expect(a.Status.Additional).To(ContainSubstring("server error"))
 		})
 	})
 
@@ -384,14 +382,18 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 				AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
 				AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
 				AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
-				AddDeregisterScalableTargetsErrorResponse("ValidationException", "Could not find model", 404, "request id").
+				AddDeregisterScalableTargetsErrorResponse("ValidationException", "Could not find HAP", 400, "request-id").
+				AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
+				AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{}).
+				AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
+				AddDescribeScalingPoliciesResponse(updatedPolicyDescription).
 				Build()
 			controller = createReconciler(k8sClient, applicationAutoscalingClient)
 			request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
 		})
 
 		AfterEach(func() {
-			Expect(receivedRequests.Len()).To(Equal(4))
+			Expect(receivedRequests.Len()).To(Equal(8))
 		})
 
 		It("should not requeue and return error", func() {
@@ -400,7 +402,6 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.Requeue).To(Equal(false))
-
 		})
 
 		It("should not delete or remove the finalizer from the Kubernetes object", func() {
@@ -413,8 +414,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			}, hostingdeploymentautoscalingjob)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(hostingdeploymentautoscalingjob.ObjectMeta.Finalizers).To(ContainElement(SageMakerResourceFinalizerName))
-			Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(FailedAutoscalingJobStatus))
-			Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("Unable to DeregisterScalableTarget"))
+			Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(CreatedAutoscalingJobStatus))
 		})
 
 	})
@@ -428,7 +428,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 				AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
 				AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
 				AddDeregisterScalableTargetsResponse(applicationautoscaling.DeregisterScalableTargetOutput{}).
-				AddRegisterScalableTargetsErrorResponse("ValidationException", "server error", 500, "request id").
+				AddRegisterScalableTargetsErrorResponse("InternalServiceException", "Server Error", 500, "request-id").
 				Build()
 			controller = createReconciler(k8sClient, applicationAutoscalingClient)
 			request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
@@ -443,7 +443,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			_, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
-			// TODO: handle server errors
+			// TODO: mbaijal Review
 			//Expect(result.Requeue).To(Equal(true))
 			//Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -459,7 +459,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 				AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
 				AddDeregisterScalableTargetsResponse(applicationautoscaling.DeregisterScalableTargetOutput{}).
 				AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
-				AddPutScalingPolicyErrorResponse("ValidationException", "server error", 500, "request id").
+				AddPutScalingPolicyErrorResponse("InternalServiceException", "Server Error", 500, "request id").
 				Build()
 			controller = createReconciler(k8sClient, applicationAutoscalingClient)
 			request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
@@ -471,16 +471,16 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 		})
 
 		It("should requeue immediately", func() {
-			_, err := controller.Reconcile(request)
+			result, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
-			// TODO: handle server errors
+			// TODO mbaijal: Check this 
 			//Expect(result.Requeue).To(Equal(true))
-			//Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
+			Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 		})
 	})
 
-	Context("When the second describe fails", func() {
+	Context("When the second describe fails with a server error", func() {
 		BeforeEach(func() {
 			receivedRequests = List{}
 			mockAutoscalingClientBuilder = NewMockAutoscalingClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
@@ -492,8 +492,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 				AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
 				AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{}).
 				AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
-				AddDescribeScalingPoliciesResponse(updatedPolicyDescription).
-				//AddDescribeScalingPoliciesErrorResponse("ValidationException", "server error", 500, "request id").
+				AddDescribeScalingPoliciesErrorResponse("InternalServiceException", "Server Error", 500, "request-id").
 				Build()
 			controller = createReconciler(k8sClient, applicationAutoscalingClient)
 			request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
@@ -505,76 +504,74 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 		})
 
 		It("should requeue immediately", func() {
-			_, err := controller.Reconcile(request)
+			result, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
+			// TODO mbaijal: Check this 
 			//Expect(result.Requeue).To(Equal(true))
-			//Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
+			Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 		})
 
-		/*
-			It("should update the status with the error message", func() {
-				controller.Reconcile(request)
+		
+		It("should update the status with the error message", func() {
+			controller.Reconcile(request)
 
-				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Namespace: hostingdeploymentautoscalingjob.ObjectMeta.Namespace,
-					Name:      hostingdeploymentautoscalingjob.ObjectMeta.Name,
-				}, hostingdeploymentautoscalingjob)
-				Expect(err).ToNot(HaveOccurred())
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
+				Namespace: hostingdeploymentautoscalingjob.ObjectMeta.Namespace,
+				Name:      hostingdeploymentautoscalingjob.ObjectMeta.Name,
+			}, hostingdeploymentautoscalingjob)
+			Expect(err).ToNot(HaveOccurred())
 
-				Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(FailedAutoscalingJobStatus))
-				Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
-			})
-		*/
-
+			Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(FailedAutoscalingJobStatus))
+			Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
+		})	
 	})
-	/*
-		Context("When the second describe returns 404", func() {
-			BeforeEach(func() {
-				receivedRequests = List{}
-				mockAutoscalingClientBuilder = NewMockAutoscalingClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
-				applicationAutoscalingClient := mockAutoscalingClientBuilder.
-				AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
-				AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
-				AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
-				AddDeregisterScalableTargetsResponse(applicationautoscaling.DeregisterScalableTargetOutput{}).
-				AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
-				AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{}).
-				AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
-				AddDescribeScalingPoliciesErrorResponse("ValidationException", "server error", 404, "request id").
-				Build()
-				controller = createReconciler(k8sClient, applicationAutoscalingClient)
-				request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
+	
+	Context("When the second describe returns 404", func() {
+		BeforeEach(func() {
+			receivedRequests = List{}
+			mockAutoscalingClientBuilder = NewMockAutoscalingClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
+			applicationAutoscalingClient := mockAutoscalingClientBuilder.
+			AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
+			AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
+			AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
+			AddDeregisterScalableTargetsResponse(applicationautoscaling.DeregisterScalableTargetOutput{}).
+			AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
+			AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{}).
+			AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
+			AddDescribeScalingPoliciesErrorResponse("ValidationException", "Could not find HAP", 400, "request-id").
+			Build()
+			controller = createReconciler(k8sClient, applicationAutoscalingClient)
+			request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
 
-			})
-
-			AfterEach(func() {
-				Expect(receivedRequests.Len()).To(Equal(8))
-			})
-
-			It("should requeue immediately", func() {
-				_, err := controller.Reconcile(request)
-
-				Expect(err).ToNot(HaveOccurred())
-				//Expect(result.Requeue).To(Equal(true))
-				//Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
-			})
-
-			It("should update the status with the error message", func() {
-				controller.Reconcile(request)
-
-				err := k8sClient.Get(context.Background(), types.NamespacedName{
-					Namespace: hostingdeploymentautoscalingjob.ObjectMeta.Namespace,
-					Name:      hostingdeploymentautoscalingjob.ObjectMeta.Name,
-				}, hostingdeploymentautoscalingjob)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(FailedAutoscalingJobStatus))
-				Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
-				//Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("model does not exist after creation"))
-			})
 		})
-	*/
+
+		AfterEach(func() {
+			Expect(receivedRequests.Len()).To(Equal(8))
+		})
+
+		It("should requeue immediately", func() {
+			result, err := controller.Reconcile(request)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(result.Requeue).To(Equal(true))
+			Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
+		})
+
+		It("should update the status with the error message", func() {
+			controller.Reconcile(request)
+
+			err := k8sClient.Get(context.Background(), types.NamespacedName{
+				Namespace: hostingdeploymentautoscalingjob.ObjectMeta.Namespace,
+				Name:      hostingdeploymentautoscalingjob.ObjectMeta.Name,
+			}, hostingdeploymentautoscalingjob)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(FailedAutoscalingJobStatus))
+			Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
+		})
+	})
+	
 })
 
 var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func() {
@@ -624,7 +621,7 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 
 	It("should do nothing if the HAP is not in sagemaker", func() {
 		applicationAutoscalingClient := mockAutoscalingClientBuilder.
-			AddDescribeScalableTargetsErrorResponse("ValidationException", "Could not find HAP xyz", 400, "request id").
+			AddDescribeScalableTargetsErrorResponse("ValidationException", "Could not find HAP xyz", 400, "request-id").
 			Build()
 
 		controller := createReconciler(k8sClient, applicationAutoscalingClient)
@@ -638,7 +635,7 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 	})
 
 	It("should delete the HAP in sagemaker", func() {
-
+		var a *hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJob
 		applicationAutoscalingClient := mockAutoscalingClientBuilder.
 			AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
 			AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
@@ -661,14 +658,17 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 		err = k8sClient.Get(context.Background(), types.NamespacedName{
 			Namespace: hostingdeploymentautoscalingjob.ObjectMeta.Namespace,
 			Name:      hostingdeploymentautoscalingjob.ObjectMeta.Name,
-		}, hostingdeploymentautoscalingjob)
+		}, a)
+
 		Expect(err).To(HaveOccurred())
 		Expect(apierrs.IsNotFound(err)).To(Equal(true))
 	})
 
 	It("Verify that finalizer is removed (or object is deleted) when HAP does not exist", func() {
+		a := &hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJob{}
 		applicationAutoscalingClient := mockAutoscalingClientBuilder.
-			AddDescribeScalableTargetsErrorResponse("ValidationException", "Could not find HAP xyz", 500, "request id").
+			AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
+			AddDescribeScalingPoliciesErrorResponse("ValidationException", "Could not find HAP xyz", 400, "request-id").
 			Build()
 
 		controller := createReconciler(k8sClient, applicationAutoscalingClient)
@@ -683,11 +683,11 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 		err = k8sClient.Get(context.Background(), types.NamespacedName{
 			Namespace: hostingdeploymentautoscalingjob.ObjectMeta.Namespace,
 			Name:      hostingdeploymentautoscalingjob.ObjectMeta.Name,
-		}, hostingdeploymentautoscalingjob)
+		}, a)
 
 		Expect(err).To(HaveOccurred())
-		//Expect(apierrs.IsNotFound(err)).To(Equal(true))
-		Expect(receivedRequests.Len()).To(Equal(1))
+		Expect(apierrs.IsNotFound(err)).To(Equal(true))
+		Expect(receivedRequests.Len()).To(Equal(2))
 	})
 
 	It("Verify that finalizer is not removed and error returned when Delete fails", func() {
@@ -695,7 +695,7 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 			AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
 			AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
 			AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
-			AddDeregisterScalableTargetsErrorResponse("ValidationException", "server error", 500, "request id").
+			AddDeregisterScalableTargetsErrorResponse("InternalServiceException", "Server Error", 500, "request-id").
 			Build()
 
 		controller := createReconciler(k8sClient, applicationAutoscalingClient)

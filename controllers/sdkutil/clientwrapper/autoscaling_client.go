@@ -14,15 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO: Check if Error Handling similar to SageMaker API errors is needed here
-
 package clientwrapper
 
 import (
 	"context"
+	"strings"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/awserr"
+	"github.com/pkg/errors"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
+)
+
+// Provides the prefixes and error codes relating to each endpoint
+// TODO mbaijal: Check the messages
+const (
+	DescribeHAP404MessagePrefix = "Could not find HAP"
+	DescribeHAP404Code          = "ValidationException"
+	DeleteHAP404MessagePrefix   = "Could not find HAP"
+	DeleteHAP404Code            = "ObjectNotFoundException"
+	HAP500MessagePrefix   		= "Server Error"
+	HAP500Code            		= "InternalServiceException"
 )
 
 // ApplicationAutoscalingClientWrapper interface for ApplicationAutoscalingClient wrapper
@@ -147,6 +159,10 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 
 	describeResponse, describeError := describeRequest.Send(ctx)
 
+	if describeError != nil {
+		return scalingPolicyDescription, describeError
+	}
+	
 	// Review: Slightly Hacky, but valid
 	if len(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies) == 1 {
 		scalingPolicyDescription = &(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies[0])
@@ -154,9 +170,33 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 		scalingPolicyDescription = nil
 	}
 
-	if describeError != nil {
-		return scalingPolicyDescription, describeError
+	return scalingPolicyDescription, describeError
+}
+
+// IsDeleteHAP404Error determines whether the given error is equivalent to an HTTP 404 status code.
+func IsDeleteHAP404Error(err error) bool {
+	awserror := errors.Cause(err)
+	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DeleteModel404Code && strings.HasPrefix(requestFailure.Message(), DeleteHAP404MessagePrefix)
 	}
 
-	return scalingPolicyDescription, describeError
+	return false
+}
+
+// IsDescribeHAP404Error detects if the error is a 404
+func IsDescribeHAP404Error(err error) bool {
+	awserror := errors.Cause(err)
+	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DescribeHAP404Code && strings.HasPrefix(requestFailure.Message(), DescribeHAP404MessagePrefix)
+	} 
+	return false
+}
+
+// IsHAP500Error detects if the error is a 404
+func IsHAP500Error(err error) bool {
+	awserror := errors.Cause(err)
+	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == HAP500Code && strings.HasPrefix(requestFailure.Message(), HAP500MessagePrefix)
+	} 
+	return false
 }
