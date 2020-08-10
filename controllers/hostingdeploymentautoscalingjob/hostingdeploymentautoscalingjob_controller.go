@@ -18,7 +18,6 @@ package hostingdeploymentautoscalingjob
 
 import (
 	"context"
-	"time"
 	"fmt"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
@@ -31,6 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"time"
 
 	hostingdeploymentautoscalingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeploymentautoscalingjob"
 )
@@ -156,7 +156,7 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 	}
 
 	// Update Descriptions in ctx
-	if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil && !clientwrapper.IsDescribeHAP404Error(err){
+	if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil && !clientwrapper.IsDescribeHAP404Error(err) {
 		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
 	}
 
@@ -350,14 +350,14 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 
 	for _, ResourceID := range ctx.ResourceIDList {
 		deleteScalingPolicyInput = sdkutil.CreateDeleteScalingPolicyInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
-		if _, err := ctx.ApplicationAutoscalingClient.DeleteScalingPolicy(ctx, &deleteScalingPolicyInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err){
+		if _, err := ctx.ApplicationAutoscalingClient.DeleteScalingPolicy(ctx, &deleteScalingPolicyInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err) {
 			return errors.Wrap(err, "Unable to DeleteScalingPolicy")
 		}
 	}
 
 	for _, ResourceID := range ctx.ResourceIDList {
 		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
-		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err){
+		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err) {
 			return errors.Wrap(err, "Unable to DeregisterScalableTarget")
 		}
 	}

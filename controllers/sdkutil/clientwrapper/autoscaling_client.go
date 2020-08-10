@@ -18,12 +18,12 @@ package clientwrapper
 
 import (
 	"context"
-	"strings"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/pkg/errors"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
+	"github.com/pkg/errors"
+	"strings"
 )
 
 // Provides the prefixes and error codes relating to each endpoint
@@ -33,8 +33,8 @@ const (
 	DescribeHAP404Code          = "ValidationException"
 	DeleteHAP404MessagePrefix   = "Could not find HAP"
 	DeleteHAP404Code            = "ObjectNotFoundException"
-	HAP500MessagePrefix   		= "Server Error"
-	HAP500Code            		= "InternalServiceException"
+	HAP500MessagePrefix         = "Server Error"
+	HAP500Code                  = "InternalServiceException"
 )
 
 // ApplicationAutoscalingClientWrapper interface for ApplicationAutoscalingClient wrapper
@@ -162,7 +162,7 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 	if describeError != nil {
 		return scalingPolicyDescription, describeError
 	}
-	
+
 	// Review: Slightly Hacky, but valid
 	if len(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies) == 1 {
 		scalingPolicyDescription = &(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies[0])
@@ -188,7 +188,7 @@ func IsDescribeHAP404Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == DescribeHAP404Code && strings.HasPrefix(requestFailure.Message(), DescribeHAP404MessagePrefix)
-	} 
+	}
 	return false
 }
 
@@ -197,6 +197,6 @@ func IsHAP500Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
 		return requestFailure.Code() == HAP500Code && strings.HasPrefix(requestFailure.Message(), HAP500MessagePrefix)
-	} 
+	}
 	return false
 }
