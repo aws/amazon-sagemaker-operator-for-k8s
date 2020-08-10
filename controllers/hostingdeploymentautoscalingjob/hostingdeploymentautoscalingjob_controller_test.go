@@ -474,7 +474,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			result, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
-			// TODO mbaijal: Check this 
+			// TODO mbaijal: Check this
 			//Expect(result.Requeue).To(Equal(true))
 			Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -507,12 +507,11 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			result, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
-			// TODO mbaijal: Check this 
+			// TODO mbaijal: Check this
 			//Expect(result.Requeue).To(Equal(true))
 			Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 		})
 
-		
 		It("should update the status with the error message", func() {
 			controller.Reconcile(request)
 
@@ -524,23 +523,23 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 
 			Expect(hostingdeploymentautoscalingjob.Status.HostingDeploymentAutoscalingJobStatus).To(Equal(FailedAutoscalingJobStatus))
 			Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
-		})	
+		})
 	})
-	
+
 	Context("When the second describe returns 404", func() {
 		BeforeEach(func() {
 			receivedRequests = List{}
 			mockAutoscalingClientBuilder = NewMockAutoscalingClientBuilder(GinkgoT()).WithRequestList(&receivedRequests)
 			applicationAutoscalingClient := mockAutoscalingClientBuilder.
-			AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
-			AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
-			AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
-			AddDeregisterScalableTargetsResponse(applicationautoscaling.DeregisterScalableTargetOutput{}).
-			AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
-			AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{}).
-			AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
-			AddDescribeScalingPoliciesErrorResponse("ValidationException", "Could not find HAP", 400, "request-id").
-			Build()
+				AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
+				AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
+				AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
+				AddDeregisterScalableTargetsResponse(applicationautoscaling.DeregisterScalableTargetOutput{}).
+				AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
+				AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{}).
+				AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
+				AddDescribeScalingPoliciesErrorResponse("ValidationException", "Could not find HAP", 400, "request-id").
+				Build()
 			controller = createReconciler(k8sClient, applicationAutoscalingClient)
 			request = CreateReconciliationRequest(hostingdeploymentautoscalingjob.ObjectMeta.Name, hostingdeploymentautoscalingjob.ObjectMeta.Namespace)
 
@@ -571,7 +570,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			Expect(hostingdeploymentautoscalingjob.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
 		})
 	})
-	
+
 })
 
 var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func() {
