@@ -102,8 +102,8 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return controllers.RequeueImmediately()
 	}
 
-	if err := r.reconcileHostingDeploymentAutoscalingJob(ctx); err != nil && !clientwrapper.IsHAP500Error(err) {
-		ctx.Log.Info("Got error while reconciling, will retry", "err", err)
+	if err := r.reconcileHostingDeploymentAutoscalingJob(ctx); err != nil && clientwrapper.IsHAP500Error(err) {
+		ctx.Log.Info("Got server error while reconciling, will retry", "err", err)
 		return controllers.RequeueImmediately()
 	}
 	return controllers.NoRequeue()
