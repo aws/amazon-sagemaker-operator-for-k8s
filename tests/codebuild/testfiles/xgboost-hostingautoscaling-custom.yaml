@@ -1,12 +1,12 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: HostingDeploymentAutoscalingJob
 metadata:
-  name: ep-autoscaling-predefined-custom
+  name: hap-custom-metric
 spec:
     resourceId:
-      - endpointName: PLACEHOLDER-ENDPOINT-1
+      - endpointName: PLACEHOLDER-ENDPOINT-3
         variantName: AllTraffic
-    region: us-east-2
+    region: us-west-2
     policyName: custom-scaling-policy
     policyType: TargetTrackingScaling
     minCapacity: 1
@@ -18,8 +18,10 @@ spec:
         customizedMetricSpecification: 
           metricName: CPUUtilization 
           namespace: /aws/sagemaker/Endpoints 
-          dimensions:  
-             - name: xgboost-2020-06-01-20-39-37-30
-               value:  AllTraffic
+          dimensions:   
+          - name: EndpointName
+            value: PLACEHOLDER-ENDPOINT-3
+          - name: VariantName
+            value: AllTraffic
           statistic: Average 
           unit: Percent

@@ -19,3 +19,4 @@ spec:
             predefinedMetricType: SageMakerVariantInvocationsPerInstance 
         scaleInCooldown: 700 
         scaleOutCooldown: 300
+        disableScaleIn: true

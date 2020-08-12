@@ -559,13 +559,13 @@ type CustomizedMetricSpecification struct {
 }
 
 // TargetTrackingScalingPolicyConfig https://docs.aws.amazon.com/autoscaling/application/APIReference/API_TargetTrackingScalingPolicyConfiguration.html
-// TODO: test the targetValue works as expected.
+// TODO: string requires the input to be in quotes in the spec which is not intuitive
+// Needs a fix for floats, probably use resource.Quantity
 type TargetTrackingScalingPolicyConfig struct {
-	// +kubebuilder:validation:MinLength=1
-	TargetValue      *string `json:"targetValue,omitempty"`
-	ScaleInCooldown  *int64  `json:"scaleInCooldown,omitempty"`
-	ScaleOutCooldown *int64  `json:"scaleOutCooldown,omitempty"`
-	DisableScaleIn   *bool   `json:"disableScaleIn,omitempty"`
+	TargetValue      *int64 `json:"targetValue,omitempty"`
+	ScaleInCooldown  *int64 `json:"scaleInCooldown,omitempty"`
+	ScaleOutCooldown *int64 `json:"scaleOutCooldown,omitempty"`
+	DisableScaleIn   *bool  `json:"disableScaleIn,omitempty"`
 
 	// Ideally Predefined metric should not need a value but this is for consistency with API usage
 	PredefinedMetricSpecification *PredefinedMetricSpecification `json:"predefinedMetricSpecification,omitempty"`
