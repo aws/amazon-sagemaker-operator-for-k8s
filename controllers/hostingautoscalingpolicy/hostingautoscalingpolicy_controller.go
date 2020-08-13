@@ -79,8 +79,8 @@ func NewHostingAutoscalingPolicyReconciler(client client.Client, log logr.Logger
 	}
 }
 
-// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingautoscalingpolicy,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingautoscalingpolicy/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingautoscalingpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingautoscalingpolicies/status,verbs=get;update;patch
 
 // Reconcile attempts to reconcile the SageMaker resource state with the k8s desired state.
 // TODO: Check if resource name above is correct or plural

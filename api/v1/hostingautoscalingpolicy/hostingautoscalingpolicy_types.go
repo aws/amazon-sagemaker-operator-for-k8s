@@ -61,7 +61,6 @@ type HostingAutoscalingPolicySpec struct {
 
 // HostingAutoscalingPolicyStatus defines the observed state of HostingAutoscalingPolicy
 type HostingAutoscalingPolicyStatus struct {
-
 	PolicyName                     string `json:"policyName,omitempty"`
 	HostingAutoscalingPolicyStatus string `json:"hostingAutoscalingPolicyStatus,omitempty"`
 

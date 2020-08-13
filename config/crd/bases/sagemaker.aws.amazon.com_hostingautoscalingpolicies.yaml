@@ -150,7 +150,6 @@ spec:
               format: date-time
               type: string
             policyName:
-              description: 'Review: Do we want to add the resourceIDList here'
               type: string
           type: object
       required:

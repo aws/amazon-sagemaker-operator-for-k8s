@@ -516,7 +516,6 @@ spec:
               format: date-time
               type: string
             policyName:
-              description: 'Review: Do we want to add the resourceIDList here'
               type: string
           type: object
       required:
@@ -1998,7 +1997,7 @@ rules:
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
-  - hostingautoscalingpolicy
+  - hostingautoscalingpolicies
   verbs:
   - create
   - delete
@@ -2010,7 +2009,7 @@ rules:
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
-  - hostingautoscalingpolicy/status
+  - hostingautoscalingpolicies/status
   verbs:
   - get
   - patch
