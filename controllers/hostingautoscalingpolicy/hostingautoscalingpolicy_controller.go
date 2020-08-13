@@ -39,16 +39,16 @@ import (
 // This operator includes two steps. For the rest of the file these are - Step1: RegisterTargets; Step2: PutScalingPolicy
 const (
 	// The process of creation has started and is in-progress.
-	ReconcilingAutoscalingJobStatus = "ReconcilingAutoscalingJob"
+	ReconcilingAutoscalingJobStatus = "Reconciling"
 
 	// This Status signifies that the job has been successfully completed for both steps
-	CreatedAutoscalingJobStatus = "CreatedAutoscalingJob"
+	CreatedAutoscalingJobStatus = "Created"
 
 	// Could have failed either at step1 or step2
-	FailedAutoscalingJobStatus = "FailedAutoscalingJob"
+	FailedAutoscalingJobStatus = "Error"
 
 	// This Status will likely not show up, is it needed
-	DeletedAutoscalingJobStatus = "DeletedAutoscalingJob"
+	DeletedAutoscalingJobStatus = "Deleted"
 
 	// https://docs.aws.amazon.com/autoscaling/application/APIReference/API_ScalingPolicy.html
 	MaxPolicyNameLength = 256
@@ -169,7 +169,7 @@ func (r *Reconciler) reconcileHostingAutoscalingPolicy(ctx reconcileRequestConte
 	// If update or delete, delete the existing Policy.
 	if action == controllers.NeedsDelete || action == controllers.NeedsUpdate {
 		if err = r.deleteAutoscalingPolicy(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to deleteAutoscalingPolicy"))
+			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to delete HostingAutoscalingPolicy"))
 		}
 
 		// Delete succeeded, set Description to nil.
@@ -180,7 +180,7 @@ func (r *Reconciler) reconcileHostingAutoscalingPolicy(ctx reconcileRequestConte
 	// If update or create, create the desired HAP.
 	if action == controllers.NeedsCreate || action == controllers.NeedsUpdate {
 		if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.applyAutoscalingPolicy(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to applyAutoscalingPolicy"))
+			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to apply HostingAutoscalingPolicy"))
 		}
 	}
 

@@ -84,8 +84,8 @@ function verify_canary_tests
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
-  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 2m CreatedAutoscalingJob "3"
-  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 2m CreatedAutoscalingJob "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 2m Created "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 2m Created "3"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
