@@ -779,6 +779,8 @@ func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.Sc
 // Review: Needs a major review and also update if additional fields are added/removed from spec
 func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy) (hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, error) {
 	transformedResourceIDs := getResourceIDListfromDescriptions(descriptions)
+
+	// This might not be needed since updates to customMetric and suspended state work out of the box
 	minCapacity := targetDescriptions[0].ScalableTargets[0].MinCapacity
 	maxCapacity := targetDescriptions[0].ScalableTargets[0].MaxCapacity
 
@@ -795,8 +797,6 @@ func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*app
 	if _, err := obj.Set(transformedResourceIDs, "ResourceId"); err != nil {
 		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
-
-	// TODO: Test suspended state, custom metric too and add if needed
 
 	if _, err := obj.Set(minCapacity, "MinCapacity"); err != nil {
 		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err

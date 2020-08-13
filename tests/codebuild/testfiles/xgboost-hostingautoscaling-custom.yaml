@@ -11,6 +11,8 @@ spec:
     policyType: TargetTrackingScaling
     minCapacity: 1
     maxCapacity: 1
+    suspendedState:
+      dynamicScalingInSuspended: true
     targetTrackingScalingPolicyConfiguration:
         targetValue: 60.0 
         scaleInCooldown: 700 

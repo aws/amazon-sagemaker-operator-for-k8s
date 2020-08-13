@@ -4,13 +4,15 @@ metadata:
   name: ep-autoscaling-custom
 spec:
     resourceId:
-      - endpointName: xgboost-2020-06-01-20-39-37-305
-        variantName: AllTraffic
+      - endpointName: Endpoint-20200410010239-FZFY
+        variantName: variant-name-1
     region: us-east-2
     policyName: SageMakerEndpointInvocationScalingPolicy
     policyType: TargetTrackingScaling
     minCapacity: 1
-    maxCapacity: 1
+    maxCapacity: 2
+    suspendedState:
+        dynamicScalingInSuspended: true
     targetTrackingScalingPolicyConfiguration:
         targetValue: 60.0 
         scaleInCooldown: 700 
@@ -20,8 +22,8 @@ spec:
           namespace: /aws/sagemaker/Endpoints 
           dimensions:  
              - name: EndpointName
-               value: xgboost-2020-06-01-20-39-37-305
+               value: Endpoint-20200410010239-FZFY
              - name: VariantName
-               value: AllTraffic
+               value: variant-name-1
           statistic: Average 
           unit: Percent

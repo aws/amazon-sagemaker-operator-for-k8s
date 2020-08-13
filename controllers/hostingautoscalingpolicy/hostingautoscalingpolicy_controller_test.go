@@ -222,7 +222,7 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 		Expect(receivedRequests.Len()).To(Equal(6))
 		Expect(hostingautoscalingpolicy.Status.HostingAutoscalingPolicyStatus).To(Equal(CreatedAutoscalingJobStatus))
 		Expect(hostingautoscalingpolicy.Status.PolicyName).To(Equal(policyName))
-		// TODO mbaijal: Add PolicyARN ?
+		// TODO mbaijal: Add PolicyARN ? Probably to the hostingdeployment
 		//Expect(hostingautoscalingpolicy.Status.policyArn).To(Equal(policyArn))
 	})
 
