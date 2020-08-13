@@ -349,6 +349,190 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
+  name: hostingautoscalingpolicies.sagemaker.aws.amazon.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.hostingAutoscalingPolicyStatus
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    format: date
+    name: Creation-Time
+    type: string
+  group: sagemaker.aws.amazon.com
+  names:
+    kind: HostingAutoscalingPolicy
+    listKind: HostingAutoscalingPolicyList
+    plural: hostingautoscalingpolicies
+    shortNames:
+    - hap
+    singular: hostingautoscalingpolicy
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: HostingAutoscalingPolicy is the Schema for the HostingAutoscalingPolicy
+        API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: HostingAutoscalingPolicySpec defines the desired state of the
+            cluster for HostingAutoscalingPolicy
+          properties:
+            maxCapacity:
+              format: int64
+              type: integer
+            minCapacity:
+              format: int64
+              type: integer
+            policyName:
+              description: The autoscaling policy name. This is optional for the SageMaker
+                K8s operator. If it is empty, the operator will populate it with a
+                generated name.
+              maxLength: 256
+              type: string
+            policyType:
+              description: The autoscaling policy type. This is optional for the SageMaker
+                K8s operator. If it is empty, the operator will populate it with TargetTrackingScaling
+              type: string
+            region:
+              type: string
+            resourceId:
+              items:
+                description: AutoscalingResource is used to create the string representing
+                  the resourceID in the format endpoint/my-end-point/variant/my-variant
+                properties:
+                  endpointName:
+                    minLength: 1
+                    type: string
+                  variantName:
+                    minLength: 1
+                    type: string
+                type: object
+              minItems: 1
+              type: array
+            sageMakerEndpoint:
+              description: A custom SageMaker endpoint to use when communicating with
+                SageMaker.
+              pattern: ^(https|http)://.*$
+              type: string
+            scalableDimension:
+              type: string
+            serviceNamespace:
+              type: string
+            suspendedState:
+              description: HAPSuspendedState https://docs.aws.amazon.com/autoscaling/application/APIReference/API_SuspendedState.html
+              properties:
+                dynamicScalingInSuspended:
+                  type: boolean
+                dynamicScalingOutSuspended:
+                  type: boolean
+                scheduledScalingSuspended:
+                  type: boolean
+              type: object
+            targetTrackingScalingPolicyConfiguration:
+              description: 'TargetTrackingScalingPolicyConfig https://docs.aws.amazon.com/autoscaling/application/APIReference/API_TargetTrackingScalingPolicyConfiguration.html
+                TODO: string requires the input to be in quotes in the spec which
+                is not intuitive Needs a fix for floats, probably use resource.Quantity'
+              properties:
+                customizedMetricSpecification:
+                  description: CustomizedMetricSpecification https://docs.aws.amazon.com/autoscaling/application/APIReference/API_CustomizedMetricSpecification.html
+                  properties:
+                    dimensions:
+                      items:
+                        description: Used in describing maps in Kubernetes.
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        type: object
+                      type: array
+                    metricName:
+                      minLength: 1
+                      type: string
+                    namespace:
+                      minLength: 1
+                      type: string
+                    statistic:
+                      minLength: 1
+                      type: string
+                    unit:
+                      type: string
+                  type: object
+                disableScaleIn:
+                  type: boolean
+                predefinedMetricSpecification:
+                  description: Ideally Predefined metric should not need a value but
+                    this is for consistency with API usage
+                  properties:
+                    predefinedMetricType:
+                      type: string
+                  type: object
+                scaleInCooldown:
+                  format: int64
+                  type: integer
+                scaleOutCooldown:
+                  format: int64
+                  type: integer
+                targetValue:
+                  format: int64
+                  type: integer
+              type: object
+          required:
+          - region
+          type: object
+        status:
+          description: HostingAutoscalingPolicyStatus defines the observed state of
+            HostingAutoscalingPolicy
+          properties:
+            additional:
+              description: Field to store additional information, for example if we
+                are unable to check the status we update this.
+              type: string
+            hostingAutoscalingPolicyStatus:
+              type: string
+            lastCheckTime:
+              description: The last time that we checked the status of the job.
+              format: date-time
+              type: string
+            policyName:
+              description: 'Review: Do we want to add the resourceIDList here'
+              type: string
+          type: object
+      required:
+      - spec
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
   name: hostingdeployments.sagemaker.aws.amazon.com
 spec:
   additionalPrinterColumns:
@@ -1674,7 +1858,7 @@ spec:
               description: Status of rule evaluation jobs, obtained from DebugRuleEvaluationStatuses.
                 https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DescribeTrainingJob.html#sagemaker-DescribeTrainingJob-response-DebugRuleEvaluationStatuses
               items:
-                description: DebugRuleEvalutionStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
+                description: DebugRuleEvaluationStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
                 properties:
                   lastModifiedTime:
                     format: date-time
