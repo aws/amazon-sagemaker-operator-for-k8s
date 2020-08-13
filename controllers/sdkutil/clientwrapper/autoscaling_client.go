@@ -23,18 +23,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 // Provides the prefixes and error codes relating to each endpoint
 // TODO mbaijal: Check the messages
 const (
-	DescribeHAP404MessagePrefix = "Could not find HAP"
-	DescribeHAP404Code          = "ValidationException"
-	DeleteHAP404MessagePrefix   = "Could not find HAP"
-	DeleteHAP404Code            = "ObjectNotFoundException"
-	HAP500MessagePrefix         = "Server Error"
-	HAP500Code                  = "InternalServiceException"
+	DescribeHAP404Code = "ValidationException"
+	DeleteHAP404Code   = "ObjectNotFoundException"
+	HAP500Code         = "InternalServiceException"
 )
 
 // ApplicationAutoscalingClientWrapper interface for ApplicationAutoscalingClient wrapper
@@ -177,7 +173,7 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 func IsDeleteHAP404Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DeleteModel404Code && strings.HasPrefix(requestFailure.Message(), DeleteHAP404MessagePrefix)
+		return requestFailure.Code() == DeleteModel404Code
 	}
 
 	return false
@@ -187,7 +183,7 @@ func IsDeleteHAP404Error(err error) bool {
 func IsDescribeHAP404Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DescribeHAP404Code && strings.HasPrefix(requestFailure.Message(), DescribeHAP404MessagePrefix)
+		return requestFailure.Code() == DescribeHAP404Code
 	}
 	return false
 }
@@ -196,7 +192,7 @@ func IsDescribeHAP404Error(err error) bool {
 func IsHAP500Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == HAP500Code && strings.HasPrefix(requestFailure.Message(), HAP500MessagePrefix)
+		return requestFailure.Code() == HAP500Code
 	}
 	return false
 }
