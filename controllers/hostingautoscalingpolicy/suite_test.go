@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package hostingdeploymentautoscalingjob
+package hostingautoscalingpolicy
 
 import (
 	"path/filepath"
@@ -45,7 +45,7 @@ func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
-		"HostingDeploymentAutoscaling Controller Suite",
+		"HostingAutoscalingPolicy Controller Suite",
 		[]Reporter{printer.NewlineReporter{}})
 }
 

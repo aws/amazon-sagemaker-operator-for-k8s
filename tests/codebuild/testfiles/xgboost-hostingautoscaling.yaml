@@ -1,5 +1,5 @@
 apiVersion: sagemaker.aws.amazon.com/v1
-kind: HostingDeploymentAutoscalingJob
+kind: HostingAutoscalingPolicy
 metadata:
   name: hap-predefined
 spec:

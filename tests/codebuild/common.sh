@@ -62,7 +62,7 @@ function delete_all_resources()
   kubectl delete -n "$crd_namespace" trainingjob --all
   kubectl delete -n "$crd_namespace" batchtransformjob --all
   # HAP must be deleted before hostingdeployment
-  kubectl delete -n "$crd_namespace" hostingdeploymentautoscalingjobs --all
+  kubectl delete -n "$crd_namespace" hostingautoscalingpolicies --all
   kubectl delete -n "$crd_namespace" hostingdeployment --all 
   kubectl delete -n "$crd_namespace" model --all  
 }

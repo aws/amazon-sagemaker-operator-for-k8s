@@ -34,7 +34,7 @@ import (
 var _ = Describe("HostingAutoscalingPolicy", func() {
 	var (
 		key              types.NamespacedName
-		created, fetched *HostingDeploymentAutoscalingJob
+		created, fetched *HostingAutoscalingPolicy
 	)
 
 	BeforeEach(func() {
@@ -57,12 +57,12 @@ var _ = Describe("HostingAutoscalingPolicy", func() {
 				Name:      "foo",
 				Namespace: "default",
 			}
-			created = &HostingDeploymentAutoscalingJob{
+			created = &HostingAutoscalingPolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "foo",
 					Namespace: "default",
 				},
-				Spec: HostingDeploymentAutoscalingJobSpec{
+				Spec: HostingAutoscalingPolicySpec{
 					ResourceID: []*commonv1.AutoscalingResource{
 						{
 							EndpointName: ToStringPtr("endpoint-xyz"),
@@ -81,7 +81,7 @@ var _ = Describe("HostingAutoscalingPolicy", func() {
 			By("creating an API obj")
 			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
 
-			fetched = &HostingDeploymentAutoscalingJob{}
+			fetched = &HostingAutoscalingPolicy{}
 			Expect(k8sClient.Get(context.TODO(), key, fetched)).To(Succeed())
 			Expect(fetched).To(Equal(created))
 

@@ -84,8 +84,8 @@ function verify_canary_tests
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
-  verify_hap_test "${crd_namespace}" HostingDeploymentAutoscalingJob hap-predefined 2m CreatedAutoscalingJob "3"
-  verify_hap_test "${crd_namespace}" HostingDeploymentAutoscalingJob hap-custom-metric 2m CreatedAutoscalingJob "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 2m CreatedAutoscalingJob "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 2m CreatedAutoscalingJob "3"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
@@ -166,7 +166,7 @@ function run_hap_test()
   run_test "$target_namespace" "$file_name_custom"
 }
 
-# This function verifies that the hostingdeploymentautoscalingjob is applied as expected, and checks using awscli
+# This function verifies that the HostingAutoscalingPolicy is applied as expected, and checks using awscli
 # Parameter:
 #    $1: Namespace of the CRD
 #    $2: Kind of CRD

@@ -44,7 +44,7 @@ func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
-		"v1 hostingdeploymentautoscalingjob Suite",
+		"v1 hostingautoscalingpolicy Suite",
 		[]Reporter{printer.NewlineReporter{}})
 }
 

@@ -28,8 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// HostingDeploymentAutoscalingJobSpec defines the desired state of the cluster for HostingDeploymentAutoscalingJob
-type HostingDeploymentAutoscalingJobSpec struct {
+// HostingAutoscalingPolicySpec defines the desired state of the cluster for HostingAutoscalingPolicy
+type HostingAutoscalingPolicySpec struct {
 	Region *string `json:"region"`
 
 	MinCapacity *int64 `json:"minCapacity,omitempty"`
@@ -59,12 +59,12 @@ type HostingDeploymentAutoscalingJobSpec struct {
 	TargetTrackingScalingPolicyConfiguration *commonv1.TargetTrackingScalingPolicyConfig `json:"targetTrackingScalingPolicyConfiguration,omitempty"`
 }
 
-// HostingDeploymentAutoscalingJobStatus defines the observed state of HostingDeploymentAutoscalingJob
-type HostingDeploymentAutoscalingJobStatus struct {
+// HostingAutoscalingPolicyStatus defines the observed state of HostingAutoscalingPolicy
+type HostingAutoscalingPolicyStatus struct {
 
 	// Review: Do we want to add the resourceIDList here
-	PolicyName                            string `json:"policyName,omitempty"`
-	HostingDeploymentAutoscalingJobStatus string `json:"hostingDeploymentAutoscalingJobStatus,omitempty"`
+	PolicyName                     string `json:"policyName,omitempty"`
+	HostingAutoscalingPolicyStatus string `json:"hostingAutoscalingPolicyStatus,omitempty"`
 
 	// Field to store additional information, for example if
 	// we are unable to check the status we update this.
@@ -76,27 +76,28 @@ type HostingDeploymentAutoscalingJobStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Status",type="string", JSONPath=".status.hostingDeploymentAutoscalingJobStatus"
+// +kubebuilder:printcolumn:name="Status",type="string", JSONPath=".status.hostingAutoscalingPolicyStatus"
 // +kubebuilder:printcolumn:name="Creation-Time",type="string", format="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:shortName="hap",path="hostingautoscalingpolicies"
 
-// HostingDeploymentAutoscalingJob is the Schema for the hostingdeploymentautoscalingjobs API
-type HostingDeploymentAutoscalingJob struct {
+// HostingAutoscalingPolicy is the Schema for the HostingAutoscalingPolicy API
+type HostingAutoscalingPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   HostingDeploymentAutoscalingJobSpec   `json:"spec"`
-	Status HostingDeploymentAutoscalingJobStatus `json:"status,omitempty"`
+	Spec   HostingAutoscalingPolicySpec   `json:"spec"`
+	Status HostingAutoscalingPolicyStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// HostingDeploymentAutoscalingJobList contains a list of HostingDeploymentAutoscalingJob
-type HostingDeploymentAutoscalingJobList struct {
+// HostingAutoscalingPolicyList contains a list of HostingAutoscalingPolicies
+type HostingAutoscalingPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []HostingDeploymentAutoscalingJob `json:"items"`
+	Items           []HostingAutoscalingPolicy `json:"items"`
 }
 
 func init() {
-	commonv1.SchemeBuilder.Register(&HostingDeploymentAutoscalingJob{}, &HostingDeploymentAutoscalingJobList{})
+	commonv1.SchemeBuilder.Register(&HostingAutoscalingPolicy{}, &HostingAutoscalingPolicyList{})
 }

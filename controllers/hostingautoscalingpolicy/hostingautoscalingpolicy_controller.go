@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package hostingdeploymentautoscalingjob
+package hostingautoscalingpolicy
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
-	hostingdeploymentautoscalingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeploymentautoscalingjob"
+	hostingautoscalingpolicyv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingautoscalingpolicy"
 )
 
 // All the status used by the controller during reconciliation.
@@ -59,7 +59,7 @@ const (
 	DefaultAutoscalingPolicyName = "SageMakerEndpointInvocationScalingPolicy"
 )
 
-// Reconciler reconciles a HostingDeploymentAutoscalingJob object
+// Reconciler reconciles a HAP object
 type Reconciler struct {
 	client.Client
 	Log                                logr.Logger
@@ -67,8 +67,8 @@ type Reconciler struct {
 	awsConfigLoader                    controllers.AwsConfigLoader
 }
 
-// NewHostingDeploymentAutoscalingJobReconciler creates a new reconciler with the default ApplicationAutoscaling client.
-func NewHostingDeploymentAutoscalingJobReconciler(client client.Client, log logr.Logger, pollInterval time.Duration) *Reconciler {
+// NewHostingAutoscalingPolicyReconciler creates a new reconciler with the default ApplicationAutoscaling client.
+func NewHostingAutoscalingPolicyReconciler(client client.Client, log logr.Logger, pollInterval time.Duration) *Reconciler {
 	return &Reconciler{
 		Client: client,
 		Log:    log,
@@ -79,30 +79,30 @@ func NewHostingDeploymentAutoscalingJobReconciler(client client.Client, log logr
 	}
 }
 
-// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingdeploymentautoscalingjobs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingdeploymentautoscalingjobs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingautoscalingpolicy,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=hostingautoscalingpolicy/status,verbs=get;update;patch
 
 // Reconcile attempts to reconcile the SageMaker resource state with the k8s desired state.
-// Review: Clean this up
+// TODO: Check if resource name above is correct or plural
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := reconcileRequestContext{
-		Context:                         context.Background(),
-		Log:                             r.Log.WithValues("hostingdeploymentautoscalingjob", req.NamespacedName),
-		HostingDeploymentAutoscalingJob: new(hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJob),
+		Context:                  context.Background(),
+		Log:                      r.Log.WithValues("hostingautoscalingpolicy", req.NamespacedName),
+		HostingAutoscalingPolicy: new(hostingautoscalingpolicyv1.HostingAutoscalingPolicy),
 	}
 
 	ctx.Log.Info("Getting resource")
 
 	// Get state from etcd
-	if err := r.Get(ctx, req.NamespacedName, ctx.HostingDeploymentAutoscalingJob); err != nil {
-		ctx.Log.Info("Unable to fetch HostingDeploymentAutoscalingJob", "reason", err)
+	if err := r.Get(ctx, req.NamespacedName, ctx.HostingAutoscalingPolicy); err != nil {
+		ctx.Log.Info("Unable to fetch HostingAutoscalingPolicy", "reason", err)
 		if apierrs.IsNotFound(err) {
 			return controllers.NoRequeue()
 		}
 		return controllers.RequeueImmediately()
 	}
 
-	if err := r.reconcileHostingDeploymentAutoscalingJob(ctx); err != nil && clientwrapper.IsHAP500Error(err) {
+	if err := r.reconcileHostingAutoscalingPolicy(ctx); err != nil && clientwrapper.IsHAP500Error(err) {
 		ctx.Log.Info("Got server error while reconciling, will retry", "err", err)
 		return controllers.RequeueImmediately()
 	}
@@ -115,8 +115,8 @@ type reconcileRequestContext struct {
 	Log                          logr.Logger
 	ApplicationAutoscalingClient clientwrapper.ApplicationAutoscalingClientWrapper
 
-	// The desired state of the HostingDeploymentAutoscalingJob
-	HostingDeploymentAutoscalingJob *hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJob
+	// The desired state of the HostingAutoscalingPolicy
+	HostingAutoscalingPolicy *hostingautoscalingpolicyv1.HostingAutoscalingPolicy
 
 	// The name the ScalingPolicy that is applied to the Variants
 	PolicyName string
@@ -129,12 +129,12 @@ type reconcileRequestContext struct {
 	ScalableTargetDescriptionList []*applicationautoscaling.DescribeScalableTargetsOutput
 }
 
-// reconcileHostingDeploymentAutoscalingJob initialized the
-func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileRequestContext) error {
+// reconcileHostingAutoscalingPolicy initializes, adds finalizer and then determines and calls the HAP action
+func (r *Reconciler) reconcileHostingAutoscalingPolicy(ctx reconcileRequestContext) error {
 	var err error
 
 	// Set first-touch status
-	if ctx.HostingDeploymentAutoscalingJob.Status.HostingDeploymentAutoscalingJobStatus == "" {
+	if ctx.HostingAutoscalingPolicy.Status.HostingAutoscalingPolicyStatus == "" {
 		if err = r.updateStatus(ctx, controllers.InitializingJobStatus); err != nil {
 			return err
 		}
@@ -145,10 +145,10 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 	}
 
 	// Add finalizer if it's not marked for deletion.
-	if !controllers.HasDeletionTimestamp(ctx.HostingDeploymentAutoscalingJob.ObjectMeta) {
-		if !controllers.ContainsString(ctx.HostingDeploymentAutoscalingJob.ObjectMeta.GetFinalizers(), controllers.SageMakerResourceFinalizerName) {
-			ctx.HostingDeploymentAutoscalingJob.ObjectMeta.Finalizers = append(ctx.HostingDeploymentAutoscalingJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
-			if err := r.Update(ctx, ctx.HostingDeploymentAutoscalingJob); err != nil {
+	if !controllers.HasDeletionTimestamp(ctx.HostingAutoscalingPolicy.ObjectMeta) {
+		if !controllers.ContainsString(ctx.HostingAutoscalingPolicy.ObjectMeta.GetFinalizers(), controllers.SageMakerResourceFinalizerName) {
+			ctx.HostingAutoscalingPolicy.ObjectMeta.Finalizers = append(ctx.HostingAutoscalingPolicy.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
+			if err := r.Update(ctx, ctx.HostingAutoscalingPolicy); err != nil {
 				return errors.Wrap(err, "Failed to add finalizer")
 			}
 			ctx.Log.Info("Finalizer added")
@@ -157,12 +157,12 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 
 	// Update Descriptions in ctx
 	if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil && !clientwrapper.IsDescribeHAP404Error(err) {
-		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
+		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingAutoscalingPolicy."))
 	}
 
 	var action controllers.ReconcileAction
 	if action, err = r.determineActionForAutoscaling(ctx); err != nil {
-		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to determine action for HostingDeploymentAutoscaling."))
+		return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to determine action for HostingAutoscalingPolicy."))
 	}
 	ctx.Log.Info("Determined action for AutoscalingJob", "action", action)
 
@@ -177,7 +177,7 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 		ctx.ScalableTargetDescriptionList = nil
 	}
 
-	// If update or create, create the desired hostingdeploymentautoscaling.
+	// If update or create, create the desired HAP.
 	if action == controllers.NeedsCreate || action == controllers.NeedsUpdate {
 		if ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, err = r.applyAutoscalingPolicy(ctx); err != nil {
 			return r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to applyAutoscalingPolicy"))
@@ -195,7 +195,7 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 	}
 
 	// Remove the Finalizer on delete
-	if controllers.HasDeletionTimestamp(ctx.HostingDeploymentAutoscalingJob.ObjectMeta) {
+	if controllers.HasDeletionTimestamp(ctx.HostingAutoscalingPolicy.ObjectMeta) {
 		if err = r.removeFinalizer(ctx); err != nil {
 			return err
 		}
@@ -208,8 +208,8 @@ func (r *Reconciler) reconcileHostingDeploymentAutoscalingJob(ctx reconcileReque
 func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 	var err error
 
-	ctx.HostingDeploymentAutoscalingJob.ObjectMeta.Finalizers = controllers.RemoveString(ctx.HostingDeploymentAutoscalingJob.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
-	if err = r.Update(ctx, ctx.HostingDeploymentAutoscalingJob); err != nil {
+	ctx.HostingAutoscalingPolicy.ObjectMeta.Finalizers = controllers.RemoveString(ctx.HostingAutoscalingPolicy.ObjectMeta.Finalizers, controllers.SageMakerResourceFinalizerName)
+	if err = r.Update(ctx, ctx.HostingAutoscalingPolicy); err != nil {
 		return errors.Wrap(err, "Failed to remove finalizer")
 	}
 	ctx.Log.Info("Finalizer has been removed")
@@ -220,7 +220,7 @@ func (r *Reconciler) removeFinalizer(ctx reconcileRequestContext) error {
 // getResourceIDListfromInputSpec converts the list of resources into a string list to be used for various API calls
 func (r *Reconciler) getResourceIDListfromInputSpec(ctx *reconcileRequestContext) error {
 
-	resourceIDListfromSpec := ctx.HostingDeploymentAutoscalingJob.Spec.ResourceID
+	resourceIDListfromSpec := ctx.HostingAutoscalingPolicy.Spec.ResourceID
 	for _, resourceIDfromSpec := range resourceIDListfromSpec {
 		resourceID := sdkutil.ConvertAutoscalingResourceToString(*resourceIDfromSpec)
 		ctx.ResourceIDList = append(ctx.ResourceIDList, *resourceID)
@@ -234,15 +234,15 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	var err error
 
 	// Ensure we are using the job name specified in the spec
-	if ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName != nil && len(*ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName) > 0 {
-		ctx.PolicyName = *ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName
+	if ctx.HostingAutoscalingPolicy.Spec.PolicyName != nil && len(*ctx.HostingAutoscalingPolicy.Spec.PolicyName) > 0 {
+		ctx.PolicyName = *ctx.HostingAutoscalingPolicy.Spec.PolicyName
 	} else {
 		ctx.PolicyName = DefaultAutoscalingPolicyName
-		ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName = &ctx.PolicyName
+		ctx.HostingAutoscalingPolicy.Spec.PolicyName = &ctx.PolicyName
 
 		// Review: Is this needed
-		if err := r.Update(ctx, ctx.HostingDeploymentAutoscalingJob); err != nil {
-			ctx.Log.Info("Error while updating HostingDeploymentAutoscalingJob policyName in spec")
+		if err := r.Update(ctx, ctx.HostingAutoscalingPolicy); err != nil {
+			ctx.Log.Info("Error while updating HostingAutoscalingPolicy policyName in spec")
 			return err
 		}
 	}
@@ -254,22 +254,22 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	}
 
 	// Initialize other values to defaults if not in Spec
-	if ctx.HostingDeploymentAutoscalingJob.Spec.ScalableDimension == nil {
-		namespace := sdkutil.HostingDeploymentAutoscalingServiceNamespace
-		ctx.HostingDeploymentAutoscalingJob.Spec.ServiceNamespace = &namespace
+	if ctx.HostingAutoscalingPolicy.Spec.ScalableDimension == nil {
+		namespace := sdkutil.HostingAutoscalingPolicyServiceNamespace
+		ctx.HostingAutoscalingPolicy.Spec.ServiceNamespace = &namespace
 	}
 
-	if ctx.HostingDeploymentAutoscalingJob.Spec.ScalableDimension == nil {
+	if ctx.HostingAutoscalingPolicy.Spec.ScalableDimension == nil {
 		dimension := ScalableDimension
-		ctx.HostingDeploymentAutoscalingJob.Spec.ScalableDimension = &dimension
+		ctx.HostingAutoscalingPolicy.Spec.ScalableDimension = &dimension
 	}
 
-	if ctx.HostingDeploymentAutoscalingJob.Spec.PolicyType == nil {
+	if ctx.HostingAutoscalingPolicy.Spec.PolicyType == nil {
 		policyType := PolicyType
-		ctx.HostingDeploymentAutoscalingJob.Spec.PolicyType = &policyType
+		ctx.HostingAutoscalingPolicy.Spec.PolicyType = &policyType
 	}
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.HostingDeploymentAutoscalingJob.Spec.Region, ctx.HostingDeploymentAutoscalingJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err
@@ -281,12 +281,11 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	return nil
 }
 
-// ctx.HostingDeploymentAutoscalingJob: desiredAutoscaling
-// ctx.ScalingPolicyDescription: actualAutoscaling
+// determineActionForAutoscaling checks if controller needs to create/delete/update HAP
 func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) (controllers.ReconcileAction, error) {
 	var err error
 	// Review: Should you add a check based on status too, for controller restarts
-	if controllers.HasDeletionTimestamp(ctx.HostingDeploymentAutoscalingJob.ObjectMeta) {
+	if controllers.HasDeletionTimestamp(ctx.HostingAutoscalingPolicy.ObjectMeta) {
 		ctx.Log.Info("Object Has Deletion Timestamp")
 		if len(ctx.ScalingPolicyDescriptionList) > 0 {
 			return controllers.NeedsDelete, nil
@@ -301,7 +300,7 @@ func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) 
 
 	var comparison sdkutil.Comparison
 
-	if comparison, err = sdkutil.HostingDeploymentAutoscalingSpecMatchesDescription(ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, ctx.HostingDeploymentAutoscalingJob.Spec); err != nil {
+	if comparison, err = sdkutil.HostingAutoscalingPolicySpecMatchesDescription(ctx.ScalableTargetDescriptionList, ctx.ScalingPolicyDescriptionList, ctx.HostingAutoscalingPolicy.Spec); err != nil {
 		return controllers.NeedsNoop, err
 	}
 
@@ -349,14 +348,14 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 	var deleteScalingPolicyInput applicationautoscaling.DeleteScalingPolicyInput
 
 	for _, ResourceID := range ctx.ResourceIDList {
-		deleteScalingPolicyInput = sdkutil.CreateDeleteScalingPolicyInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
+		deleteScalingPolicyInput = sdkutil.CreateDeleteScalingPolicyInput(ctx.HostingAutoscalingPolicy.Spec, ResourceID)
 		if _, err := ctx.ApplicationAutoscalingClient.DeleteScalingPolicy(ctx, &deleteScalingPolicyInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err) {
 			return errors.Wrap(err, "Unable to DeleteScalingPolicy")
 		}
 	}
 
 	for _, ResourceID := range ctx.ResourceIDList {
-		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(ctx.HostingDeploymentAutoscalingJob.Spec, ResourceID)
+		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(ctx.HostingAutoscalingPolicy.Spec, ResourceID)
 		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err) {
 			return errors.Wrap(err, "Unable to DeregisterScalableTarget")
 		}
@@ -376,12 +375,12 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 	var scalingPolicyDescriptionList []*applicationautoscaling.ScalingPolicy
 
 	// Review: Is this needed
-	if ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName == nil || len(*ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName) == 0 {
-		ctx.HostingDeploymentAutoscalingJob.Spec.PolicyName = &ctx.PolicyName
+	if ctx.HostingAutoscalingPolicy.Spec.PolicyName == nil || len(*ctx.HostingAutoscalingPolicy.Spec.PolicyName) == 0 {
+		ctx.HostingAutoscalingPolicy.Spec.PolicyName = &ctx.PolicyName
 	}
 
 	// For each resourceID, register the scalableTarget
-	registerScalableTargetInputList = sdkutil.CreateRegisterScalableTargetInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
+	registerScalableTargetInputList = sdkutil.CreateRegisterScalableTargetInputFromSpec(ctx.HostingAutoscalingPolicy.Spec)
 	for _, registerScalableTargetInput := range registerScalableTargetInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.RegisterScalableTarget(ctx, &registerScalableTargetInput); err != nil {
 			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to Register Target")
@@ -389,7 +388,7 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 	}
 
 	// For each resourceID, apply the scalingPolicy
-	putScalingPolicyInputList = sdkutil.CreatePutScalingPolicyInputFromSpec(ctx.HostingDeploymentAutoscalingJob.Spec)
+	putScalingPolicyInputList = sdkutil.CreatePutScalingPolicyInputFromSpec(ctx.HostingAutoscalingPolicy.Spec)
 	for _, putScalingPolicyInput := range putScalingPolicyInputList {
 		if _, err := ctx.ApplicationAutoscalingClient.PutScalingPolicy(ctx, &putScalingPolicyInput); err != nil {
 			return scalableTargetDescriptionList, scalingPolicyDescriptionList, errors.Wrap(err, "Unable to Put Scaling Policy")
@@ -398,7 +397,7 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 
 	var err error
 	if scalableTargetDescriptionList, scalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil {
-		return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingDeploymentAutoscaling."))
+		return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, FailedAutoscalingJobStatus, errors.Wrap(err, "Unable to describe HostingAutoscalingPolicy."))
 	}
 
 	// TODO mbaijal: This check is not needed since the first describe is handled differently
@@ -412,8 +411,8 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 // If this function returns an error, the status update has failed, and the reconciler should always requeue.
 // This prevents the case where a terminal status fails to persist to the Kubernetes datastore yet we stop
 // reconciling and thus leave the job in an unfinished state.
-func (r *Reconciler) updateStatus(ctx reconcileRequestContext, hostingDeploymentAutoscalingJobStatus string) error {
-	return r.updateStatusWithAdditional(ctx, hostingDeploymentAutoscalingJobStatus, "")
+func (r *Reconciler) updateStatus(ctx reconcileRequestContext, hostingAutoscalingPolicyStatus string) error {
+	return r.updateStatusWithAdditional(ctx, hostingAutoscalingPolicyStatus, "")
 }
 
 func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, status string, reconcileErr error) error {
@@ -423,16 +422,16 @@ func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, sta
 	return reconcileErr
 }
 
-func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, hostingDeploymentAutoscalingJobStatus, additional string) error {
+func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, hostingAutoscalingPolicyStatus, additional string) error {
 
-	jobStatus := &ctx.HostingDeploymentAutoscalingJob.Status
+	jobStatus := &ctx.HostingAutoscalingPolicy.Status
 
 	// When you call this function, update/refresh all the fields since we overwrite.
-	jobStatus.HostingDeploymentAutoscalingJobStatus = hostingDeploymentAutoscalingJobStatus
+	jobStatus.HostingAutoscalingPolicyStatus = hostingAutoscalingPolicyStatus
 	jobStatus.Additional = additional
 	jobStatus.PolicyName = ctx.PolicyName
 
-	if err := r.Status().Update(ctx, ctx.HostingDeploymentAutoscalingJob); err != nil {
+	if err := r.Status().Update(ctx, ctx.HostingAutoscalingPolicy); err != nil {
 		err = errors.Wrap(err, "Unable to update status")
 		ctx.Log.Info("Error while updating status.", "err", err)
 		return err
@@ -444,7 +443,7 @@ func (r *Reconciler) updateStatusWithAdditional(ctx reconcileRequestContext, hos
 // SetupWithManager configures the manager to recognise the controller.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJob{}).
+		For(&hostingautoscalingpolicyv1.HostingAutoscalingPolicy{}).
 		// Ignore status-only and metadata-only updates
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)

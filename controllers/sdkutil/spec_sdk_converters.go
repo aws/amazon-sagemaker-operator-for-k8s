@@ -26,7 +26,7 @@ import (
 	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
 	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
-	hostingdeploymentautoscalingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeploymentautoscalingjob"
+	hostingautoscalingpolicyv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingautoscalingpolicy"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
@@ -35,8 +35,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HostingDeploymentAutoscalingServiceNamespace is a constant value for using the Autoscaling API in the SageMaker Service
-const HostingDeploymentAutoscalingServiceNamespace = "sagemaker"
+// HostingAutoscalingPolicyServiceNamespace is a constant value for using the Autoscaling API in the SageMaker Service
+const HostingAutoscalingPolicyServiceNamespace = "sagemaker"
 
 // CreateHyperParameterTuningJobSpecFromDescription creates a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
 // This panics if json libraries are unable to serialize the description and deserialize the serialization.
@@ -603,7 +603,7 @@ func ConvertAutoscalingResourceToString(resourceIDfromSpec commonv1.AutoscalingR
 
 // CreateRegisterScalableTargetInputFromSpec from a JobSpec.
 // This panics if json libraries are unable to serialize the spec or deserialize the serialization.
-func CreateRegisterScalableTargetInputFromSpec(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec) []applicationautoscaling.RegisterScalableTargetInput {
+func CreateRegisterScalableTargetInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) []applicationautoscaling.RegisterScalableTargetInput {
 
 	if input, err := createRegisterScalableTargetInputListFromSpec(spec); err == nil {
 		return input
@@ -613,7 +613,7 @@ func CreateRegisterScalableTargetInputFromSpec(spec hostingdeploymentautoscaling
 }
 
 // createRegisterScalableTargetInputListFromSpec request input from a Kubernetes spec.
-func createRegisterScalableTargetInputListFromSpec(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec) ([]applicationautoscaling.RegisterScalableTargetInput, error) {
+func createRegisterScalableTargetInputListFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) ([]applicationautoscaling.RegisterScalableTargetInput, error) {
 	var outputList []applicationautoscaling.RegisterScalableTargetInput
 	var output applicationautoscaling.RegisterScalableTargetInput
 
@@ -631,7 +631,7 @@ func createRegisterScalableTargetInputListFromSpec(spec hostingdeploymentautosca
 }
 
 // createRegisterScalableTargetInputFromSpec request input from a Kubernetes spec.
-func createRegisterScalableTargetInputFromSpec(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID *string) (applicationautoscaling.RegisterScalableTargetInput, error) {
+func createRegisterScalableTargetInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID *string) (applicationautoscaling.RegisterScalableTargetInput, error) {
 	var output applicationautoscaling.RegisterScalableTargetInput
 
 	marshalledRegisterScalableTargetInput, err := json.Marshal(spec)
@@ -650,7 +650,7 @@ func createRegisterScalableTargetInputFromSpec(spec hostingdeploymentautoscaling
 
 // CreatePutScalingPolicyInputFromSpec from a JobSpec.
 // This panics if json libraries are unable to serialize the spec or deserialize the serialization.
-func CreatePutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec) []applicationautoscaling.PutScalingPolicyInput {
+func CreatePutScalingPolicyInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) []applicationautoscaling.PutScalingPolicyInput {
 
 	if input, err := createPutScalingPolicyInputListFromSpec(spec); err == nil {
 		return input
@@ -660,7 +660,7 @@ func CreatePutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.
 }
 
 // createPutScalingPolicyInputListFromSpec request input from a Kubernetes spec.
-func createPutScalingPolicyInputListFromSpec(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec) ([]applicationautoscaling.PutScalingPolicyInput, error) {
+func createPutScalingPolicyInputListFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) ([]applicationautoscaling.PutScalingPolicyInput, error) {
 	var outputList []applicationautoscaling.PutScalingPolicyInput
 	var output applicationautoscaling.PutScalingPolicyInput
 
@@ -678,7 +678,7 @@ func createPutScalingPolicyInputListFromSpec(spec hostingdeploymentautoscalingjo
 }
 
 // createPutScalingPolicyInputFromSpec request input from a Kubernetes spec.
-func createPutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID *string) (applicationautoscaling.PutScalingPolicyInput, error) {
+func createPutScalingPolicyInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID *string) (applicationautoscaling.PutScalingPolicyInput, error) {
 	var output applicationautoscaling.PutScalingPolicyInput
 
 	// clear out the CustomizedMetricSpecification KVPs from spec and init to empty struct
@@ -710,7 +710,7 @@ func createPutScalingPolicyInputFromSpec(spec hostingdeploymentautoscalingjobv1.
 }
 
 // CreateDeregisterScalableTargetInput creates DeregisterScalableTargetInput from spec
-func CreateDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) applicationautoscaling.DeregisterScalableTargetInput {
+func CreateDeregisterScalableTargetInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) applicationautoscaling.DeregisterScalableTargetInput {
 
 	if input, err := createDeregisterScalableTargetInput(spec, resourceID); err == nil {
 		return input
@@ -720,7 +720,7 @@ func CreateDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.
 }
 
 // createDeregisterScalableTargetInput creates DeregisterScalableTargetInput from spec.
-func createDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) (applicationautoscaling.DeregisterScalableTargetInput, error) {
+func createDeregisterScalableTargetInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) (applicationautoscaling.DeregisterScalableTargetInput, error) {
 	var output applicationautoscaling.DeregisterScalableTargetInput
 
 	marshalledScalableDimension, err := json.Marshal(spec.ScalableDimension)
@@ -729,13 +729,13 @@ func createDeregisterScalableTargetInput(spec hostingdeploymentautoscalingjobv1.
 	}
 
 	output.ResourceId = &resourceID
-	output.ServiceNamespace = HostingDeploymentAutoscalingServiceNamespace
+	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
 
 	return output, nil
 }
 
 // CreateDeleteScalingPolicyInput creates DeleteScalingPolicyInput from spec
-func CreateDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) applicationautoscaling.DeleteScalingPolicyInput {
+func CreateDeleteScalingPolicyInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) applicationautoscaling.DeleteScalingPolicyInput {
 
 	if input, err := createDeleteScalingPolicyInput(spec, resourceID); err == nil {
 		return input
@@ -745,7 +745,7 @@ func CreateDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.Hosti
 }
 
 // createDeleteScalingPolicyInput creates DeleteScalingPolicyInput from spec
-func createDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, resourceID string) (applicationautoscaling.DeleteScalingPolicyInput, error) {
+func createDeleteScalingPolicyInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) (applicationautoscaling.DeleteScalingPolicyInput, error) {
 	var output applicationautoscaling.DeleteScalingPolicyInput
 
 	marshalledScalableDimension, err := json.Marshal(spec.ScalableDimension)
@@ -756,7 +756,7 @@ func createDeleteScalingPolicyInput(spec hostingdeploymentautoscalingjobv1.Hosti
 	output.PolicyName = spec.PolicyName
 	output.ResourceId = &resourceID
 
-	output.ServiceNamespace = HostingDeploymentAutoscalingServiceNamespace
+	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
 
 	return output, nil
 }
@@ -775,40 +775,40 @@ func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.Sc
 	return resourceIDListforSpec
 }
 
-// CreateHostingDeploymentAutoscalingSpecFromDescription creates a Kubernetes spec from a List of Descriptions
+// CreateHostingAutoscalingPolicySpecFromDescription creates a Kubernetes spec from a List of Descriptions
 // Review: Needs a major review and also update if additional fields are added/removed from spec
-func CreateHostingDeploymentAutoscalingSpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy) (hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec, error) {
+func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy) (hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, error) {
 	transformedResourceIDs := getResourceIDListfromDescriptions(descriptions)
 	minCapacity := targetDescriptions[0].ScalableTargets[0].MinCapacity
 	maxCapacity := targetDescriptions[0].ScalableTargets[0].MaxCapacity
 
 	marshalled, err := json.Marshal(descriptions[0])
 	if err != nil {
-		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
 
 	obj, err := gabs.ParseJSON(marshalled)
 	if err != nil {
-		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
 
 	if _, err := obj.Set(transformedResourceIDs, "ResourceId"); err != nil {
-		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
 
 	// TODO: Test suspended state, custom metric too and add if needed
 
 	if _, err := obj.Set(minCapacity, "MinCapacity"); err != nil {
-		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
 
 	if _, err := obj.Set(maxCapacity, "MaxCapacity"); err != nil {
-		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
 
-	var unmarshalled hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec
+	var unmarshalled hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec
 	if err := json.Unmarshal(obj.Bytes(), &unmarshalled); err != nil {
-		return hostingdeploymentautoscalingjobv1.HostingDeploymentAutoscalingJobSpec{}, err
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
 
 	return unmarshalled, nil
