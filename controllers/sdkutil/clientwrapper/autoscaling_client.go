@@ -25,8 +25,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Provides the prefixes and error codes relating to each endpoint
-// TODO mbaijal: Check the messages
+// Provides error codes
 const (
 	DescribeHAP404Code = "ValidationException"
 	DeleteHAP404Code   = "ObjectNotFoundException"

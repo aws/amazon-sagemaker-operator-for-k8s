@@ -240,7 +240,6 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		ctx.PolicyName = DefaultAutoscalingPolicyName
 		ctx.HostingAutoscalingPolicy.Spec.PolicyName = &ctx.PolicyName
 
-		// Review: Is this needed
 		if err := r.Update(ctx, ctx.HostingAutoscalingPolicy); err != nil {
 			ctx.Log.Info("Error while updating HostingAutoscalingPolicy policyName in spec")
 			return err
@@ -284,7 +283,6 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 // determineActionForAutoscaling checks if controller needs to create/delete/update HAP
 func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) (controllers.ReconcileAction, error) {
 	var err error
-	// Review: Should you add a check based on status too, for controller restarts
 	if controllers.HasDeletionTimestamp(ctx.HostingAutoscalingPolicy.ObjectMeta) {
 		ctx.Log.Info("Object Has Deletion Timestamp")
 		if len(ctx.ScalingPolicyDescriptionList) > 0 {
@@ -293,7 +291,7 @@ func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) 
 		return controllers.NeedsNoop, nil
 	}
 
-	//Review: Second condition is not needed, cleanup after test
+	// TODO: one condition should be enough since the object is initialized
 	if ctx.ScalingPolicyDescriptionList == nil || len(ctx.ScalingPolicyDescriptionList) == 0 {
 		return controllers.NeedsCreate, nil
 	}
@@ -374,7 +372,6 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 	var scalableTargetDescriptionList []*applicationautoscaling.DescribeScalableTargetsOutput
 	var scalingPolicyDescriptionList []*applicationautoscaling.ScalingPolicy
 
-	// Review: Is this needed
 	if ctx.HostingAutoscalingPolicy.Spec.PolicyName == nil || len(*ctx.HostingAutoscalingPolicy.Spec.PolicyName) == 0 {
 		ctx.HostingAutoscalingPolicy.Spec.PolicyName = &ctx.PolicyName
 	}

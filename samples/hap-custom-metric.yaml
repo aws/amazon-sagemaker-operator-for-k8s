@@ -1,7 +1,7 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: HostingAutoscalingPolicy
 metadata:
-  name: ep-autoscaling-custom
+  name: hap-custom
 spec:
     resourceId:
       - endpointName: Endpoint-20200410010239-FZFY
