@@ -14,17 +14,17 @@ function run_canary_tests
   inject_all_variables
 
   echo "Starting Canary Tests"
-  ## run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml
-  ## run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
   # Special code for batch transform till we fix issue-59
-  ## run_test "${crd_namespace}" testfiles/xgboost-model.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-model.yaml
   # We need to get sagemaker model before running batch transform
-  ## verify_test "${crd_namespace}" Model xgboost-model 1m Created
-  ## yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
-  ## run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
+  verify_test "${crd_namespace}" Model xgboost-model 1m Created
+  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
   run_hap_test "${crd_namespace}" xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml testfiles/xgboost-hostingautoscaling-custom.yaml
-  ## run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Applies each of the resources needed for the canary tests.
@@ -64,13 +64,13 @@ function run_integration_tests
   fi
 
   echo "Starting integration tests"
-  ## run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-trainingjob.yaml
-  ## run_test "${crd_namespace}" testfiles/xgboost-mnist-custom-endpoint.yaml
+  run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-custom-endpoint.yaml
   # run_test "${crd_namespace}" testfiles/efs-xgboost-mnist-trainingjob.yaml
   # run_test "${crd_namespace}" testfiles/fsx-kmeans-mnist-trainingjob.yaml
-  ## run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
-  ## run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
-  ## run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
