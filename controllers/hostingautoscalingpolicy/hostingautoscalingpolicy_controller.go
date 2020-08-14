@@ -285,7 +285,8 @@ func (r *Reconciler) determineActionForAutoscaling(ctx reconcileRequestContext) 
 	var err error
 	if controllers.HasDeletionTimestamp(ctx.HostingAutoscalingPolicy.ObjectMeta) {
 		ctx.Log.Info("Object Has Deletion Timestamp")
-		if len(ctx.ScalingPolicyDescriptionList) > 0 {
+		// Both conditions are needed because if apply fails, its possible only registering target was done.
+		if len(ctx.ScalingPolicyDescriptionList) > 0 || len(ctx.ScalableTargetDescriptionList) > 0 {
 			return controllers.NeedsDelete, nil
 		}
 		return controllers.NeedsNoop, nil
@@ -331,7 +332,7 @@ func (r *Reconciler) describeAutoscalingPolicy(ctx reconcileRequestContext) ([]*
 		}
 
 		if scalableTargetDescription != nil {
-			scalableTargetDescriptionList = append(ctx.ScalableTargetDescriptionList, scalableTargetDescription)
+			scalableTargetDescriptionList = append(scalableTargetDescriptionList, scalableTargetDescription)
 		}
 		if scalingPolicyDescription != nil {
 			scalingPolicyDescriptionList = append(scalingPolicyDescriptionList, scalingPolicyDescription)
