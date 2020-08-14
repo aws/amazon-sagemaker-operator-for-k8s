@@ -20,19 +20,25 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	gabs "github.com/Jeffail/gabs/v2"
 	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
 	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
+	hostingautoscalingpolicyv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingautoscalingpolicy"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/pkg/errors"
 )
 
-// Create a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
+// HostingAutoscalingPolicyServiceNamespace is a constant value for using the Autoscaling API in the SageMaker Service
+const HostingAutoscalingPolicyServiceNamespace = "sagemaker"
+
+// CreateHyperParameterTuningJobSpecFromDescription creates a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
 // This panics if json libraries are unable to serialize the description and deserialize the serialization.
 func CreateHyperParameterTuningJobSpecFromDescription(description sagemaker.DescribeHyperParameterTuningJobOutput) hpojobv1.HyperparameterTuningJobSpec {
 	if spec, err := createHyperParameterTuningJobSpecFromDescription(description); err == nil {
@@ -42,7 +48,7 @@ func CreateHyperParameterTuningJobSpecFromDescription(description sagemaker.Desc
 	}
 }
 
-// Create a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
+// createHyperParameterTuningJobSpecFromDescription creates a HyperParameterTuningJobSpec from a DescribeHyperParameterTuningJobOutput.
 func createHyperParameterTuningJobSpecFromDescription(description sagemaker.DescribeHyperParameterTuningJobOutput) (hpojobv1.HyperparameterTuningJobSpec, error) {
 
 	transformedHyperParameters := []*commonv1.KeyValuePair{}
@@ -77,7 +83,7 @@ func createHyperParameterTuningJobSpecFromDescription(description sagemaker.Desc
 	return unmarshalled, nil
 }
 
-// Create a TrainingJobSpec from a SageMaker description. This uses JSON to do the assignment. It also transforms the hyperparameter
+// CreateTrainingJobSpecFromDescription creates a TrainingJobSpec from a SageMaker description. This uses JSON to do the assignment. It also transforms the hyperparameter
 // list from map to list of key,value pairs.
 func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTrainingJobOutput) (trainingjobv1.TrainingJobSpec, error) {
 
@@ -106,7 +112,7 @@ func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTraining
 	return unmarshalled, nil
 }
 
-// Create a CreateTrainingJobInput from a TrainingJobSpec.
+// CreateCreateTrainingJobInputFromSpec creates a CreateTrainingJobInput from a TrainingJobSpec.
 // This panics if json libraries are unable to serialize the spec or deserialize the serialization.
 func CreateCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) sagemaker.CreateTrainingJobInput {
 	if input, err := createCreateTrainingJobInputFromSpec(spec); err == nil {
@@ -116,7 +122,7 @@ func CreateCreateTrainingJobInputFromSpec(spec trainingjobv1.TrainingJobSpec) sa
 	}
 }
 
-// Create a CreateTrainingJob request input from a Kubernetes spec.
+// createCreateTrainingJobInputFromSpec creates a CreateTrainingJob request input from a Kubernetes spec.
 // TODO Implement tests or find an alternative method.
 // This approach was done as part of a proof of concept. It escapes the Go type system via json to convert
 // between trainingjobv1.and sdk struct types. There are a few other ways to do it (see alternatives).
@@ -284,7 +290,7 @@ func CreateTrainingJobStatusCountersFromDescription(sageMakerDescription *sagema
 	return &commonv1.TrainingJobStatusCounters{}
 }
 
-// Create a CreateModel request input from a Kubernetes Model spec.
+// CreateCreateModelInputFromSpec creates a CreateModel request input from a Kubernetes Model spec.
 func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) (*sagemaker.CreateModelInput, error) {
 
 	var primaryContainerEnvironment []*commonv1.KeyValuePair
@@ -329,7 +335,7 @@ func CreateCreateModelInputFromSpec(model *modelv1.ModelSpec, modelName string) 
 	return &output, nil
 }
 
-// Create a DeleteModel request input from a ModelName.
+// CreateDeleteModelInput creates a DeleteModel request input from a ModelName.
 func CreateDeleteModelInput(modelName *string) (*sagemaker.DeleteModelInput, error) {
 	var output sagemaker.DeleteModelInput
 	output.ModelName = modelName
@@ -337,7 +343,7 @@ func CreateDeleteModelInput(modelName *string) (*sagemaker.DeleteModelInput, err
 	return &output, nil
 }
 
-// Create a Kubernetes Model spec from a SageMaker model description.
+// CreateModelSpecFromDescription creates a Kubernetes Model spec from a SageMaker model description.
 func CreateModelSpecFromDescription(description *sagemaker.DescribeModelOutput) (*modelv1.ModelSpec, error) {
 
 	transformedContainersEnvironment := [][]*commonv1.KeyValuePair{}
@@ -390,7 +396,7 @@ func CreateModelSpecFromDescription(description *sagemaker.DescribeModelOutput) 
 	return &unmarshalled, nil
 }
 
-// Creates a CreateTrainingJobInput from a BatchTransformJobSpec
+// CreateCreateBatchTransformJobInputFromSpec creates a CreateTrainingJobInput from a BatchTransformJobSpec
 func CreateCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTransformJobSpec) sagemaker.CreateTransformJobInput {
 	input, err := createCreateBatchTransformJobInputFromSpec(spec)
 	if err == nil {
@@ -399,6 +405,7 @@ func CreateCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTr
 	panic("Unable to create CreateHyperParameterTuningJobInput from spec : " + err.Error())
 }
 
+//createCreateBatchTransformJobInputFromSpec creates a BatchTransformJobInput From Spec
 func createCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTransformJobSpec) (sagemaker.CreateTransformJobInput, error) {
 	var target sagemaker.CreateTransformJobInput
 
@@ -414,7 +421,7 @@ func createCreateBatchTransformJobInputFromSpec(spec batchtransformjobv1.BatchTr
 	return target, nil
 }
 
-// Create a BatchTransformJobSpec from a DescribeTrainingJobOutput.
+// CreateTransformJobSpecFromDescription creates a BatchTransformJobSpec from a DescribeTrainingJobOutput.
 // This panics if json libraries are unable to serialize the description and deserialize the serialization.
 func CreateTransformJobSpecFromDescription(description sagemaker.DescribeTransformJobOutput) batchtransformjobv1.BatchTransformJobSpec {
 	if spec, err := createTransformJobSpecFromDescription(description); err == nil {
@@ -424,7 +431,7 @@ func CreateTransformJobSpecFromDescription(description sagemaker.DescribeTransfo
 	}
 }
 
-// Create a BatchTransformJobSpec from a SageMaker description. This uses JSON to do the assignment.
+// createTransformJobSpecFromDescription creates a BatchTransformJobSpec from a SageMaker description. This uses JSON to do the assignment.
 func createTransformJobSpecFromDescription(description sagemaker.DescribeTransformJobOutput) (batchtransformjobv1.BatchTransformJobSpec, error) {
 
 	marshalled, err := json.Marshal(description)
@@ -445,7 +452,7 @@ func createTransformJobSpecFromDescription(description sagemaker.DescribeTransfo
 	return unmarshalled, nil
 }
 
-// Create a CreateEndpointConfig request input from a Kubernetes EndpointConfig spec.
+// CreateCreateEndpointConfigInputFromSpec creates a CreateEndpointConfig request input from a Kubernetes EndpointConfig spec.
 func CreateCreateEndpointConfigInputFromSpec(endpointconfig *endpointconfigv1.EndpointConfigSpec, endpointConfigName string) (*sagemaker.CreateEndpointConfigInput, error) {
 
 	jsonstr, err := json.Marshal(endpointconfig)
@@ -463,7 +470,7 @@ func CreateCreateEndpointConfigInputFromSpec(endpointconfig *endpointconfigv1.En
 	return &output, nil
 }
 
-// Create a DeleteEndpointConfigRequest input from a EndpointConfigName.
+// CreateDeleteEndpointConfigInput creates a DeleteEndpointConfigRequest input from a EndpointConfigName.
 func CreateDeleteEndpointConfigInput(endpointConfigName *string) (*sagemaker.DeleteEndpointConfigInput, error) {
 	var output sagemaker.DeleteEndpointConfigInput
 	output.EndpointConfigName = endpointConfigName
@@ -471,7 +478,7 @@ func CreateDeleteEndpointConfigInput(endpointConfigName *string) (*sagemaker.Del
 	return &output, nil
 }
 
-// Create a Kubernetes EndpointConfig spec from a SageMaker endpointconfig description.
+// CreateEndpointConfigSpecFromDescription creates a Kubernetes EndpointConfig spec from a SageMaker endpointconfig description.
 func CreateEndpointConfigSpecFromDescription(description *sagemaker.DescribeEndpointConfigOutput) (*endpointconfigv1.EndpointConfigSpec, error) {
 	jsonstr, err := json.Marshal(description)
 	if err != nil {
@@ -486,7 +493,7 @@ func CreateEndpointConfigSpecFromDescription(description *sagemaker.DescribeEndp
 	return &output, nil
 }
 
-// Create a *commonv1.ProductionVariantSummary from the equivalent SageMaker type.
+// ConvertProductionVariantSummary creates a *commonv1.ProductionVariantSummary from the equivalent SageMaker type.
 func ConvertProductionVariantSummary(pv *sagemaker.ProductionVariantSummary) (*commonv1.ProductionVariantSummary, error) {
 
 	jsonstr, err := json.Marshal(pv)
@@ -540,7 +547,7 @@ func replaceFloat64WithInt64(obj *gabs.Container, path string, toConvert float64
 	return nil
 }
 
-// Create a []*commonv1.ProductionVariantSummary from the equivalent SageMaker type.
+// ConvertProductionVariantSummarySlice creates a []*commonv1.ProductionVariantSummary from the equivalent SageMaker type.
 func ConvertProductionVariantSummarySlice(pvs []sagemaker.ProductionVariantSummary) ([]*commonv1.ProductionVariantSummary, error) {
 	productionVariants := []*commonv1.ProductionVariantSummary{}
 	for _, pv := range pvs {
@@ -554,6 +561,7 @@ func ConvertProductionVariantSummarySlice(pvs []sagemaker.ProductionVariantSumma
 	return productionVariants, nil
 }
 
+// ConvertTagSliceToSageMakerTagSlice converts Tags to Sagemaker Tags
 func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []sagemaker.Tag {
 	sageMakerTags := []sagemaker.Tag{}
 	for _, tag := range tags {
@@ -566,6 +574,7 @@ func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []sagemaker.Tag {
 	return sageMakerTags
 }
 
+// ConvertKeyValuePairSliceToMap converts key value pairs to a map
 func ConvertKeyValuePairSliceToMap(kvps []*commonv1.KeyValuePair) map[string]string {
 	target := map[string]string{}
 	for _, kvp := range kvps {
@@ -574,6 +583,7 @@ func ConvertKeyValuePairSliceToMap(kvps []*commonv1.KeyValuePair) map[string]str
 	return target
 }
 
+// ConvertMapToKeyValuePairSlice converts a map to a key value pair
 func ConvertMapToKeyValuePairSlice(m map[string]string) []*commonv1.KeyValuePair {
 	var kvps []*commonv1.KeyValuePair
 	for name, value := range m {
@@ -583,4 +593,223 @@ func ConvertMapToKeyValuePairSlice(m map[string]string) []*commonv1.KeyValuePair
 		})
 	}
 	return kvps
+}
+
+// ConvertAutoscalingResourceToString converts a map to a key value pair
+func ConvertAutoscalingResourceToString(resourceIDfromSpec commonv1.AutoscalingResource) *string {
+	var resourceString string = "endpoint/" + *resourceIDfromSpec.EndpointName + "/variant/" + *resourceIDfromSpec.VariantName
+	return &resourceString
+}
+
+// CreateRegisterScalableTargetInputFromSpec from a JobSpec.
+// This panics if json libraries are unable to serialize the spec or deserialize the serialization.
+func CreateRegisterScalableTargetInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) []applicationautoscaling.RegisterScalableTargetInput {
+
+	if input, err := createRegisterScalableTargetInputListFromSpec(spec); err == nil {
+		return input
+	} else {
+		panic("Unable to CreateRegisterScalableTargetInputFromSpec : " + err.Error())
+	}
+}
+
+// createRegisterScalableTargetInputListFromSpec request input from a Kubernetes spec.
+func createRegisterScalableTargetInputListFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) ([]applicationautoscaling.RegisterScalableTargetInput, error) {
+	var outputList []applicationautoscaling.RegisterScalableTargetInput
+	var output applicationautoscaling.RegisterScalableTargetInput
+
+	// clear out the old KVPs from spec and init to empty struct
+	resourceIDListfromSpec := spec.ResourceID
+	spec.ResourceID = []*commonv1.AutoscalingResource{}
+
+	for _, resourceIDfromSpec := range resourceIDListfromSpec {
+		ResourceID := ConvertAutoscalingResourceToString(*resourceIDfromSpec)
+		output, _ = createRegisterScalableTargetInputFromSpec(spec, ResourceID)
+		outputList = append(outputList, output)
+	}
+
+	return outputList, nil
+}
+
+// createRegisterScalableTargetInputFromSpec request input from a Kubernetes spec.
+func createRegisterScalableTargetInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID *string) (applicationautoscaling.RegisterScalableTargetInput, error) {
+	var output applicationautoscaling.RegisterScalableTargetInput
+
+	marshalledRegisterScalableTargetInput, err := json.Marshal(spec)
+	if err != nil {
+		return applicationautoscaling.RegisterScalableTargetInput{}, err
+	}
+
+	if err = json.Unmarshal(marshalledRegisterScalableTargetInput, &output); err != nil {
+		return applicationautoscaling.RegisterScalableTargetInput{}, err
+	}
+
+	output.ResourceId = resourceID
+
+	return output, nil
+}
+
+// CreatePutScalingPolicyInputFromSpec from a JobSpec.
+// This panics if json libraries are unable to serialize the spec or deserialize the serialization.
+func CreatePutScalingPolicyInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) []applicationautoscaling.PutScalingPolicyInput {
+
+	if input, err := createPutScalingPolicyInputListFromSpec(spec); err == nil {
+		return input
+	} else {
+		panic("Unable to create CreateTrainingJobInput from spec : " + err.Error())
+	}
+}
+
+// createPutScalingPolicyInputListFromSpec request input from a Kubernetes spec.
+func createPutScalingPolicyInputListFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) ([]applicationautoscaling.PutScalingPolicyInput, error) {
+	var outputList []applicationautoscaling.PutScalingPolicyInput
+	var output applicationautoscaling.PutScalingPolicyInput
+
+	// clear out the old KVPs from spec and init to empty struct
+	resourceIDListfromSpec := spec.ResourceID
+	spec.ResourceID = []*commonv1.AutoscalingResource{}
+
+	for _, resourceIDfromSpec := range resourceIDListfromSpec {
+		ResourceID := ConvertAutoscalingResourceToString(*resourceIDfromSpec)
+		output, _ = createPutScalingPolicyInputFromSpec(spec, ResourceID)
+		outputList = append(outputList, output)
+	}
+
+	return outputList, nil
+}
+
+// createPutScalingPolicyInputFromSpec request input from a Kubernetes spec.
+func createPutScalingPolicyInputFromSpec(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID *string) (applicationautoscaling.PutScalingPolicyInput, error) {
+	var output applicationautoscaling.PutScalingPolicyInput
+
+	// clear out the CustomizedMetricSpecification KVPs from spec and init to empty struct
+	customizedMetricSpecificationDimensions := []*commonv1.KeyValuePair{}
+	if spec.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification != nil {
+		customizedMetricSpecificationDimensions = spec.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification.Dimensions
+		spec.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification.Dimensions = []*commonv1.KeyValuePair{}
+	}
+
+	marshalledPutScalingPolicyInputInput, err := json.Marshal(spec)
+	if err != nil {
+		return applicationautoscaling.PutScalingPolicyInput{}, err
+	}
+
+	if err = json.Unmarshal(marshalledPutScalingPolicyInputInput, &output); err != nil {
+		return applicationautoscaling.PutScalingPolicyInput{}, err
+	}
+
+	output.ResourceId = resourceID
+
+	if output.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification != nil {
+		marshalledDimensions, err := json.Marshal(customizedMetricSpecificationDimensions)
+		if err = json.Unmarshal(marshalledDimensions, &output.TargetTrackingScalingPolicyConfiguration.CustomizedMetricSpecification.Dimensions); err != nil {
+			return applicationautoscaling.PutScalingPolicyInput{}, err
+		}
+	}
+
+	return output, nil
+}
+
+// CreateDeregisterScalableTargetInput creates DeregisterScalableTargetInput from spec
+func CreateDeregisterScalableTargetInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) applicationautoscaling.DeregisterScalableTargetInput {
+
+	if input, err := createDeregisterScalableTargetInput(spec, resourceID); err == nil {
+		return input
+	} else {
+		panic("Unable to create CreateDegisterScalableTargetInput " + err.Error())
+	}
+}
+
+// createDeregisterScalableTargetInput creates DeregisterScalableTargetInput from spec.
+func createDeregisterScalableTargetInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) (applicationautoscaling.DeregisterScalableTargetInput, error) {
+	var output applicationautoscaling.DeregisterScalableTargetInput
+
+	marshalledScalableDimension, err := json.Marshal(spec.ScalableDimension)
+	if err = json.Unmarshal(marshalledScalableDimension, &output.ScalableDimension); err != nil {
+		return applicationautoscaling.DeregisterScalableTargetInput{}, err
+	}
+
+	output.ResourceId = &resourceID
+	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
+
+	return output, nil
+}
+
+// CreateDeleteScalingPolicyInput creates DeleteScalingPolicyInput from spec
+func CreateDeleteScalingPolicyInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) applicationautoscaling.DeleteScalingPolicyInput {
+
+	if input, err := createDeleteScalingPolicyInput(spec, resourceID); err == nil {
+		return input
+	} else {
+		panic("Unable to create CreateDegisterScalableTargetInput " + err.Error())
+	}
+}
+
+// createDeleteScalingPolicyInput creates DeleteScalingPolicyInput from spec
+func createDeleteScalingPolicyInput(spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, resourceID string) (applicationautoscaling.DeleteScalingPolicyInput, error) {
+	var output applicationautoscaling.DeleteScalingPolicyInput
+
+	marshalledScalableDimension, err := json.Marshal(spec.ScalableDimension)
+	if err = json.Unmarshal(marshalledScalableDimension, &output.ScalableDimension); err != nil {
+		return applicationautoscaling.DeleteScalingPolicyInput{}, err
+	}
+
+	output.PolicyName = spec.PolicyName
+	output.ResourceId = &resourceID
+
+	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
+
+	return output, nil
+}
+
+// getResourceIDListfromDescriptions converts a map to a key value pair
+func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.ScalingPolicy) []*commonv1.AutoscalingResource {
+	var resourceIDListforSpec []*commonv1.AutoscalingResource
+
+	for _, description := range descriptions {
+		resourceID := strings.Split(*description.ResourceId, "/")
+		endpointName, variantName := resourceID[1], resourceID[3]
+		resourceIDforSpec := commonv1.AutoscalingResource{EndpointName: &endpointName, VariantName: &variantName}
+		resourceIDListforSpec = append(resourceIDListforSpec, &resourceIDforSpec)
+	}
+
+	return resourceIDListforSpec
+}
+
+// CreateHostingAutoscalingPolicySpecFromDescription creates a Kubernetes spec from a List of Descriptions
+// Review: Needs a major review and also update if additional fields are added/removed from spec
+func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy) (hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, error) {
+	transformedResourceIDs := getResourceIDListfromDescriptions(descriptions)
+
+	// This might not be needed since updates to customMetric and suspended state work out of the box
+	minCapacity := targetDescriptions[0].ScalableTargets[0].MinCapacity
+	maxCapacity := targetDescriptions[0].ScalableTargets[0].MaxCapacity
+
+	marshalled, err := json.Marshal(descriptions[0])
+	if err != nil {
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
+	}
+
+	obj, err := gabs.ParseJSON(marshalled)
+	if err != nil {
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
+	}
+
+	if _, err := obj.Set(transformedResourceIDs, "ResourceId"); err != nil {
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
+	}
+
+	if _, err := obj.Set(minCapacity, "MinCapacity"); err != nil {
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
+	}
+
+	if _, err := obj.Set(maxCapacity, "MaxCapacity"); err != nil {
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
+	}
+
+	var unmarshalled hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec
+	if err := json.Unmarshal(obj.Bytes(), &unmarshalled); err != nil {
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
+	}
+
+	return unmarshalled, nil
 }

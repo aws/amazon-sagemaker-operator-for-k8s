@@ -1,0 +1,22 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: HostingAutoscalingPolicy
+metadata:
+  name: hap-predefined
+spec:
+    resourceId:
+      - endpointName: PLACEHOLDER-ENDPOINT-1
+        variantName: AllTraffic
+      - endpointName: PLACEHOLDER-ENDPOINT-2
+        variantName: AllTraffic
+    region: us-west-2
+    policyName: SageMakerEndpointInvocationScalingPolicy
+    policyType: TargetTrackingScaling
+    minCapacity: 1
+    maxCapacity: 2
+    targetTrackingScalingPolicyConfiguration:
+        targetValue: 70.0 
+        predefinedMetricSpecification: 
+            predefinedMetricType: SageMakerVariantInvocationsPerInstance 
+        scaleInCooldown: 700 
+        scaleOutCooldown: 300
+        disableScaleIn: true

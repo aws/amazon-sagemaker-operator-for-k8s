@@ -19,15 +19,17 @@ import (
 	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
 	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	endpointconfigv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/endpointconfig"
+	hostingautoscalingpolicyv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingautoscalingpolicy"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-// Simple struct representing whether two objects match and their differences.
+// Comparison is a simple struct representing whether two objects match and their differences.
 type Comparison struct {
 	// A human-readable list of differences.
 	Differences string
@@ -149,6 +151,27 @@ var endpointConfigSpecComparisonOptions = []cmp.Option{
 	createIgnoreSageMakerEndpointOption(endpointconfigv1.EndpointConfigSpec{}),
 	createIgnoreTagsOption(endpointconfigv1.EndpointConfigSpec{}),
 	equateEmptySlicesAndMapsToNil,
+	equateNilStringToEmptyString,
+	ignoreKeyValuePairSliceOrder,
+}
+
+// HostingAutoscalingPolicySpecMatchesDescription determines if the given HostingAutoscalingPolicySpec matches the DescribeScalingPoliciesOutput.
+// This converts description to spec and selectively compares fields
+func HostingAutoscalingPolicySpecMatchesDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy, spec hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec) (Comparison, error) {
+	remoteSpec, err := CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions, descriptions)
+	if err != nil {
+		return Comparison{}, err
+	}
+	differences := cmp.Diff(remoteSpec, spec, hostingAutoscalingPolicySpecComparisonOptions...)
+	return createComparison(differences), nil
+}
+
+// These options configure the equality check for HDASpecs.
+var hostingAutoscalingPolicySpecComparisonOptions = []cmp.Option{
+	createIgnoreRegionOption(hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}),
+	createIgnoreSageMakerEndpointOption(hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}),
+	equateEmptySlicesAndMapsToNil,
+	equateNilBoolToFalse,
 	equateNilStringToEmptyString,
 	ignoreKeyValuePairSliceOrder,
 }

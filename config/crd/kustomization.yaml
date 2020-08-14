@@ -5,6 +5,7 @@ resources:
 - bases/sagemaker.aws.amazon.com_batchtransformjobs.yaml
 - bases/sagemaker.aws.amazon.com_models.yaml
 - bases/sagemaker.aws.amazon.com_endpointconfigs.yaml
+- bases/sagemaker.aws.amazon.com_hostingautoscalingpolicies.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

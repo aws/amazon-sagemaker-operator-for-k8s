@@ -28,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
 
+	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -50,6 +51,20 @@ func CreateMockSageMakerClientProvider(sageMakerClient sagemakeriface.ClientAPI)
 func CreateMockSageMakerClientWrapperProvider(sageMakerClient sagemakeriface.ClientAPI) clientwrapper.SageMakerClientWrapperProvider {
 	return func(_ aws.Config) clientwrapper.SageMakerClientWrapper {
 		return clientwrapper.NewSageMakerClientWrapper(sageMakerClient)
+	}
+}
+
+// CreateMockAutoscalingClientProvider Create a provider that creates a mock ApplicationAutoscaling client.
+func CreateMockAutoscalingClientProvider(applicationAutoscalingClient applicationautoscalingiface.ClientAPI) ApplicationAutoscalingClientProvider {
+	return func(_ aws.Config) applicationautoscalingiface.ClientAPI {
+		return applicationAutoscalingClient
+	}
+}
+
+// CreateMockAutoscalingClientWrapperProvider Creates a provider that creates a mock Application client wrapper.
+func CreateMockAutoscalingClientWrapperProvider(applicationAutoscalingClient applicationautoscalingiface.ClientAPI) clientwrapper.ApplicationAutoscalingClientWrapperProvider {
+	return func(_ aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
+		return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationAutoscalingClient)
 	}
 }
 

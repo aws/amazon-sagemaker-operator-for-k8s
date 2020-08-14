@@ -1,0 +1,29 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: HostingAutoscalingPolicy
+metadata:
+  name: hap-custom-metric
+spec:
+    resourceId:
+      - endpointName: PLACEHOLDER-ENDPOINT-3
+        variantName: AllTraffic
+    region: us-west-2
+    policyName: custom-scaling-policy
+    policyType: TargetTrackingScaling
+    minCapacity: 1
+    maxCapacity: 1
+    suspendedState:
+      dynamicScalingInSuspended: true
+    targetTrackingScalingPolicyConfiguration:
+        targetValue: 60.0 
+        scaleInCooldown: 700 
+        scaleOutCooldown: 300
+        customizedMetricSpecification: 
+          metricName: CPUUtilization 
+          namespace: /aws/sagemaker/Endpoints 
+          dimensions:   
+          - name: EndpointName
+            value: PLACEHOLDER-ENDPOINT-3
+          - name: VariantName
+            value: AllTraffic
+          statistic: Average 
+          unit: Percent

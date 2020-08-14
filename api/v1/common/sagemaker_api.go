@@ -516,7 +516,7 @@ type TensorBoardOutputConfig struct {
 	S3OutputPath *string `json:"s3OutputPath"`
 }
 
-// DebugRuleEvalutionStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
+// DebugRuleEvaluationStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
 type DebugRuleEvaluationStatus struct {
 	LastModifiedTime *metav1.Time `json:"lastModifiedTime,omitempty"`
 
@@ -527,4 +527,54 @@ type DebugRuleEvaluationStatus struct {
 	RuleEvaluationStatus *string `json:"ruleEvaluationStatus,omitempty"`
 
 	StatusDetail *string `json:"statusDetail,omitempty"`
+}
+
+// AutoscalingResource is used to create the string representing the resourceID
+// in the format endpoint/my-end-point/variant/my-variant
+type AutoscalingResource struct {
+	// +kubebuilder:validation:MinLength=1
+	EndpointName *string `json:"endpointName,omitempty"`
+
+	// +kubebuilder:validation:MinLength=1
+	VariantName *string `json:"variantName,omitempty"`
+}
+
+// PredefinedMetricSpecification https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
+type PredefinedMetricSpecification struct {
+	PredefinedMetricType *string `json:"predefinedMetricType,omitempty"`
+}
+
+// CustomizedMetricSpecification https://docs.aws.amazon.com/autoscaling/application/APIReference/API_CustomizedMetricSpecification.html
+type CustomizedMetricSpecification struct {
+	// +kubebuilder:validation:MinLength=1
+	MetricName *string `json:"metricName,omitempty"`
+
+	// +kubebuilder:validation:MinLength=1
+	Namespace *string `json:"namespace,omitempty"`
+
+	// +kubebuilder:validation:MinLength=1
+	Statistic  *string         `json:"statistic,omitempty"`
+	Unit       *string         `json:"unit,omitempty"`
+	Dimensions []*KeyValuePair `json:"dimensions,omitempty"`
+}
+
+// TargetTrackingScalingPolicyConfig https://docs.aws.amazon.com/autoscaling/application/APIReference/API_TargetTrackingScalingPolicyConfiguration.html
+// TODO: string requires the input to be in quotes in the spec which is not intuitive
+// Needs a fix for floats, probably use resource.Quantity
+type TargetTrackingScalingPolicyConfig struct {
+	TargetValue      *int64 `json:"targetValue,omitempty"`
+	ScaleInCooldown  *int64 `json:"scaleInCooldown,omitempty"`
+	ScaleOutCooldown *int64 `json:"scaleOutCooldown,omitempty"`
+	DisableScaleIn   *bool  `json:"disableScaleIn,omitempty"`
+
+	// Ideally Predefined metric should not need a value but this is for consistency with API usage
+	PredefinedMetricSpecification *PredefinedMetricSpecification `json:"predefinedMetricSpecification,omitempty"`
+	CustomizedMetricSpecification *CustomizedMetricSpecification `json:"customizedMetricSpecification,omitempty"`
+}
+
+// HAPSuspendedState https://docs.aws.amazon.com/autoscaling/application/APIReference/API_SuspendedState.html
+type HAPSuspendedState struct {
+	DynamicScalingInSuspended  *bool `json:"dynamicScalingInSuspended,omitempty"`
+	DynamicScalingOutSuspended *bool `json:"dynamicScalingOutSuspended,omitempty"`
+	ScheduledScalingSuspended  *bool `json:"scheduledScalingSuspended,omitempty"`
 }
