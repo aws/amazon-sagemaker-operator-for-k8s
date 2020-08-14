@@ -135,7 +135,7 @@ func (r *Reconciler) reconcileHostingAutoscalingPolicy(ctx reconcileRequestConte
 
 	// Set first-touch status
 	if ctx.HostingAutoscalingPolicy.Status.HostingAutoscalingPolicyStatus == "" {
-		if err = r.updateStatus(ctx, controllers.InitializingJobStatus); err != nil {
+		if err = r.updateStatus(ctx, ReconcilingAutoscalingJobStatus); err != nil {
 			return err
 		}
 	}
