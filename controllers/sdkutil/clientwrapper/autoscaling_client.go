@@ -172,7 +172,7 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 func IsDeleteHAP404Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DeleteModel404Code
+		return requestFailure.Code() == DeleteHAP404Code
 	}
 
 	return false

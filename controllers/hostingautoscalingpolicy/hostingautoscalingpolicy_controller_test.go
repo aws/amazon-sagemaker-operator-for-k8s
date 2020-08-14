@@ -380,7 +380,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 				AddDescribeScalableTargetsResponse(outOfDateTargetDescription).
 				AddDescribeScalingPoliciesResponse(outOfDatePolicyDescription).
 				AddDeleteScalingPolicyResponse(applicationautoscaling.DeleteScalingPolicyOutput{}).
-				AddDeregisterScalableTargetsErrorResponse("ValidationException", "Could not find HAP", 400, "request-id").
+				AddDeregisterScalableTargetsErrorResponse("ObjectNotFoundException", "Could not find HAP", 404, "request-id").
 				AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
 				AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{}).
 				AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
