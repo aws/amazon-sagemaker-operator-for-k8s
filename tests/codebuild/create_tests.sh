@@ -127,6 +127,7 @@ function verify_integration_tests
 #    $1: Target namespace
 #    $2: K8s Name of the hostingdeployment to apply autoscaling 
 #    $3: Filename of the hap test to run
+#    $4: Filename of the custom metric hap test to run
 function run_hap_test()
 {
   local target_namespace="$1"
