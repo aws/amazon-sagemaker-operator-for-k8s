@@ -11,9 +11,14 @@ information to effectively respond to your bug report or contribution.
 This guide assumes that you have a k8s cluster setup and can access it via kubectl.
 Make sure your k8s cluster server version is >=1.12 and client version >=1.15
 
-To register the CRD in the cluster:
+To register the CRD in the cluster and create installers:
 ```
-make install 
+make generate_and_install
+```
+
+If you want to only register the CRD in the cluster:
+```
+make install
 ```
 
 To run the controller, run the following command. The controller runs in an infinite loop so open another terminal to create CRDs.
