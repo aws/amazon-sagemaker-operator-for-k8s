@@ -47,6 +47,7 @@ undeploy: manifests
 	kubectl delete --all --all-namespaces hyperparametertuningjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces trainingjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces batchtransformjobs.sagemaker.aws.amazon.com || true
+	kubectl delete --all --all-namespaces hostingautoscalingpolicies.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces hostingdeployments.sagemaker.aws.amazon.com || true
 	@# Need to make sure awscreds.env exists, otherwise kustomize will fail.
 	touch config/default/awscreds.env
