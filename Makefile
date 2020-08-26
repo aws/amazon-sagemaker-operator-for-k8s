@@ -25,6 +25,10 @@ run: lint generate fmt vet
 install: manifests
 	kubectl apply -f config/crd/bases
 
+# Generate the CRDs, RBAC etc. install the CRDs onto your cluster and create installers to be keep in sync with CRDs
+# Recommended to use this as opposed to just install if you intend to check-in code
+generate_and_install: install create-installers
+
 # Build a tarball containing everything needed to install the operator onto a cluster.
 # This also removes the awscreds.env file before creating the tarball to make sure that credentials are
 # not included in the release.
@@ -55,7 +59,7 @@ undeploy: manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 # Requires golang development setup for controller-gen.
-manifests: controller-gen create-installers
+manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
