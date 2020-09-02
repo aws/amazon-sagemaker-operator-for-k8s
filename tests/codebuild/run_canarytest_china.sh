@@ -57,26 +57,11 @@ function download_installer_china(){
 }
 
 function create_eks_cluster() {
-  if [[ $USE_EXISTING_SUBNET ]]; then
-    echo "Creating EKS cluster with existing VPC"
-    eksctl create cluster --name $CLUSTER_NAME \
-      --region $CLUSTER_REGION \
-      --auto-kubeconfig \
-      --timeout=30m \
-      --managed \
-      --node-type=c5.xlarge \
-      --nodes=1 \
-      --vpc-private-subnets=${EKS_PRIVATE_SUBNET_1},${EKS_PRIVATE_SUBNET_2} \
-      --vpc-public-subnets=${EKS_PUBLIC_SUBNET_1},${EKS_PUBLIC_SUBNET_2}
-  else
-    eksctl create cluster --name $CLUSTER_NAME \
-      --region $CLUSTER_REGION \
-      --auto-kubeconfig \
-      --timeout=30m \
-      --managed \
-      --node-type=c5.xlarge \
-      --nodes=1
-  fi
+  eksctl_args=( --managed --nodes 1 --node-type=c5.xlarge --timeout=30m --region "$CLUSTER_REGION" --auto-kubeconfig )
+  [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-public-subnets="${EKS_PUBLIC_SUBNET_1},${EKS_PUBLIC_SUBNET_2}" )
+  [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-private-subnets="${EKS_PRIVATE_SUBNET_1},${EKS_PRIVATE_SUBNET_2}" )
+
+  eksctl create cluster "$CLUSTER_NAME" "${eksctl_args[@]}"
 }
 
 function install_k8s_operators() {
