@@ -29,16 +29,25 @@ spec:
       description: HostingDeployment is the Schema for the hostingdeployments API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
           description: HostingDeploymentSpec defines the desired state of HostingDeployment
           properties:
+            endpointName:
+              description: The SageMaker endpoint name. If it is empty the operator
+                will populate it with a generated name.
+              maxLength: 63
+              type: string
             kmsKeyId:
               type: string
             models:
@@ -110,7 +119,10 @@ spec:
                     minimum: 1
                     type: integer
                   initialVariantWeight:
-                    description: We use an int64 here instead of float because floats are not supported by the Kubernetes API. The actual traffic directed to this ProductionVariant is the ratio of this variant weight to the sum of all variant weights.
+                    description: We use an int64 here instead of float because floats
+                      are not supported by the Kubernetes API. The actual traffic
+                      directed to this ProductionVariant is the ratio of this variant
+                      weight to the sum of all variant weights.
                     format: int64
                     type: integer
                   instanceType:
@@ -133,7 +145,8 @@ spec:
               minLength: 1
               type: string
             sageMakerEndpoint:
-              description: A custom SageMaker endpoint to use when communicating with SageMaker.
+              description: A custom SageMaker endpoint to use when communicating with
+                SageMaker.
               pattern: ^(https|http)://.*$
               type: string
             tags:
@@ -201,13 +214,17 @@ spec:
             productionVariants:
               description: https://docs.aws.amazon.com/sagemaker/latest/dg/API_ProductionVariantSummary.html
               items:
-                description: Please also see https://docs.aws.amazon.com/goto/WebAPI/sagemaker-2017-07-24/ProductionVariantSummary This is only used in status so no validation is required
+                description: Please also see https://docs.aws.amazon.com/goto/WebAPI/sagemaker-2017-07-24/ProductionVariantSummary
+                  This is only used in status so no validation is required
                 properties:
                   currentInstanceCount:
                     format: int64
                     type: integer
                   currentWeight:
-                    description: We use an int64 here instead of float because floats are not supported by the Kubernetes API. The actual traffic directed to this ProductionVariant is the ratio of this variant weight to the sum of all variant weights.
+                    description: We use an int64 here instead of float because floats
+                      are not supported by the Kubernetes API. The actual traffic
+                      directed to this ProductionVariant is the ratio of this variant
+                      weight to the sum of all variant weights.
                     format: int64
                     type: integer
                   deployedImages:
@@ -226,7 +243,10 @@ spec:
                     format: int64
                     type: integer
                   desiredWeight:
-                    description: We use an int64 here instead of float because floats are not supported by the Kubernetes API. The actual traffic directed to this ProductionVariant is the ratio of this variant weight to the sum of all variant weights.
+                    description: We use an int64 here instead of float because floats
+                      are not supported by the Kubernetes API. The actual traffic
+                      directed to this ProductionVariant is the ratio of this variant
+                      weight to the sum of all variant weights.
                     format: int64
                     type: integer
                   variantName:

@@ -46,6 +46,11 @@ type HostingDeploymentSpec struct {
 	Models []commonv1.Model `json:"models"`
 
 	Tags []commonv1.Tag `json:"tags,omitempty"`
+
+	// The SageMaker endpoint name. If it is empty the operator will populate
+	// it with a generated name.
+	// +kubebuilder:validation:MaxLength=63
+	EndpointName *string `json:"endpointName,omitempty"`
 }
 
 // HostingDeploymentStatus defines the observed state of HostingDeployment
