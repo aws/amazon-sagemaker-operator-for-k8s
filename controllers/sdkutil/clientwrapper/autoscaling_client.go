@@ -23,13 +23,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
 	"github.com/pkg/errors"
+	"strings"
 )
 
-// Provides error codes
+// Provides error codes and messages
 const (
-	DescribeHAP404Code = "ValidationException"
-	DeleteHAP404Code   = "ObjectNotFoundException"
-	HAP500Code         = "InternalServiceException"
+	HAPObjectNotFoundExceptionCode   = "ObjectNotFoundException"
+	HAPInternalServiceExceptionCode  = "InternalServiceException"
+	HAPConcurrentUpdateExceptionCode = "ConcurrentUpdateException"
+	HAPValidationExceptionCode       = "ValidationException"
+	HDPendingMessage                 = "The status should be in 'InService' to register it as a scalable target"
 )
 
 // ApplicationAutoscalingClientWrapper interface for ApplicationAutoscalingClient wrapper
@@ -168,30 +171,49 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 	return scalingPolicyDescription, describeError
 }
 
-// IsDeleteHAP404Error determines whether the given error is equivalent to an HTTP 404 status code.
+// IsDeleteHAP404Error determines whether the given error HAPObjectNotFoundExceptionCode, used for deletion.
 func IsDeleteHAP404Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DeleteHAP404Code
+		return requestFailure.Code() == HAPObjectNotFoundExceptionCode
 	}
 
 	return false
 }
 
-// IsDescribeHAP404Error detects if the error is a 404
+// IsDescribeHAP404Error detects if the error is a HAPValidationExceptionCode
 func IsDescribeHAP404Error(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == DescribeHAP404Code
+		return requestFailure.Code() == HAPValidationExceptionCode
 	}
 	return false
 }
 
-// IsHAP500Error detects if the error is a 404
-func IsHAP500Error(err error) bool {
+// IsHAPInternalServiceExceptionError detects if the error is an InternalServiceException
+func IsHAPInternalServiceExceptionError(err error) bool {
 	awserror := errors.Cause(err)
 	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
-		return requestFailure.Code() == HAP500Code
+		return requestFailure.Code() == HAPInternalServiceExceptionCode
+	}
+	return false
+}
+
+// IsHAPConcurrentUpdateExceptionError detects if the error is a ConcurrentUpdateException
+func IsHAPConcurrentUpdateExceptionError(err error) bool {
+	awserror := errors.Cause(err)
+	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == HAPConcurrentUpdateExceptionCode
+	}
+	return false
+}
+
+// IsHDPendingError is for the special case when the HD is in creating/updating status and HAP throws a validationException. Status is set to reconciling.
+func IsHDPendingError(err error) bool {
+	awserror := errors.Cause(err)
+	if requestFailure, isRequestFailure := awserror.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == HAPValidationExceptionCode && strings.Contains(requestFailure.Message(), HDPendingMessage)
+
 	}
 	return false
 }

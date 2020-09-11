@@ -517,6 +517,10 @@ spec:
               type: string
             policyName:
               type: string
+            resourceIDList:
+              items:
+                type: string
+              type: array
           type: object
       required:
       - spec
