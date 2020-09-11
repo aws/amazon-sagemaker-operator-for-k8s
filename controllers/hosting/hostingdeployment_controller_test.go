@@ -730,6 +730,16 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				It("Updates status to deleting", func() {
 					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
 				})
+
+				Context("EndpointName is defined", func() {
+					BeforeEach(func() {
+						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
+					})
+
+					It("Deletes the endpoint with the name specified", func() {
+						ExpectRequestToDeleteHostingDeployment(receivedRequests.Front().Next().Value, deployment)
+					})
+				})
 			})
 
 			Context("!HasDeletionTimestamp", func() {
@@ -758,6 +768,16 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 						It("Requeues after interval", func() {
 							ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+						})
+
+						Context("EndpointName is defined", func() {
+							BeforeEach(func() {
+								deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
+							})
+
+							It("Deletes the endpoint with the name specified", func() {
+								ExpectRequestToUpdateHostingDeployment(receivedRequests.Front().Next().Value, deployment, endpointConfigSageMakerName)
+							})
 						})
 					})
 
@@ -803,6 +823,9 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 				Context("EndpointName is defined", func() {
 					BeforeEach(func() {
+						mockSageMakerClientBuilder.
+							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, endpointConfigSageMakerName))
+
 						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
 					})
 
@@ -1126,7 +1149,14 @@ func ExpectRequestToDeleteHostingDeployment(req interface{}, deployment *hosting
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.DeleteEndpointInput)(nil)))
 
 	deleteRequest := req.(*sagemaker.DeleteEndpointInput)
-	Expect(*deleteRequest.EndpointName).To(Equal(controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+
+	var endpointName string
+	if deployment.Spec.EndpointName != nil {
+		endpointName = *deployment.Spec.EndpointName
+	} else {
+		endpointName = controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)
+	}
+	Expect(*deleteRequest.EndpointName).To(Equal(endpointName))
 }
 
 // Helper function to verify that the specified object is n UpdateEndpointInput and that it requests to update the HostingDeployment correctly.
@@ -1134,7 +1164,13 @@ func ExpectRequestToUpdateHostingDeployment(req interface{}, deployment *hosting
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.UpdateEndpointInput)(nil)))
 
 	updateRequest := req.(*sagemaker.UpdateEndpointInput)
-	Expect(*updateRequest.EndpointName).To(Equal(controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+	var endpointName string
+	if deployment.Spec.EndpointName != nil {
+		endpointName = *deployment.Spec.EndpointName
+	} else {
+		endpointName = controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)
+	}
+	Expect(*updateRequest.EndpointName).To(Equal(endpointName))
 	Expect(*updateRequest.EndpointConfigName).To(Equal(expectedEndpointConfigName))
 }
 
