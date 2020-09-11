@@ -217,15 +217,11 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 	})
 
 	Context("Endpoint does not exist", func() {
-
-		BeforeEach(func() {
-			mockSageMakerClientBuilder.
-				AddDescribeEndpointErrorResponse(clientwrapper.DescribeEndpoint404Code, clientwrapper.DescribeEndpoint404MessagePrefix, 400, "request id")
-		})
-
 		Context("HasDeletionTimestamp", func() {
-
 			BeforeEach(func() {
+				mockSageMakerClientBuilder.
+					AddDescribeEndpointErrorResponse(clientwrapper.DescribeEndpoint404Code, clientwrapper.DescribeEndpoint404MessagePrefix, 400, "request id")
+
 				shouldHaveDeletionTimestamp = true
 				shouldHaveFinalizer = true
 			})
@@ -245,39 +241,84 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 		Context("!HasDeletionTimestamp", func() {
 			BeforeEach(func() {
-				mockSageMakerClientBuilder.
-					AddCreateEndpointResponse(sagemaker.CreateEndpointOutput{}).
-					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.EndpointStatusCreating))
-
-				shouldHaveDeletionTimestamp = false
-				shouldHaveFinalizer = true
-				shouldHaveEndpointConfig = true
-
 				// Add twice because there are two calls to GetSageMakerEndpointConfigName.
 				sageMakerEndpointConfigNames.PushBack(endpointConfigSageMakerName)
 				sageMakerEndpointConfigNames.PushBack(endpointConfigSageMakerName)
 			})
 
-			It("Creates necessary resources", func() {
-				ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler, endpointConfigReconciler, 0)
+			// Case where the user is restoring the etcd state from an existing endpoint
+			Context("SageMaker endpoint resource exists", func() {
+				BeforeEach(func() {
+					mockSageMakerClientBuilder.
+						AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, "outdated-"+endpointConfigSageMakerName)).
+						AddUpdateEndpointResponse(sagemaker.UpdateEndpointOutput{EndpointArn: ToStringPtr("xyz")})
+
+					shouldHaveDeletionTimestamp = false
+					shouldHaveFinalizer = true
+					shouldHaveEndpointConfig = true
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Recognises the existing endpoint", func() {
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusInService))
+				})
+
+				It("Creates new resources", func() {
+					ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler, endpointConfigReconciler, 0)
+				})
 			})
 
-			It("Creates an Endpoint", func() {
+			Context("SageMaker endpoint resource does not exist", func() {
+				BeforeEach(func() {
+					mockSageMakerClientBuilder.
+						AddDescribeEndpointErrorResponse(clientwrapper.DescribeEndpoint404Code, clientwrapper.DescribeEndpoint404MessagePrefix, 400, "request id").
+						AddCreateEndpointResponse(sagemaker.CreateEndpointOutput{}).
+						AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.EndpointStatusCreating))
 
-				req := receivedRequests.Front().Next().Value
-				Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateEndpointInput)(nil)))
+					shouldHaveDeletionTimestamp = false
+					shouldHaveFinalizer = true
+					shouldHaveEndpointConfig = true
+				})
 
-				createdRequest := req.(*sagemaker.CreateEndpointInput)
-				Expect(*createdRequest.EndpointConfigName).To(Equal(endpointConfigSageMakerName))
-				Expect(*createdRequest.EndpointName).To(Equal(controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
-			})
+				It("Creates an Endpoint", func() {
 
-			It("Requeues after interval", func() {
-				ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
-			})
+					req := receivedRequests.Front().Next().Value
+					Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateEndpointInput)(nil)))
 
-			It("Updates status", func() {
-				ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusCreating))
+					createdRequest := req.(*sagemaker.CreateEndpointInput)
+					Expect(*createdRequest.EndpointConfigName).To(Equal(endpointConfigSageMakerName))
+					Expect(*createdRequest.EndpointName).To(Equal(controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)))
+				})
+
+				It("Requeues after interval", func() {
+					ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+				})
+
+				It("Updates status", func() {
+					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusCreating))
+				})
+
+				It("Creates necessary resources", func() {
+					ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler, endpointConfigReconciler, 0)
+				})
+
+				Context("EndpointName is defined", func() {
+					BeforeEach(func() {
+						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
+					})
+
+					It("Creates an Endpoint with the defined name", func() {
+						req := receivedRequests.Front().Next().Value
+						Expect(req).To(BeAssignableToTypeOf((*sagemaker.CreateEndpointInput)(nil)))
+
+						createdRequest := req.(*sagemaker.CreateEndpointInput)
+						Expect(*createdRequest.EndpointConfigName).To(Equal(endpointConfigSageMakerName))
+						Expect(*createdRequest.EndpointName).To(Equal("my-endpoint"))
+					})
+				})
 			})
 		})
 	})
@@ -318,6 +359,19 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 					})
 				})
 
+				Context("EndpointName is defined", func() {
+					BeforeEach(func() {
+						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
+					})
+
+					It("Describes the endpoint with the name specified", func() {
+						req := receivedRequests.Front().Value
+						Expect(req).To(BeAssignableToTypeOf((*sagemaker.DescribeEndpointInput)(nil)))
+
+						describeRequest := req.(*sagemaker.DescribeEndpointInput)
+						Expect(*describeRequest.EndpointName).To(Equal("my-endpoint"))
+					})
+				})
 			})
 
 			When("HasDeletionTimestamp", func() {
@@ -744,6 +798,20 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 					It("Requeues after interval", func() {
 						ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+					})
+				})
+
+				Context("EndpointName is defined", func() {
+					BeforeEach(func() {
+						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
+					})
+
+					It("Describes the endpoint with the name specified", func() {
+						req := receivedRequests.Front().Value
+						Expect(req).To(BeAssignableToTypeOf((*sagemaker.DescribeEndpointInput)(nil)))
+
+						describeRequest := req.(*sagemaker.DescribeEndpointInput)
+						Expect(*describeRequest.EndpointName).To(Equal("my-endpoint"))
 					})
 				})
 			})
