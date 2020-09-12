@@ -569,6 +569,11 @@ spec:
         spec:
           description: HostingDeploymentSpec defines the desired state of HostingDeployment
           properties:
+            endpointName:
+              description: The SageMaker endpoint name. If it is empty the operator
+                will populate it with a generated name.
+              maxLength: 63
+              type: string
             kmsKeyId:
               type: string
             models:
