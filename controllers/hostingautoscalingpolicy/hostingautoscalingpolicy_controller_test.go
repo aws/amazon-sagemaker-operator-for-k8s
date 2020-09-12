@@ -735,7 +735,6 @@ func createHAPWithFinalizer() *hostingautoscalingpolicyv1.HostingAutoscalingPoli
 
 func createHAP(withFinalizer bool, k8sName, k8sNamespace string) *hostingautoscalingpolicyv1.HostingAutoscalingPolicy {
 	finalizers := []string{}
-	resourceIDList := []string{"endpoint/endpoint-xyz/variant/variant-xyz"}
 
 	if withFinalizer {
 		finalizers = append(finalizers, SageMakerResourceFinalizerName)
@@ -760,9 +759,6 @@ func createHAP(withFinalizer bool, k8sName, k8sNamespace string) *hostingautosca
 			Region:      ToStringPtr("region-xyz"),
 			MinCapacity: ToInt64Ptr(1),
 			MaxCapacity: ToInt64Ptr(2),
-		},
-		Status: hostingautoscalingpolicyv1.HostingAutoscalingPolicyStatus{
-			ResourceIDList: resourceIDList,
 		},
 	}
 }

@@ -775,8 +775,8 @@ func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.Sc
 	return resourceIDListforSpec
 }
 
-// getResourceIDforSpecfromList converts a list of ResourceID strings to the Spec format.
-func getResourceIDforSpecfromList(resourceIDList []string) []*commonv1.AutoscalingResource {
+// getResourceIDForSpecFromList converts a list of ResourceID strings to the Spec format.
+func getResourceIDForSpecFromList(resourceIDList []string) []*commonv1.AutoscalingResource {
 	var resourceIDListforSpec []*commonv1.AutoscalingResource
 
 	for _, resourceID := range resourceIDList {
@@ -792,7 +792,7 @@ func getResourceIDforSpecfromList(resourceIDList []string) []*commonv1.Autoscali
 // CreateHostingAutoscalingPolicySpecFromDescription creates a Kubernetes spec from a List of Descriptions
 // Review: Needs a major review and also update if additional fields are added/removed from spec
 func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy, oldResourceIDList []string) (hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, error) {
-	transformedResourceIDs := getResourceIDforSpecfromList(oldResourceIDList)
+	transformedResourceIDs := getResourceIDForSpecFromList(oldResourceIDList)
 
 	// This might not be needed since updates to customMetric and suspended state work out of the box
 	minCapacity := targetDescriptions[0].ScalableTargets[0].MinCapacity
