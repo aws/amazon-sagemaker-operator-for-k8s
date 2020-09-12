@@ -216,7 +216,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 		})
 	})
 
-	Context("Endpoint does not exist", func() {
+	Context("Endpoint does not exist in K8s", func() {
 		Context("HasDeletionTimestamp", func() {
 			BeforeEach(func() {
 				mockSageMakerClientBuilder.
@@ -305,7 +305,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 					ExpectNthSubreconcilerCallToKeepUnusedResources(modelReconciler, endpointConfigReconciler, 0)
 				})
 
-				Context("EndpointName is defined", func() {
+				Context("EndpointName is defined by user", func() {
 					BeforeEach(func() {
 						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
 					})
@@ -323,7 +323,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 		})
 	})
 
-	Context("Endpoint exists", func() {
+	Context("Endpoint exists in K8s", func() {
 
 		var expectedStatus sagemaker.EndpointStatus
 
@@ -359,7 +359,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 					})
 				})
 
-				Context("EndpointName is defined", func() {
+				Context("EndpointName is defined by user", func() {
 					BeforeEach(func() {
 						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
 					})
@@ -731,7 +731,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 					ExpectStatusToBe(deployment, string(sagemaker.EndpointStatusDeleting))
 				})
 
-				Context("EndpointName is defined", func() {
+				Context("EndpointName is defined by user", func() {
 					BeforeEach(func() {
 						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
 					})
@@ -770,7 +770,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 							ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
 						})
 
-						Context("EndpointName is defined", func() {
+						Context("EndpointName is defined by user", func() {
 							BeforeEach(func() {
 								deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
 							})
@@ -821,7 +821,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 					})
 				})
 
-				Context("EndpointName is defined", func() {
+				Context("EndpointName is defined by user", func() {
 					BeforeEach(func() {
 						mockSageMakerClientBuilder.
 							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, endpointConfigSageMakerName))
