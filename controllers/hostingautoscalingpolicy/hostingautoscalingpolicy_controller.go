@@ -63,6 +63,7 @@ const (
 type Reconciler struct {
 	client.Client
 	Log                                logr.Logger
+	PollInterval                       time.Duration
 	createApplicationAutoscalingClient clientwrapper.ApplicationAutoscalingClientWrapperProvider
 	awsConfigLoader                    controllers.AwsConfigLoader
 }
@@ -70,8 +71,9 @@ type Reconciler struct {
 // NewHostingAutoscalingPolicyReconciler creates a new reconciler with the default ApplicationAutoscaling client.
 func NewHostingAutoscalingPolicyReconciler(client client.Client, log logr.Logger, pollInterval time.Duration) *Reconciler {
 	return &Reconciler{
-		Client: client,
-		Log:    log,
+		Client:       client,
+		Log:          log,
+		PollInterval: pollInterval,
 		createApplicationAutoscalingClient: func(cfg aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
 			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(cfg))
 		},
@@ -107,7 +109,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return controllers.RequeueImmediately()
 	}
 
-	return controllers.NoRequeue()
+	return controllers.RequeueAfterInterval(r.PollInterval, nil)
 }
 
 type reconcileRequestContext struct {

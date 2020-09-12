@@ -26,13 +26,7 @@ RUN gem install travis
 RUN pip install awscli
 
 # Install kustomize
-RUN curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases |\
-  grep browser_download |\
-  grep linux |\
-  cut -d '"' -f 4 |\
-  grep /kustomize/v |\
-  sort | tail -n 1 |\
-  xargs curl -O -L && tar xzf ./kustomize_v*_linux_amd64.tar.gz && mv kustomize /bin/kustomize && chmod u+x /bin/kustomize
+RUN curl -LO https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.2.1/kustomize_kustomize.v3.2.1_linux_amd64 && mv kustomize_kustomize.v3.2.1_linux_amd64 /bin/kustomize && chmod u+x /bin/kustomize
 
 # Install kubectl
 RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06-21/bin/linux/amd64/kubectl \
