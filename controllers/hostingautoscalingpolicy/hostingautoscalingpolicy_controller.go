@@ -360,28 +360,20 @@ func (r *Reconciler) deleteAutoscalingPolicy(ctx reconcileRequestContext) error 
 	var deregisterScalableTargetInput applicationautoscaling.DeregisterScalableTargetInput
 	var deleteScalingPolicyInput applicationautoscaling.DeleteScalingPolicyInput
 
-	fmt.Println("Line 363: Let's delete!!")
-	fmt.Printf("The number of resources is %v \n ", len(ctx.HostingAutoscalingPolicy.Status.ResourceIDList))
-
 	// For delete if Object is not found, don't throw an error.
 	for _, ResourceID := range ctx.HostingAutoscalingPolicy.Status.ResourceIDList {
 		deleteScalingPolicyInput = sdkutil.CreateDeleteScalingPolicyInput(ctx.HostingAutoscalingPolicy.Spec, ResourceID)
 		if _, err := ctx.ApplicationAutoscalingClient.DeleteScalingPolicy(ctx, &deleteScalingPolicyInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err) {
-			fmt.Println("Line 369: deleteScalingPolicy Failed!!")
 			return errors.Wrap(err, "Unable to DeleteScalingPolicy")
 		}
 	}
 
 	for _, ResourceID := range ctx.HostingAutoscalingPolicy.Status.ResourceIDList {
-		fmt.Println("Line 375: deregisterScalableTarget must reach here!!")
 		deregisterScalableTargetInput = sdkutil.CreateDeregisterScalableTargetInput(ctx.HostingAutoscalingPolicy.Spec, ResourceID)
 		if _, err := ctx.ApplicationAutoscalingClient.DeregisterScalableTarget(ctx, &deregisterScalableTargetInput); err != nil && !clientwrapper.IsDeleteHAP404Error(err) {
-			fmt.Println("Line 377: deregisterScalableTarget Failed!!")
 			return errors.Wrap(err, "Unable to DeregisterScalableTarget")
 		}
 	}
-
-	fmt.Println("Line 382: Delete Done!!")
 
 	return nil
 }

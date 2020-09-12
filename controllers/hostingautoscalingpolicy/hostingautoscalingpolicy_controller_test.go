@@ -88,6 +88,9 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 
 		hostingautoscalingpolicy = createHAPWithGeneratedNames()
 		err := k8sClient.Create(context.Background(), hostingautoscalingpolicy)
+		hostingautoscalingpolicy.Status.ResourceIDList = []string{"endpoint/endpoint-xyz/variant/variant-xyz"}
+		err = k8sClient.Status().Update(context.Background(), hostingautoscalingpolicy)
+
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -222,8 +225,6 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 		Expect(receivedRequests.Len()).To(Equal(6))
 		Expect(hostingautoscalingpolicy.Status.HostingAutoscalingPolicyStatus).To(Equal(CreatedAutoscalingJobStatus))
 		Expect(hostingautoscalingpolicy.Status.PolicyName).To(Equal(policyName))
-		// TODO mbaijal: Add PolicyARN ? Probably to the hostingdeployment
-		//Expect(hostingautoscalingpolicy.Status.policyArn).To(Equal(policyArn))
 	})
 
 })
@@ -244,6 +245,9 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 	BeforeEach(func() {
 		hostingautoscalingpolicy = createHAPWithFinalizer()
 		err := k8sClient.Create(context.Background(), hostingautoscalingpolicy)
+		hostingautoscalingpolicy.Status.ResourceIDList = []string{"endpoint/endpoint-xyz/variant/variant-xyz"}
+		err = k8sClient.Status().Update(context.Background(), hostingautoscalingpolicy)
+
 		Expect(err).ToNot(HaveOccurred())
 
 		policyName = "test-policy-name"
@@ -313,7 +317,6 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 
 			result, err := controller.Reconcile(request)
 
-			// Should requeue after interval.
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.Requeue).To(Equal(false))
 		})
@@ -361,14 +364,13 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 		It("should update the status with the error message", func() {
 			controller.Reconcile(request)
 
-			a := hostingautoscalingpolicyv1.HostingAutoscalingPolicy{}
 			err := k8sClient.Get(context.Background(), types.NamespacedName{
 				Namespace: hostingautoscalingpolicy.ObjectMeta.Namespace,
 				Name:      hostingautoscalingpolicy.ObjectMeta.Name,
-			}, &a)
+			}, hostingautoscalingpolicy)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(a.Status.HostingAutoscalingPolicyStatus).To(Equal(FailedAutoscalingJobStatus))
-			Expect(a.Status.Additional).To(ContainSubstring("Unable to DeregisterScalableTarget"))
+			Expect(hostingautoscalingpolicy.Status.HostingAutoscalingPolicyStatus).To(Equal(ReconcilingAutoscalingJobStatus))
+			Expect(hostingautoscalingpolicy.Status.Additional).To(ContainSubstring("Unable to DeregisterScalableTarget"))
 		})
 	})
 
@@ -399,6 +401,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			result, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
+			// If object is not found on delete, it is not an error. Only errors are requeued
 			Expect(result.Requeue).To(Equal(false))
 		})
 
@@ -516,7 +519,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			}, hostingautoscalingpolicy)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(hostingautoscalingpolicy.Status.HostingAutoscalingPolicyStatus).To(Equal(FailedAutoscalingJobStatus))
+			Expect(hostingautoscalingpolicy.Status.HostingAutoscalingPolicyStatus).To(Equal(ReconcilingAutoscalingJobStatus))
 			Expect(hostingautoscalingpolicy.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
 		})
 	})
@@ -548,9 +551,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			result, err := controller.Reconcile(request)
 
 			Expect(err).ToNot(HaveOccurred())
-			// at the moment we are not requeueing anything other than server errors
-			Expect(result.Requeue).To(Equal(false))
-			// TODO: shouldn't this fail ?
+			Expect(result.Requeue).To(Equal(true))
 			Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
 		})
 
@@ -567,7 +568,6 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 			Expect(hostingautoscalingpolicy.Status.Additional).To(ContainSubstring("Unable to describe ScalingPolicy"))
 		})
 	})
-
 })
 
 var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func() {
@@ -608,6 +608,9 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 
 		hostingautoscalingpolicy = createHAPWithFinalizer()
 		err := k8sClient.Create(context.Background(), hostingautoscalingpolicy)
+		hostingautoscalingpolicy.Status.ResourceIDList = []string{"endpoint/endpoint-xyz/variant/variant-xyz"}
+		err = k8sClient.Status().Update(context.Background(), hostingautoscalingpolicy)
+
 		Expect(err).ToNot(HaveOccurred())
 
 		// Mark job as deleting in Kubernetes.
@@ -645,7 +648,6 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 		Expect(hostingautoscalingpolicy.ObjectMeta.GetFinalizers()).To(ContainElement(SageMakerResourceFinalizerName))
 		result, err := controller.Reconcile(request)
 
-		// Should not requeue
 		Expect(err).ToNot(HaveOccurred())
 		Expect(result.Requeue).To(Equal(false))
 		Expect(receivedRequests.Len()).To(Equal(4))
@@ -733,6 +735,8 @@ func createHAPWithFinalizer() *hostingautoscalingpolicyv1.HostingAutoscalingPoli
 
 func createHAP(withFinalizer bool, k8sName, k8sNamespace string) *hostingautoscalingpolicyv1.HostingAutoscalingPolicy {
 	finalizers := []string{}
+	resourceIDList := []string{"endpoint/endpoint-xyz/variant/variant-xyz"}
+
 	if withFinalizer {
 		finalizers = append(finalizers, SageMakerResourceFinalizerName)
 	}
@@ -756,6 +760,9 @@ func createHAP(withFinalizer bool, k8sName, k8sNamespace string) *hostingautosca
 			Region:      ToStringPtr("region-xyz"),
 			MinCapacity: ToInt64Ptr(1),
 			MaxCapacity: ToInt64Ptr(2),
+		},
+		Status: hostingautoscalingpolicyv1.HostingAutoscalingPolicyStatus{
+			ResourceIDList: resourceIDList,
 		},
 	}
 }
