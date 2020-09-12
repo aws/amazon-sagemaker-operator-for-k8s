@@ -29,18 +29,24 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: HostingAutoscalingPolicy is the Schema for the HostingAutoscalingPolicy API
+      description: HostingAutoscalingPolicy is the Schema for the HostingAutoscalingPolicy
+        API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
-          description: HostingAutoscalingPolicySpec defines the desired state of the cluster for HostingAutoscalingPolicy
+          description: HostingAutoscalingPolicySpec defines the desired state of the
+            cluster for HostingAutoscalingPolicy
           properties:
             maxCapacity:
               format: int64
@@ -49,17 +55,21 @@ spec:
               format: int64
               type: integer
             policyName:
-              description: The autoscaling policy name. This is optional for the SageMaker K8s operator. If it is empty, the operator will populate it with a generated name.
+              description: The autoscaling policy name. This is optional for the SageMaker
+                K8s operator. If it is empty, the operator will populate it with a
+                generated name.
               maxLength: 256
               type: string
             policyType:
-              description: The autoscaling policy type. This is optional for the SageMaker K8s operator. If it is empty, the operator will populate it with TargetTrackingScaling
+              description: The autoscaling policy type. This is optional for the SageMaker
+                K8s operator. If it is empty, the operator will populate it with TargetTrackingScaling
               type: string
             region:
               type: string
             resourceId:
               items:
-                description: AutoscalingResource is used to create the string representing the resourceID in the format endpoint/my-end-point/variant/my-variant
+                description: AutoscalingResource is used to create the string representing
+                  the resourceID in the format endpoint/my-end-point/variant/my-variant
                 properties:
                   endpointName:
                     minLength: 1
@@ -71,7 +81,8 @@ spec:
               minItems: 1
               type: array
             sageMakerEndpoint:
-              description: A custom SageMaker endpoint to use when communicating with SageMaker.
+              description: A custom SageMaker endpoint to use when communicating with
+                SageMaker.
               pattern: ^(https|http)://.*$
               type: string
             scalableDimension:
@@ -89,7 +100,9 @@ spec:
                   type: boolean
               type: object
             targetTrackingScalingPolicyConfiguration:
-              description: 'TargetTrackingScalingPolicyConfig https://docs.aws.amazon.com/autoscaling/application/APIReference/API_TargetTrackingScalingPolicyConfiguration.html TODO: string requires the input to be in quotes in the spec which is not intuitive Needs a fix for floats, probably use resource.Quantity'
+              description: 'TargetTrackingScalingPolicyConfig https://docs.aws.amazon.com/autoscaling/application/APIReference/API_TargetTrackingScalingPolicyConfiguration.html
+                TODO: string requires the input to be in quotes in the spec which
+                is not intuitive Needs a fix for floats, probably use resource.Quantity'
               properties:
                 customizedMetricSpecification:
                   description: CustomizedMetricSpecification https://docs.aws.amazon.com/autoscaling/application/APIReference/API_CustomizedMetricSpecification.html
@@ -119,7 +132,8 @@ spec:
                 disableScaleIn:
                   type: boolean
                 predefinedMetricSpecification:
-                  description: Ideally Predefined metric should not need a value but this is for consistency with API usage
+                  description: Ideally Predefined metric should not need a value but
+                    this is for consistency with API usage
                   properties:
                     predefinedMetricType:
                       type: string
@@ -138,10 +152,12 @@ spec:
           - region
           type: object
         status:
-          description: HostingAutoscalingPolicyStatus defines the observed state of HostingAutoscalingPolicy
+          description: HostingAutoscalingPolicyStatus defines the observed state of
+            HostingAutoscalingPolicy
           properties:
             additional:
-              description: Field to store additional information, for example if we are unable to check the status we update this.
+              description: Field to store additional information, for example if we
+                are unable to check the status we update this.
               type: string
             hostingAutoscalingPolicyStatus:
               type: string
