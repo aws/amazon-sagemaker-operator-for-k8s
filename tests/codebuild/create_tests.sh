@@ -139,12 +139,12 @@ function run_hap_test()
   local hostingdeployment_type="hostingdeployment"
 
   # Create the second Endpoint
-  sed -i "s/$hosting_deployment_1/$hosting_deployment_2/g" testfiles/xgboost-hosting-deployment.yaml
+  yq w -i testfiles/xgboost-hosting-deployment.yaml "metadata.name" $hosting_deployment_2
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
 
   # Create the third Endpoint used for the custom metric also here in order to parallize
   # TODO: This test can be written much better by modularizing
-  sed -i "s/$hosting_deployment_2/$hosting_deployment_3/g" testfiles/xgboost-hosting-deployment.yaml
+  yq w -i testfiles/xgboost-hosting-deployment.yaml "metadata.name" $hosting_deployment_3
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
 
   # Endpoints must be created before autoscaling can be applied, one is already created
@@ -158,13 +158,17 @@ function run_hap_test()
   local endpoint_name_3="$(kubectl get -n "$target_namespace" "$hostingdeployment_type" "$hosting_deployment_3" -o=custom-columns=SAGEMAKER_ENDPOINT-NAME:.status.endpointArn | tail -1 | cut -d'/' -f2)"
 
   # HAP Test 1: Using the Predefined Metric
-  sed -i "s/PLACEHOLDER-ENDPOINT-1/$endpoint_name_1/g" "$file_name"
-  sed -i "s/PLACEHOLDER-ENDPOINT-2/$endpoint_name_2/g" "$file_name"
+  yq w -i "$file_name" "spec.resourceId[0].endpointName" $endpoint_name_1
+  yq w -i "$file_name" "spec.resourceId[1].endpointName" $endpoint_name_2
+
   run_test "$target_namespace" "$file_name"
-  
+
   # HAP Test 2: Using the Custom Metric
-  sed -i "s/PLACEHOLDER-ENDPOINT-3/$endpoint_name_3/g" "$file_name_custom"
+  yq w -i "$file_name_custom" "spec.resourceId[0].endpointName" $endpoint_name_3
+  yq w -i "$file_name_custom" "spec.targetTrackingScalingPolicyConfiguration.customizedMetricSpecification.dimensions[0].value" $endpoint_name_3
   run_test "$target_namespace" "$file_name_custom"
+
+  yq w -i testfiles/xgboost-hosting-deployment.yaml "metadata.name" $hosting_deployment_1
 }
 
 # This function verifies that the HostingAutoscalingPolicy is applied as expected, and checks using awscli
