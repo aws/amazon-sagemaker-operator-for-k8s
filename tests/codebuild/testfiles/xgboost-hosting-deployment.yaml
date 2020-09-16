@@ -12,7 +12,7 @@ spec:
       initialVariantWeight: 1
   models:
     - name: xgboost-model
-      executionRoleArn: {ROLE_ARN}
+      executionRoleArn: "{ROLE_ARN}"
       containers:
         - containerHostname: xgboost
           modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
