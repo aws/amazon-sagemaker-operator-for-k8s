@@ -22,6 +22,7 @@ run: lint generate fmt vet
 	go run ./main.go
 
 # Install the Custom Resource Definition(s) onto your cluster, without installing the controller.
+# create-installers is a custom target to create installers to be keep in sync with CRDs 
 install: manifests
 	kubectl apply -f config/crd/bases
 
@@ -50,6 +51,7 @@ deploy: manifests
 undeploy: manifests
 	kubectl delete --all --all-namespaces hyperparametertuningjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces trainingjobs.sagemaker.aws.amazon.com || true
+	kubectl delete --all --all-namespaces processingjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces batchtransformjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces hostingautoscalingpolicies.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces hostingdeployments.sagemaker.aws.amazon.com || true

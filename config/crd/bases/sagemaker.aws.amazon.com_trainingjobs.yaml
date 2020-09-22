@@ -36,14 +36,10 @@ spec:
       description: TrainingJob is the Schema for the trainingjobs API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -294,8 +290,7 @@ spec:
               minLength: 20
               type: string
             sageMakerEndpoint:
-              description: A custom SageMaker endpoint to use when communicating with
-                SageMaker.
+              description: A custom SageMaker endpoint to use when communicating with SageMaker.
               pattern: ^(https|http)://.*$
               type: string
             stoppingCondition:
@@ -334,9 +329,7 @@ spec:
               - s3OutputPath
               type: object
             trainingJobName:
-              description: The SageMaker training job name. This is optional for the
-                SageMaker K8s operator. If it is empty, the operator will populate
-                it with a generated name.
+              description: The SageMaker training job name. This is optional for the SageMaker K8s operator. If it is empty, the operator will populate it with a generated name.
               maxLength: 63
               type: string
             vpcConfig:
@@ -344,11 +337,13 @@ spec:
                 securityGroupIds:
                   items:
                     type: string
+                  maxItems: 5
                   minItems: 1
                   type: array
                 subnets:
                   items:
                     type: string
+                  maxItems: 16
                   minItems: 1
                   type: array
               required:
@@ -367,15 +362,13 @@ spec:
           description: TrainingJobStatus defines the observed state of TrainingJob
           properties:
             additional:
-              description: Field to store additional information, for example if we
-                are unable to check the status we update this.
+              description: Field to store additional information, for example if we are unable to check the status we update this.
               type: string
             cloudWatchLogUrl:
               description: Cloud Watch url for training log
               type: string
             debugRuleEvaluationStatuses:
-              description: Status of rule evaluation jobs, obtained from DebugRuleEvaluationStatuses.
-                https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DescribeTrainingJob.html#sagemaker-DescribeTrainingJob-response-DebugRuleEvaluationStatuses
+              description: Status of rule evaluation jobs, obtained from DebugRuleEvaluationStatuses. https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DescribeTrainingJob.html#sagemaker-DescribeTrainingJob-response-DebugRuleEvaluationStatuses
               items:
                 description: DebugRuleEvaluationStatus https://docs.aws.amazon.com/sagemaker/latest/dg/API_DebugRuleEvaluationStatus.html
                 properties:
@@ -393,8 +386,7 @@ spec:
                 type: object
               type: array
             lastCheckTime:
-              description: The last time that we checked the status of the SageMaker
-                job.
+              description: The last time that we checked the status of the SageMaker job.
               format: date-time
               type: string
             modelPath:
@@ -404,8 +396,7 @@ spec:
               description: SageMaker training job name
               type: string
             secondaryStatus:
-              description: The secondary, more granular status of the training job.
-                https://docs.aws.amazon.com/sagemaker/latest/dg/API_DescribeTrainingJob.html#SageMaker-DescribeTrainingJob-response-SecondaryStatus
+              description: The secondary, more granular status of the training job. https://docs.aws.amazon.com/sagemaker/latest/dg/API_DescribeTrainingJob.html#SageMaker-DescribeTrainingJob-response-SecondaryStatus
               type: string
             trainingJobStatus:
               description: The status of the training job. https://docs.aws.amazon.com/sagemaker/latest/dg/API_DescribeTrainingJob.html#SageMaker-DescribeTrainingJob-response-TrainingJobStatus

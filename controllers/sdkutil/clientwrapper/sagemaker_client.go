@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/pkg/errors"
 
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 )
@@ -34,6 +35,9 @@ const (
 	DescribeTrainingJob404MessagePrefix = "Requested resource not found"
 	StopTrainingJob404Code              = "ValidationException"
 	StopTrainingJob404MessagePrefix     = "Requested resource not found"
+
+	DescribeProcessingJob404Code          = "ValidationException"
+	DescribeProcessingJob404MessagePrefix = "Could not find requested job"
 
 	DescribeHyperParameterTuningJob404Code          = "ResourceNotFound"
 	DescribeHyperParameterTuningJob404MessagePrefix = "Amazon SageMaker can't find a tuning job"
@@ -70,6 +74,10 @@ type SageMakerClientWrapper interface {
 	DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error)
 	CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error)
 	StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error)
+
+	DescribeProcessingJob(ctx context.Context, processingJobName string) (*sagemaker.DescribeProcessingJobOutput, error)
+	CreateProcessingJob(ctx context.Context, processingJob *sagemaker.CreateProcessingJobInput) (*sagemaker.CreateProcessingJobOutput, error)
+	StopProcessingJob(ctx context.Context, processingJobName string) (*sagemaker.StopProcessingJobOutput, error)
 
 	DescribeHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.DescribeHyperParameterTuningJobOutput, error)
 	CreateHyperParameterTuningJob(ctx context.Context, tuningJob *sagemaker.CreateHyperParameterTuningJobInput) (*sagemaker.CreateHyperParameterTuningJobOutput, error)
@@ -167,6 +175,67 @@ func (c *sageMakerClientWrapper) isDescribeTrainingJob404Error(err error) bool {
 	}
 
 	return false
+}
+
+// Return a processing job description or nil if error or does not exist.
+func (c *sageMakerClientWrapper) DescribeProcessingJob(ctx context.Context, processingJobName string) (*sagemaker.DescribeProcessingJobOutput, error) {
+
+	describeRequest := c.innerClient.DescribeProcessingJobRequest(&sagemaker.DescribeProcessingJobInput{
+		ProcessingJobName: &processingJobName,
+	})
+
+	describeResponse, describeError := describeRequest.Send(ctx)
+
+	if describeError != nil {
+		if c.isDescribeProcessingJob404Error(describeError) {
+			return nil, nil
+		}
+		return nil, describeError
+	}
+
+	return describeResponse.DescribeProcessingJobOutput, describeError
+}
+
+// The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
+// to an HTTP 404 not found.
+func (c *sageMakerClientWrapper) isDescribeProcessingJob404Error(err error) bool {
+	if requestFailure, isRequestFailure := err.(awserr.RequestFailure); isRequestFailure {
+		return requestFailure.Code() == DescribeProcessingJob404Code && strings.HasPrefix(requestFailure.Message(), DescribeProcessingJob404MessagePrefix)
+	}
+
+	return false
+}
+
+// Create a processing job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) CreateProcessingJob(ctx context.Context, processingJob *sagemaker.CreateProcessingJobInput) (*sagemaker.CreateProcessingJobOutput, error) {
+
+	createRequest := c.innerClient.CreateProcessingJobRequest(processingJob)
+
+	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
+	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+
+	response, err := createRequest.Send(ctx)
+
+	if response != nil {
+		return response.CreateProcessingJobOutput, nil
+	}
+
+	return nil, err
+}
+
+// Stops a processing job. Returns the response output or nil if error.
+func (c *sageMakerClientWrapper) StopProcessingJob(ctx context.Context, processingJobName string) (*sagemaker.StopProcessingJobOutput, error) {
+	stopRequest := c.innerClient.StopProcessingJobRequest(&sagemaker.StopProcessingJobInput{
+		ProcessingJobName: &processingJobName,
+	})
+
+	stopResponse, stopError := stopRequest.Send(ctx)
+
+	if stopError != nil {
+		return nil, stopError
+	}
+
+	return stopResponse.StopProcessingJobOutput, nil
 }
 
 // Return a hyperparameter tuning job description or nil if error or does not exist.
@@ -537,4 +606,23 @@ func (p *hyperParameterTuningJobPaginator) CurrentPage() []sagemaker.HyperParame
 // Err returns the error the paginator encountered when retrieving the next page.
 func (p *hyperParameterTuningJobPaginator) Err() error {
 	return p.paginator.Err()
+}
+
+// IsRecoverableError determines if type of error is trasient and can be resolved without user intervention by reconciling
+// Before using this method determine if all other errors for your use-case can be categorized as non-recoverable
+// Check SageMaker common errors and errors section for each APIs used in your operator.
+// Example: Processing Create API specific errors: https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateProcessingJob.html#API_CreateProcessingJob_Errors and
+// SageMaker Common errors: https://docs.aws.amazon.com/sagemaker/latest/APIReference/CommonErrors.html and
+func IsRecoverableError(err error) bool {
+	rootErr := errors.Cause(err)
+	if requestFailure, isRequestFailure := rootErr.(awserr.RequestFailure); isRequestFailure {
+		switch requestFailure.Code() {
+		case
+			"RequestExpired",
+			"ServiceUnavailable",
+			"ThrottlingException":
+			return true
+		}
+	}
+	return false
 }

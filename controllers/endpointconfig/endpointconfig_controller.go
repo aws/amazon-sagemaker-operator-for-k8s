@@ -48,9 +48,6 @@ const (
 	// Status to indicate that the desired endpointConfig has been deleted in SageMaker.
 	DeletedStatus = "Deleted"
 
-	// Status to indicate that an error occurred during reconciliation.
-	ErrorStatus = "Error"
-
 	// Defines the maximum number of characters in a SageMaker Endpoint Config Resource name
 	MaxEndpointConfigNameLength = 63
 )
