@@ -16,16 +16,16 @@ function run_canary_tests
   echo "Starting Canary Tests"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml
   run_test "${crd_namespace}" testfiles/kmeans-mnist-processingjob.yaml
-  # run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
-  # # Special code for batch transform till we fix issue-59
-  # run_test "${crd_namespace}" testfiles/xgboost-model.yaml
-  # # We need to get sagemaker model before running batch transform
-  # verify_test "${crd_namespace}" Model xgboost-model 1m Created
-  # yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
-  # run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
-  # run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
-  # run_hap_test "${crd_namespace}" xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml testfiles/xgboost-hostingautoscaling-custom.yaml
-  # run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
+  # Special code for batch transform till we fix issue-59
+  run_test "${crd_namespace}" testfiles/xgboost-model.yaml
+  # We need to get sagemaker model before running batch transform
+  verify_test "${crd_namespace}" Model xgboost-model 1m Created
+  yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
+  run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
+  run_hap_test "${crd_namespace}" xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml testfiles/xgboost-hostingautoscaling-custom.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Applies each of the resources needed for the canary tests.
@@ -65,13 +65,13 @@ function run_integration_tests
   fi
 
   echo "Starting integration tests"
-  # run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-trainingjob.yaml
-  # run_test "${crd_namespace}" testfiles/xgboost-mnist-custom-endpoint.yaml
-  # # run_test "${crd_namespace}" testfiles/efs-xgboost-mnist-trainingjob.yaml
-  # # run_test "${crd_namespace}" testfiles/fsx-kmeans-mnist-trainingjob.yaml
-  # run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
-  # run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
-  # run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-custom-endpoint.yaml
+  # run_test "${crd_namespace}" testfiles/efs-xgboost-mnist-trainingjob.yaml
+  # run_test "${crd_namespace}" testfiles/fsx-kmeans-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
@@ -83,12 +83,12 @@ function verify_canary_tests
   echo "Verifying canary tests"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist 20m Completed
   verify_test "${crd_namespace}" ProcessingJob kmeans-mnist 20m Completed
-  # verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
-  # verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
-  # verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
-  # verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 2m Created "3"
-  # verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 2m Created "3"
-  # verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
+  verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
+  verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
+  verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 2m Created "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 2m Created "3"
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
@@ -112,15 +112,15 @@ function verify_integration_tests
   echo "Verifying integration tests"
   verify_canary_tests "${crd_namespace}"
 
-  # verify_test "${crd_namespace}" TrainingJob spot-xgboost-mnist 20m Completed
-  # verify_test "${crd_namespace}" TrainingJob xgboost-mnist-custom-endpoint 20m Completed
-  # # verify_test "${crd_namespace}" TrainingJob efs-xgboost-mnist 20m Completed
-  # # verify_test "${crd_namespace}" TrainingJob fsx-kmeans-mnist 20m Completed
-  # verify_test "${crd_namespace}" HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
-  # verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
-  # verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
-  # # Verify that debug job has status
-  # verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
+  verify_test "${crd_namespace}" TrainingJob spot-xgboost-mnist 20m Completed
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-custom-endpoint 20m Completed
+  # verify_test "${crd_namespace}" TrainingJob efs-xgboost-mnist 20m Completed
+  # verify_test "${crd_namespace}" TrainingJob fsx-kmeans-mnist 20m Completed
+  verify_test "${crd_namespace}" HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
+  verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
+  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
+  # Verify that debug job has status
+  verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
 }
 
 

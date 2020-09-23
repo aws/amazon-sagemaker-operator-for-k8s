@@ -23,7 +23,7 @@ run: lint generate fmt vet
 
 # Install the Custom Resource Definition(s) onto your cluster, without installing the controller.
 # create-installers is a custom target to create installers to be keep in sync with CRDs 
-install: manifests
+install: manifests create-installers
 	kubectl apply -f config/crd/bases
 
 # Generate the CRDs, RBAC etc. install the CRDs onto your cluster and create installers to be keep in sync with CRDs
