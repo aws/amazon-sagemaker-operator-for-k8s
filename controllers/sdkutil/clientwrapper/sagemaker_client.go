@@ -216,7 +216,7 @@ func (c *sageMakerClientWrapper) CreateProcessingJob(ctx context.Context, proces
 
 	response, err := createRequest.Send(ctx)
 
-	if response != nil {
+	if err == nil {
 		return response.CreateProcessingJobOutput, nil
 	}
 

@@ -13,7 +13,7 @@ function run_delete_canary_tests
   local crd_namespace="$1"
   echo "Running delete canary tests"
   verify_delete "${crd_namespace}" TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
-  verify_delete "${crd_namespace}" ProcessingJob testfiles/kmeans-mnist-processingjob.yaml
+  verify_delete "${crd_namespace}" ProcessingJob testfiles/kmeans-mnist-processingjob.yaml 2m
   verify_delete "${crd_namespace}" HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 
   # Create model before running batch delete test

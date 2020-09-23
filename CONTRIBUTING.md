@@ -13,11 +13,6 @@ Make sure your k8s cluster server version is >=1.12 and client version >=1.15
 
 To register the CRD in the cluster and create installers:
 ```
-make generate_and_install
-```
-
-If you want to only register the CRD in the cluster:
-```
 make install
 ```
 

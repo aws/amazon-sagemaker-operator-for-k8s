@@ -38,7 +38,7 @@ import (
 
 const (
 	// ReconcilingProcessingJobStatus is the status used by the controller during reconciliation.
-	ReconcilingProcessingJobStatus = "ReconcilingProcessingJob"
+	ReconcilingProcessingJobStatus = "Reconciling"
 
 	// MaxProcessingJobNameLength defines the maximum number of characters in a SageMaker Processing Job name
 	MaxProcessingJobNameLength = 63
@@ -132,7 +132,7 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 	}
 
 	if err = r.initializeContext(&ctx); err != nil {
-		return r.updateStatusAndReturnError(ctx, string(controllers.ErrorStatus), errors.Wrap(err, "Unable to initialize operator"))
+		return r.updateStatusAndReturnError(ctx, errors.Wrap(err, "Unable to initialize operator"))
 	}
 
 	// Add finalizer if it's not marked for deletion.
@@ -148,7 +148,7 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 
 	// Get the ProcessingJob from SageMaker
 	if ctx.ProcessingJobDescription, err = ctx.SageMakerClient.DescribeProcessingJob(ctx, ctx.ProcessingJobName); err != nil {
-		return r.updateStatusAndReturnError(ctx, "", errors.Wrap(err, "Unable to describe SageMaker processing job"))
+		return r.updateStatusAndReturnError(ctx, errors.Wrap(err, "Unable to describe SageMaker processing job"))
 	}
 
 	// The resource does not exist within SageMaker yet.
@@ -158,11 +158,11 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 		}
 
 		if err = r.createProcessingJob(ctx); err != nil {
-			return r.updateStatusAndReturnError(ctx, "", errors.Wrap(err, "Unable to create processing job"))
+			return r.updateStatusAndReturnError(ctx, errors.Wrap(err, "Unable to create processing job"))
 		}
 
 		if ctx.ProcessingJobDescription, err = ctx.SageMakerClient.DescribeProcessingJob(ctx, ctx.ProcessingJobName); err != nil {
-			return r.updateStatusAndReturnError(ctx, "", errors.Wrap(err, "Unable to describe SageMaker processing job"))
+			return r.updateStatusAndReturnError(ctx, errors.Wrap(err, "Unable to describe SageMaker processing job"))
 		}
 	}
 
@@ -171,11 +171,11 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 		if controllers.HasDeletionTimestamp(ctx.ProcessingJob.ObjectMeta) {
 			// Request to stop the job
 			if _, err := ctx.SageMakerClient.StopProcessingJob(ctx, ctx.ProcessingJobName); err != nil && !clientwrapper.IsStopTrainingJob404Error(err) {
-				return r.updateStatusAndReturnError(ctx, "", errors.Wrap(err, "Unable to delete processing job"))
+				return r.updateStatusAndReturnError(ctx, errors.Wrap(err, "Unable to delete processing job"))
 			}
 			// Describe the new state of the job
 			if ctx.ProcessingJobDescription, err = ctx.SageMakerClient.DescribeProcessingJob(ctx, ctx.ProcessingJobName); err != nil {
-				return r.updateStatusAndReturnError(ctx, "", errors.Wrap(err, "Unable to describe SageMaker processing job"))
+				return r.updateStatusAndReturnError(ctx, errors.Wrap(err, "Unable to describe SageMaker processing job"))
 			}
 		}
 		break
@@ -194,7 +194,7 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 
 	default:
 		unknownStateError := errors.New(fmt.Sprintf("Unknown Processing Job Status: %s", ctx.ProcessingJobDescription.ProcessingJobStatus))
-		return r.updateStatusAndReturnError(ctx, "", unknownStateError)
+		return r.updateStatusAndReturnError(ctx, unknownStateError)
 	}
 
 	status := string(ctx.ProcessingJobDescription.ProcessingJobStatus)
@@ -225,7 +225,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	return nil
 }
 
-// Creates the training job in SageMaker
+// Creates the processing job in SageMaker
 func (r *Reconciler) createProcessingJob(ctx reconcileRequestContext) error {
 	var createProcessingJobInput sagemaker.CreateProcessingJobInput
 
@@ -260,13 +260,10 @@ func (r *Reconciler) updateStatus(ctx reconcileRequestContext, processingJobStat
 	return r.updateStatusWithAdditional(ctx, processingJobStatus, "")
 }
 
-func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, processingJobStatus string, reconcileErr error) error {
-	if len(processingJobStatus) == 0 {
-		if clientwrapper.IsRecoverableError(reconcileErr) {
-			processingJobStatus = ReconcilingProcessingJobStatus
-		} else {
-			processingJobStatus = controllers.ErrorStatus
-		}
+func (r *Reconciler) updateStatusAndReturnError(ctx reconcileRequestContext, reconcileErr error) error {
+	processingJobStatus := controllers.ErrorStatus
+	if clientwrapper.IsRecoverableError(reconcileErr) {
+		processingJobStatus = ReconcilingProcessingJobStatus
 	}
 	if err := r.updateStatusWithAdditional(ctx, processingJobStatus, reconcileErr.Error()); err != nil {
 		return errors.Wrapf(reconcileErr, "Unable to update status with error. Status failure was caused by: '%s'", err.Error())
