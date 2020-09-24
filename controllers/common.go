@@ -43,6 +43,9 @@ const (
 	// InitializingJobStatus is the status stored on first touch of a job by a controller.
 	// This status is kept until the job has a real status.
 	InitializingJobStatus = "SynchronizingK8sJobWithSageMaker"
+
+	// ErrorStatus is the status when the operator cannot recover by itself by reconciling or to indicate that an error occurred during reconciliation.
+	ErrorStatus = "Error"
 )
 
 // CreateSpecDiffersFromDescriptionErrorMessage returns the error message to use when a spec differs from its SageMaker description.

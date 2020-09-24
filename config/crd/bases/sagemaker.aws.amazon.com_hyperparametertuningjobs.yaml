@@ -49,26 +49,18 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: HyperparameterTuningJob is the Schema for the hyperparametertuningjobs
-        API
+      description: HyperparameterTuningJob is the Schema for the hyperparametertuningjobs API
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
-          description: HyperparameterTuningJobSpec defines the desired state of HyperparameterTuningJob
-            These are taken from aws-go-sdk-v2 and modified to use Kubebuilder validation
-            and json omitempty instead of aws-go-sdk-v2 validation and required parameter
-            notation, respectively.
+          description: HyperparameterTuningJobSpec defines the desired state of HyperparameterTuningJob These are taken from aws-go-sdk-v2 and modified to use Kubebuilder validation and json omitempty instead of aws-go-sdk-v2 validation and required parameter notation, respectively.
           properties:
             hyperParameterTuningJobConfig:
               properties:
@@ -165,8 +157,7 @@ spec:
               minLength: 1
               type: string
             sageMakerEndpoint:
-              description: A custom SageMaker endpoint to use when communicating with
-                SageMaker.
+              description: A custom SageMaker endpoint to use when communicating with SageMaker.
               pattern: ^(https|http)://.*$
               type: string
             tags:
@@ -366,11 +357,13 @@ spec:
                     securityGroupIds:
                       items:
                         type: string
+                      maxItems: 5
                       minItems: 1
                       type: array
                     subnets:
                       items:
                         type: string
+                      maxItems: 16
                       minItems: 1
                       type: array
                   required:
@@ -406,17 +399,13 @@ spec:
           - region
           type: object
         status:
-          description: HyperparameterTuningJobStatus defines the observed state of
-            HyperparameterTuningJob
+          description: HyperparameterTuningJobStatus defines the observed state of HyperparameterTuningJob
           properties:
             additional:
-              description: Field to store additional information, for example if we
-                are unable to check the status we update this.
+              description: Field to store additional information, for example if we are unable to check the status we update this.
               type: string
             bestTrainingJob:
-              description: A HyperParameterTrainingJobSummary object that describes
-                the training job that completed with the best current HyperParameterTuningJobObjective.
-                See https://docs.aws.amazon.com/sagemaker/latest/dg/API_DescribeHyperParameterTuningJob.html#SageMaker-DescribeHyperParameterTuningJob-response-BestTrainingJob
+              description: A HyperParameterTrainingJobSummary object that describes the training job that completed with the best current HyperParameterTuningJobObjective. See https://docs.aws.amazon.com/sagemaker/latest/dg/API_DescribeHyperParameterTuningJob.html#SageMaker-DescribeHyperParameterTuningJob-response-BestTrainingJob
               properties:
                 creationTime:
                   format: date-time
@@ -430,8 +419,7 @@ spec:
                     type:
                       type: string
                     value:
-                      description: Value is string instead of float64 to prevent bugs
-                        when deserializing onto different platforms.
+                      description: Value is string instead of float64 to prevent bugs when deserializing onto different platforms.
                       type: string
                   type: object
                 objectiveStatus:
@@ -465,49 +453,37 @@ spec:
               description: The status of HyperParameterTrainingJob https://docs.aws.amazon.com/sagemaker/latest/dg/API_DescribeHyperParameterTuningJob.html#SageMaker-DescribeHyperParameterTuningJob-response-HyperParameterTuningJobStatus
               type: string
             lastCheckTime:
-              description: The last time that we checked the status of the SageMaker
-                job.
+              description: The last time that we checked the status of the SageMaker job.
               format: date-time
               type: string
             sageMakerHyperParameterTuningJobName:
               description: SageMaker hyperparametertuning job name
               type: string
             trainingJobStatusCounters:
-              description: The TrainingJobStatusCounters object that specifies the
-                number of training jobs, categorized by status, that this tuning job
-                launched. https://docs.aws.amazon.com/sagemaker/latest/dg/API_TrainingJobStatusCounters.html
+              description: The TrainingJobStatusCounters object that specifies the number of training jobs, categorized by status, that this tuning job launched. https://docs.aws.amazon.com/sagemaker/latest/dg/API_TrainingJobStatusCounters.html
               properties:
                 completed:
-                  description: The number of completed training jobs launched by the
-                    hyperparameter tuning job.
+                  description: The number of completed training jobs launched by the hyperparameter tuning job.
                   format: int64
                   type: integer
                 inProgress:
-                  description: The number of in-progress training jobs launched by
-                    a hyperparameter tuning job.
+                  description: The number of in-progress training jobs launched by a hyperparameter tuning job.
                   format: int64
                   type: integer
                 nonRetryableError:
-                  description: The number of training jobs that failed and can't be
-                    retried. A failed training job can't be retried if it failed because
-                    a client error occurred.
+                  description: The number of training jobs that failed and can't be retried. A failed training job can't be retried if it failed because a client error occurred.
                   format: int64
                   type: integer
                 retryableError:
-                  description: The number of training jobs that failed, but can be
-                    retried. A failed training job can be retried only if it failed
-                    because an internal service error occurred.
+                  description: The number of training jobs that failed, but can be retried. A failed training job can be retried only if it failed because an internal service error occurred.
                   format: int64
                   type: integer
                 stopped:
-                  description: The number of training jobs launched by a hyperparameter
-                    tuning job that were manually stopped.
+                  description: The number of training jobs launched by a hyperparameter tuning job that were manually stopped.
                   format: int64
                   type: integer
                 totalError:
-                  description: The sum of NonRetryableError and RetryableError. This
-                    is unique to the Kubernetes operator and is used to simplify the
-                    `kubectl get` output.
+                  description: The sum of NonRetryableError and RetryableError. This is unique to the Kubernetes operator and is used to simplify the `kubectl get` output.
                   format: int64
                   type: integer
               type: object

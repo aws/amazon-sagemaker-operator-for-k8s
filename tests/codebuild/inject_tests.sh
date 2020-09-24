@@ -19,6 +19,7 @@ function inject_variables()
 function inject_all_variables
 {
   inject_variables testfiles/xgboost-mnist-trainingjob.yaml
+  inject_variables testfiles/kmeans-mnist-processingjob.yaml
   inject_variables testfiles/spot-xgboost-mnist-trainingjob.yaml
   inject_variables testfiles/xgboost-mnist-custom-endpoint.yaml
   # inject_variables testfiles/efs-xgboost-mnist-trainingjob.yaml

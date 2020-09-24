@@ -623,11 +623,13 @@ spec:
                       securityGroupIds:
                         items:
                           type: string
+                        maxItems: 5
                         minItems: 1
                         type: array
                       subnets:
                         items:
                           type: string
+                        maxItems: 16
                         minItems: 1
                         type: array
                     required:
@@ -1165,11 +1167,13 @@ spec:
                     securityGroupIds:
                       items:
                         type: string
+                      maxItems: 5
                       minItems: 1
                       type: array
                     subnets:
                       items:
                         type: string
+                      maxItems: 16
                       minItems: 1
                       type: array
                   required:
@@ -1439,11 +1443,13 @@ spec:
                 securityGroupIds:
                   items:
                     type: string
+                  maxItems: 5
                   minItems: 1
                   type: array
                 subnets:
                   items:
                     type: string
+                  maxItems: 16
                   minItems: 1
                   type: array
               required:
@@ -1473,6 +1479,293 @@ spec:
               type: string
             status:
               description: The status of the model.
+              type: string
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: processingjobs.sagemaker.aws.amazon.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.processingJobStatus
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    format: date
+    name: Creation-Time
+    type: string
+  - JSONPath: .status.sageMakerProcessingJobName
+    name: Sagemaker-Job-Name
+    type: string
+  group: sagemaker.aws.amazon.com
+  names:
+    kind: ProcessingJob
+    listKind: ProcessingJobList
+    plural: processingjobs
+    singular: processingjob
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: ProcessingJob is the Schema for the processingjobs API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ProcessingJobSpec defines the desired state of ProcessingJob
+          properties:
+            appSpecification:
+              properties:
+                containerArguments:
+                  items:
+                    type: string
+                  type: array
+                containerEntrypoint:
+                  items:
+                    type: string
+                  type: array
+                imageUri:
+                  type: string
+              type: object
+            environment:
+              items:
+                description: Used in describing maps in Kubernetes.
+                properties:
+                  name:
+                    type: string
+                  value:
+                    type: string
+                type: object
+              maxItems: 100
+              type: array
+            networkConfig:
+              properties:
+                enableInterContainerTrafficEncryption:
+                  type: boolean
+                enableNetworkIsolation:
+                  type: boolean
+                vpcConfig:
+                  properties:
+                    securityGroupIds:
+                      items:
+                        type: string
+                      maxItems: 5
+                      minItems: 1
+                      type: array
+                    subnets:
+                      items:
+                        type: string
+                      maxItems: 16
+                      minItems: 1
+                      type: array
+                  required:
+                  - securityGroupIds
+                  - subnets
+                  type: object
+              type: object
+            processingInputs:
+              items:
+                properties:
+                  inputName:
+                    type: string
+                  s3Input:
+                    properties:
+                      compressionType:
+                        enum:
+                        - None
+                        - Gzip
+                        type: string
+                      localPath:
+                        maxLength: 256
+                        type: string
+                      s3DataDistributionType:
+                        allOf:
+                        - enum:
+                          - FullyReplicated
+                          - ShardedByS3Key
+                        - enum:
+                          - FullyReplicated
+                          - ShardedByS3Key
+                        type: string
+                      s3DataType:
+                        enum:
+                        - S3Prefix
+                        - ManifestFile
+                        type: string
+                      s3InputMode:
+                        allOf:
+                        - enum:
+                          - File
+                          - Pipe
+                        - enum:
+                          - Pipe
+                          - File
+                        type: string
+                      s3Uri:
+                        pattern: ^(https|s3)://([^/]+)/?(.*)$
+                        type: string
+                    required:
+                    - localPath
+                    - s3DataType
+                    - s3InputMode
+                    - s3Uri
+                    type: object
+                required:
+                - inputName
+                - s3Input
+                type: object
+              maxItems: 10
+              type: array
+            processingOutputConfig:
+              properties:
+                kmsKeyId:
+                  maxLength: 1024
+                  type: string
+                outputs:
+                  items:
+                    properties:
+                      outputName:
+                        type: string
+                      s3Output:
+                        properties:
+                          localPath:
+                            maxLength: 256
+                            type: string
+                          s3UploadMode:
+                            enum:
+                            - Continuous
+                            - EndOfJob
+                            type: string
+                          s3Uri:
+                            pattern: ^(https|s3)://([^/]+)/?(.*)$
+                            type: string
+                        required:
+                        - localPath
+                        - s3UploadMode
+                        - s3Uri
+                        type: object
+                    required:
+                    - outputName
+                    - s3Output
+                    type: object
+                  maxItems: 10
+                  type: array
+              required:
+              - outputs
+              type: object
+            processingResources:
+              properties:
+                clusterConfig:
+                  properties:
+                    instanceCount:
+                      format: int64
+                      minimum: 1
+                      type: integer
+                    instanceType:
+                      minLength: 1
+                      type: string
+                    volumeKmsKeyId:
+                      type: string
+                    volumeSizeInGB:
+                      format: int64
+                      minimum: 1
+                      type: integer
+                  required:
+                  - instanceCount
+                  - instanceType
+                  - volumeSizeInGB
+                  type: object
+              required:
+              - clusterConfig
+              type: object
+            region:
+              minLength: 1
+              type: string
+            roleArn:
+              maxLength: 2048
+              minLength: 20
+              type: string
+            sageMakerEndpoint:
+              description: A custom SageMaker endpoint to use when communicating with
+                SageMaker.
+              pattern: ^(https|http)://.*$
+              type: string
+            stoppingCondition:
+              description: StoppingConditionNoSpot is used for APIs which do not support
+                WaitTime param i.e. managed spot training not supported
+              properties:
+                maxRuntimeInSeconds:
+                  format: int64
+                  minimum: 1
+                  type: integer
+              type: object
+            tags:
+              items:
+                properties:
+                  key:
+                    minLength: 1
+                    type: string
+                  value:
+                    type: string
+                required:
+                - key
+                - value
+                type: object
+              maxItems: 50
+              type: array
+          required:
+          - appSpecification
+          - processingResources
+          - region
+          - roleArn
+          type: object
+        status:
+          description: ProcessingJobStatus defines the observed state of ProcessingJob
+          properties:
+            additional:
+              description: Field to store additional information, for example if we
+                are unable to check the status we update this.
+              type: string
+            cloudWatchLogUrl:
+              description: CloudWatch URL for log
+              type: string
+            lastCheckTime:
+              description: The last time that we checked the status of the SageMaker
+                job.
+              format: date-time
+              type: string
+            processingJobStatus:
+              description: The status of the processing job. https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_DescribeProcessingJob.html#sagemaker-DescribeProcessingJob-response-ProcessingJobStatus
+              type: string
+            sageMakerProcessingJobName:
+              description: SageMaker processing job name
               type: string
           type: object
       type: object
@@ -1833,11 +2126,13 @@ spec:
                 securityGroupIds:
                   items:
                     type: string
+                  maxItems: 5
                   minItems: 1
                   type: array
                 subnets:
                   items:
                     type: string
+                  maxItems: 16
                   minItems: 1
                   type: array
               required:

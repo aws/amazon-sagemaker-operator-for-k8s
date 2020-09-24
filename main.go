@@ -28,6 +28,7 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/hostingautoscalingpolicy"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/hyperparametertuningjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/model"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/processingjob"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/trainingjob"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -83,6 +84,17 @@ func main() {
 		SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "TrainingJob")
+		os.Exit(1)
+	}
+
+	err = processingjob.
+		NewProcessingJobReconciler(
+			mgr.GetClient(),
+			ctrl.Log.WithName("controllers").WithName("ProcessingJob"),
+			parseDurationOrPanic(jobPollInterval)).
+		SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ProcessingJob")
 		os.Exit(1)
 	}
 

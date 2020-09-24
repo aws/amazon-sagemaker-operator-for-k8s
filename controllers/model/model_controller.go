@@ -44,9 +44,6 @@ const (
 	// Status to indicate that the desired model has been deleted in SageMaker.
 	DeletedStatus = "Deleted"
 
-	// Status to indicate that an error occurred during reconciliation.
-	ErrorStatus = "Error"
-
 	// Defines the maximum number of characters in a SageMaker Model SubResource name
 	MaxModelNameLength = 63
 )

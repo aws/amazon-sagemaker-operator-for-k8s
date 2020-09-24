@@ -29,6 +29,7 @@ import (
 	hostingautoscalingpolicyv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingautoscalingpolicy"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	processingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/processingjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
@@ -110,6 +111,39 @@ func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTraining
 	}
 
 	return unmarshalled, nil
+}
+
+// CreateCreateProcessingJobInputFromSpec creates a CreateProcessingJobInput from a ProcessingJobSpec.
+// This panics if json libraries are unable to serialize the spec or deserialize the serialization.
+func CreateCreateProcessingJobInputFromSpec(spec processingjobv1.ProcessingJobSpec, processingJobName *string) sagemaker.CreateProcessingJobInput {
+	if input, err := createCreateProcessingJobInputFromSpec(spec, processingJobName); err == nil {
+		return input
+	} else {
+		panic("Unable to create CreateProcessingJobInput from spec : " + err.Error())
+	}
+}
+
+func createCreateProcessingJobInputFromSpec(spec processingjobv1.ProcessingJobSpec, processingJobName *string) (sagemaker.CreateProcessingJobInput, error) {
+	var output sagemaker.CreateProcessingJobInput
+
+	// clear out the KVPs from spec.
+	environmentVars := spec.Environment
+	spec.Environment = []*commonv1.KeyValuePair{}
+
+	marshalledCreateProcessingJobInput, err := json.Marshal(spec)
+
+	if err != nil {
+		return sagemaker.CreateProcessingJobInput{}, err
+	}
+
+	if err = json.Unmarshal(marshalledCreateProcessingJobInput, &output); err != nil {
+		return sagemaker.CreateProcessingJobInput{}, err
+	}
+
+	output.Environment = ConvertKeyValuePairSliceToMap(environmentVars)
+	output.ProcessingJobName = processingJobName
+
+	return output, nil
 }
 
 // CreateCreateTrainingJobInputFromSpec creates a CreateTrainingJobInput from a TrainingJobSpec.

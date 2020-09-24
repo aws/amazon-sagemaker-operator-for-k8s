@@ -6,16 +6,19 @@ resources:
 - bases/sagemaker.aws.amazon.com_models.yaml
 - bases/sagemaker.aws.amazon.com_endpointconfigs.yaml
 - bases/sagemaker.aws.amazon.com_hostingautoscalingpolicies.yaml
+- bases/sagemaker.aws.amazon.com_processingjobs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
 - patches/role-arn-validation-pattern.yaml
 # [WEBHOOK] patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_trainingjobs.yaml
+#- patches/webhook_in_processingjobs.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CAINJECTION] patches here are for enabling the CA injection for each CRD
 #- patches/cainjection_in_trainingjobs.yaml
+#- patches/cainjection_in_processingjobs.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
