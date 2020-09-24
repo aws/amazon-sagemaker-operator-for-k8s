@@ -19,7 +19,6 @@ awscreds.env
 *.swp
 *.swo
 *~
-.vscode
 
 # Build generated files
 config/default/manager_image_patch.yaml-e
