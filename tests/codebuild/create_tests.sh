@@ -20,7 +20,7 @@ function run_canary_tests
   # Special code for batch transform till we fix issue-59
   run_test "${crd_namespace}" testfiles/xgboost-model.yaml
   # We need to get sagemaker model before running batch transform
-  verify_test "${crd_namespace}" Model xgboost-model 1m Created
+  verify_test "${crd_namespace}" Model xgboost-model 5m Created
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
@@ -44,7 +44,7 @@ function run_canary_tests_china
   # Special code for batch transform till we fix issue-59
   run_test "${crd_namespace}" testfiles/xgboost-model-china.yaml
   # We need to get sagemaker model before running batch transform
-  verify_test "${crd_namespace}" Model xgboost-model-china 1m Created
+  verify_test "${crd_namespace}" Model xgboost-model-china 5m Created
   yq w -i testfiles/xgboost-mnist-batchtransform-china.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model-china)"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform-china.yaml
 }
@@ -86,8 +86,8 @@ function verify_canary_tests
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
-  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 2m Created "3"
-  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 2m Created "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 5m Created "3"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
