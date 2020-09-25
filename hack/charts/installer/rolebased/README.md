@@ -36,7 +36,7 @@ helm install --namespace sagemaker-k8s-operator-system sagemaker-operator roleba
 To uninstall/delete the operator deployment:
 
 ```bash
-helm delete --purge sagemaker-operator
+helm delete --namespace sagemaker-k8s-operator-system sagemaker-operator
 ```
 
 ## Configuration
