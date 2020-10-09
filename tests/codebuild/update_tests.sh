@@ -6,7 +6,7 @@ source inject_tests.sh
 # Updates the spec and re-applies to ensure updates work as expected.
 # Parameter:
 #    $1: Namespace of the CRD
-function run_update_integration_tests
+function run_update_canary_tests
 {
   local crd_namespace="$1"
 
@@ -17,10 +17,19 @@ function run_update_integration_tests
   update_hap_test "${crd_namespace}" named-xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml
 }
 
+# Parameter:
+#    $1: CRD namespace
+function run_update_integration_tests
+{
+  echo "Running update integration tests"
+  local crd_namespace="$1"
+  run_update_canary_tests "${crd_namespace}"
+}
+
 # Verifies that all resources were created and are running/completed for the canary tests.
 # Parameter:
 #    $1: Namespace of the CRD
-function verify_update_integration_tests
+function verify_update_canary_tests
 {
   local crd_namespace="$1"
   echo "Verifying update tests"
@@ -28,6 +37,18 @@ function verify_update_integration_tests
   # At this point there are two variants in total(1 predefined and 1 custom) that have HAP applied. 
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
   verify_hap_test "2"
+}
+
+
+# Verifies that each integration update test has completed successfully.
+# Parameter:
+#    $1: CRD namespace
+function verify_feature_integration_tests
+{
+  echo "Verifying Update integration tests"
+  local crd_namespace="$1"
+  verify_update_canary_tests
+
 }
 
 # Updates the ResourceID List and the MaxCapacity in the spec to check for updates 

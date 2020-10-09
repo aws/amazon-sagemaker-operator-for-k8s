@@ -137,23 +137,14 @@ function run_hap_test()
   local hosting_deployment_1="$2"
   local file_name="$3"
   local file_name_custom="$4"
-  local file_name_hd="testfiles/xgboost-hosting-deployment-with-name.yaml"
   local hosting_deployment_2="${hosting_deployment_1}-2"
   local hosting_deployment_3="${hosting_deployment_1}-3"
   local hostingdeployment_type="hostingdeployment"
 
-  # Create the first Endpoint
-  run_test "${crd_namespace}" "${file_name_hd}"
-
-  # Create the second Endpoint
-  yq w -i "${file_name_hd}" "metadata.name" $hosting_deployment_2
-  yq w -i "${file_name_hd}" "spec.endpointName" $hosting_deployment_2
-  run_test "${crd_namespace}" "${file_name_hd}"
-
-  # Create the third Endpoint used for the custom metric also here in order to parallize
-  yq w -i "${file_name_hd}" "metadata.name" $hosting_deployment_3
-  yq w -i "${file_name_hd}" "spec.endpointName" $hosting_deployment_3
-  run_test "${crd_namespace}" "${file_name_hd}"
+  # Create the 3 Endpoints
+  update_hostingdeployment_input_metadata "${crd_namespace}" "${hosting_deployment_1}" "true"
+  update_hostingdeployment_input_metadata "${crd_namespace}" "${hosting_deployment_2}" "true"
+  update_hostingdeployment_input_metadata "${crd_namespace}" "${hosting_deployment_3}" "true"
 
   # This can be removed, but will make debugging easier with the same runtime. 
   verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_1}" 40m InService
@@ -163,7 +154,6 @@ function run_hap_test()
   # HAP Test 1: Using the Predefined Metric
   yq w -i "$file_name" "spec.resourceId[0].endpointName" "${hosting_deployment_1}"
   yq w -i "$file_name" "spec.resourceId[1].endpointName" "${hosting_deployment_2}"
-
   run_test "$target_namespace" "$file_name"
 
   # HAP Test 2: Using the Custom Metric
@@ -171,9 +161,9 @@ function run_hap_test()
   yq w -i "$file_name_custom" "spec.targetTrackingScalingPolicyConfiguration.customizedMetricSpecification.dimensions[0].value" "${hosting_deployment_3}"
   run_test "$target_namespace" "$file_name_custom"
 
-  yq w -i "${file_name_hd}" "metadata.name" "${hosting_deployment_1}"
-  yq w -i "${file_name_hd}" "spec.endpointName" "${hosting_deployment_1}"
+  update_hostingdeployment_input_metadata "${crd_namespace}" "${hosting_deployment_1}" "false"
 }
+
 
 # This function verifies that the number of scaling policies applied is as expected 
 # Parameter:
@@ -303,4 +293,24 @@ function build_fsx_from_s3()
   fi
 
   export FSX_ID=$FSX_ID
+}
+
+# Replaces the names of the endpoint and optionally  creates it
+# Parameter:
+#    $1: Target namespace
+#    $2: K8s Name and endpointName of the hostingdeployment to apply autoscaling 
+#    $3: Boolean to indicate if the modified HostingDeployment should be applied
+function update_hostingdeployment_input_metadata()
+{ 
+  local crd_namespace="$1"
+  local hosting_deployment="$2"
+  local is_create="$3"
+  local file_name_hd="testfiles/xgboost-hosting-deployment-with-name.yaml"
+  
+  yq w -i "${file_name_hd}" "metadata.name" $hosting_deployment
+  yq w -i "${file_name_hd}" "spec.endpointName" $hosting_deployment
+  
+  if [[ "${is_create}" == "true" ]]; then
+    run_test "${crd_namespace}" "${file_name_hd}"
+  fi
 }

@@ -9,6 +9,8 @@ source smlogs_tests.sh
 run_canary_tests "default"
 run_feature_canary_tests "default"
 verify_canary_tests "default"
+run_update_canary_tests "default"
+verify_update_canary_tests "default"
 verify_feature_canary_tests "default"
 run_smlogs_canary_tests "default"
 delete_all_resources "default" # Delete all existing resources to re-use metadata names
