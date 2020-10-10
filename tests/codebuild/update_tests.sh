@@ -43,7 +43,7 @@ function verify_update_canary_tests
 # Verifies that each integration update test has completed successfully.
 # Parameter:
 #    $1: CRD namespace
-function verify_feature_integration_tests
+function verify_update_integration_tests
 {
   echo "Verifying Update integration tests"
   local crd_namespace="$1"
