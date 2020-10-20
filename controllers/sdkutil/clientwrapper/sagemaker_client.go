@@ -88,7 +88,7 @@ type SageMakerClientWrapper interface {
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
 	CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error)
 	DeleteEndpoint(ctx context.Context, endpointName *string) (*sagemaker.DeleteEndpointOutput, error)
-	UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string) (*sagemaker.UpdateEndpointOutput, error)
+	UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string, retainAllVariantProperties *bool, excludeRetainedVariantProperties []sagemaker.VariantProperty) (*sagemaker.UpdateEndpointOutput, error)
 
 	DescribeModel(ctx context.Context, modelName string) (*sagemaker.DescribeModelOutput, error)
 	CreateModel(ctx context.Context, model *sagemaker.CreateModelInput) (*sagemaker.CreateModelOutput, error)
@@ -375,10 +375,12 @@ func (c *sageMakerClientWrapper) DeleteEndpoint(ctx context.Context, endpointNam
 }
 
 // Delete an Endpoint. Returns the response output or nil if error.
-func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string) (*sagemaker.UpdateEndpointOutput, error) {
+func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string, retainAllVariantProperties *bool, excludeRetainedVariantProperties []sagemaker.VariantProperty) (*sagemaker.UpdateEndpointOutput, error) {
 	updateRequest := c.innerClient.UpdateEndpointRequest(&sagemaker.UpdateEndpointInput{
 		EndpointName:       &endpointName,
 		EndpointConfigName: &endpointConfigName,
+		RetainAllVariantProperties:       retainAllVariantProperties,
+		ExcludeRetainedVariantProperties: excludeRetainedVariantProperties,
 	})
 
 	updateResponse, updateError := updateRequest.Send(ctx)

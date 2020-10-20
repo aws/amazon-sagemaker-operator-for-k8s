@@ -52,6 +52,31 @@ function wait_for_crd_status()
   fi
 }
 
+# This function waits for endpoint to reach a specified state
+# varifies the state through aws cli as well
+function hostingdeploymet_wait_for_status(){
+  local crd_namespace="$1"
+  local crd_instance="$2"
+  local enpoint_name="$3"
+  local endpoint_region="$4"
+  local timeout="$5"
+  local desired_status="$6"
+
+  echo "Waiting for endpoint $enpoint_name to be in status $desired_status"
+  wait_for_crd_status "${crd_namespace}" HostingDeployment "${crd_instance}" "${timeout}" "${desired_status}"
+
+  timeout "${timeout}" bash -c \
+    'until [ "$(aws sagemaker describe-endpoint --endpoint-name "$0" --region "$1" --query EndpointStatus --output text)" == "$2" ]; do \
+      sleep 5; \
+    done' "$enpoint_name" "$endpoint_region" "$desired_status"
+
+  if [ $? -ne 0 ]; then
+    return 1
+  fi
+
+  echo "$enpoint_name reached status $desired_status"
+}
+
 # Cleans up all resources created during tests.
 # Parameter:
 #    $1: Namespace of CRD

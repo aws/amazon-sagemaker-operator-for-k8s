@@ -861,3 +861,30 @@ func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*app
 
 	return unmarshalled, nil
 }
+
+// Converts VariantProperties to SageMaker VariantProperties
+func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []commonv1.VariantProperty) []sagemaker.VariantProperty {
+	sageMakerVariantProperties := []sagemaker.VariantProperty{}
+
+	for _, variantProperty := range variantProperties {
+		variantPropertyType := sagemaker.VariantPropertyTypeDesiredInstanceCount
+
+		switch *variantProperty.VariantPropertyType {
+		case "DesiredInstanceCount":
+			variantPropertyType = sagemaker.VariantPropertyTypeDesiredInstanceCount
+		case "DesiredWeight":
+			variantPropertyType = sagemaker.VariantPropertyTypeDesiredWeight
+		case "DataCaptureConfig":
+			variantPropertyType = sagemaker.VariantPropertyTypeDataCaptureConfig
+		default:
+			variantPropertyType = ""
+			errors.New("Error: invalid VariantPropertyType string '" + *variantProperty.VariantPropertyType + "'")
+		}
+
+		sageMakerVariantProperties = append(sageMakerVariantProperties, sagemaker.VariantProperty{
+			VariantPropertyType: variantPropertyType,
+		})
+	}
+
+	return sageMakerVariantProperties
+}

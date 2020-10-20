@@ -51,6 +51,10 @@ type HostingDeploymentSpec struct {
 	// it with a generated name.
 	// +kubebuilder:validation:MaxLength=63
 	EndpointName *string `json:"endpointName,omitempty"`
+
+	RetainAllVariantProperties *bool `json:"retainAllVariantProperties,omitempty"`
+
+	ExcludeRetainedVariantProperties []commonv1.VariantProperty `json:"excludeRetainedVariantProperties,omitempty"`
 }
 
 // HostingDeploymentStatus defines the observed state of HostingDeployment

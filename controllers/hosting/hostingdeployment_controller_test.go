@@ -781,6 +781,36 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 						})
 					})
 
+					Context("The update succeeds with RetainAllVariantProperties", func() {
+						BeforeEach(func() {
+							deployment.Spec.RetainAllVariantProperties = ToBoolPtr(true)
+							deployment.Spec.ExcludeRetainedVariantProperties = []commonv1.VariantProperty{
+								{VariantPropertyType: ToStringPtr("DesiredInstanceCount")},
+							}
+							mockSageMakerClientBuilder.
+								AddUpdateEndpointResponse(sagemaker.UpdateEndpointOutput{EndpointArn: ToStringPtr("xyz")})
+						})
+
+						It("Calls UpdateEndpoint", func() {
+							ExpectRequestToUpdateHostingDeployment(receivedRequests.Front().Next().Value, deployment, endpointConfigSageMakerName)
+							ExpectUpdateRequestToHaveRetainVariantProperty(receivedRequests.Front().Next().Value, deployment, true, sagemaker.VariantPropertyTypeDesiredInstanceCount)
+						})
+
+						It("Requeues after interval", func() {
+							ExpectRequeueAfterInterval(reconcileResult, reconcileError, pollDuration)
+						})
+
+						Context("EndpointName is defined by user", func() {
+							BeforeEach(func() {
+								deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
+							})
+
+							It("Deletes the endpoint with the name specified", func() {
+								ExpectRequestToUpdateHostingDeployment(receivedRequests.Front().Next().Value, deployment, endpointConfigSageMakerName)
+							})
+						})
+					})
+
 					Context("The update failed", func() {
 						var errorMessage string
 
@@ -1172,6 +1202,22 @@ func ExpectRequestToUpdateHostingDeployment(req interface{}, deployment *hosting
 	}
 	Expect(*updateRequest.EndpointName).To(Equal(endpointName))
 	Expect(*updateRequest.EndpointConfigName).To(Equal(expectedEndpointConfigName))
+}
+
+func ExpectUpdateRequestToHaveRetainVariantProperty(req interface{}, deployment *hostingv1.HostingDeployment, expectedRetainVariantProperty bool, expectedExcludeRetainProperty sagemaker.VariantPropertyType) {
+	Expect(req).To(BeAssignableToTypeOf((*sagemaker.UpdateEndpointInput)(nil)))
+
+	updateRequest := req.(*sagemaker.UpdateEndpointInput)
+	var endpointName string
+	if deployment.Spec.EndpointName != nil {
+		endpointName = *deployment.Spec.EndpointName
+	} else {
+		endpointName = controllercommon.GetGeneratedJobName(deployment.ObjectMeta.GetUID(), deployment.ObjectMeta.GetName(), 63)
+	}
+
+	Expect(*updateRequest.EndpointName).To(Equal(endpointName))
+	Expect(*updateRequest.RetainAllVariantProperties).To(Equal(expectedRetainVariantProperty))
+	Expect(updateRequest.ExcludeRetainedVariantProperties[0].VariantPropertyType).To(Equal(expectedExcludeRetainProperty))
 }
 
 // Helper function to create a DescribeEndpointOutput.

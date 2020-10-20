@@ -64,6 +64,10 @@ var _ = Describe("HostingDeployment", func() {
 				},
 				Spec: HostingDeploymentSpec{
 					Region: ToStringPtr("us-east-1"),
+					RetainAllVariantProperties: ToBoolPtr(true),
+					ExcludeRetainedVariantProperties: []commonv1.VariantProperty{
+						{VariantPropertyType: ToStringPtr("DesiredInstanceCount")},
+					},
 					ProductionVariants: []commonv1.ProductionVariant{
 						{
 							InitialInstanceCount: ToInt64Ptr(5),

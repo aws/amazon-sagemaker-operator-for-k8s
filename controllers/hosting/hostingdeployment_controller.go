@@ -286,7 +286,11 @@ func (r *HostingDeploymentReconciler) handleUpdates(ctx reconcileRequestContext)
 		r.Log.Info("Endpoint needs update", "endpoint name", ctx.EndpointName, "actual config name", ctx.EndpointDescription.EndpointConfigName, "desired config name", ctx.EndpointConfigName)
 
 		var output *sagemaker.UpdateEndpointOutput
-		if output, err = ctx.SageMakerClient.UpdateEndpoint(ctx, ctx.EndpointName, ctx.EndpointConfigName); err != nil && !clientwrapper.IsUpdateEndpoint404Error(err) {
+		var excludeRetainedVariantProperties []sagemaker.VariantProperty
+
+		excludeRetainedVariantProperties = sdkutil.ConvertVariantPropertiesToSageMakerVariantProperties(ctx.Deployment.Spec.ExcludeRetainedVariantProperties)
+
+		if output, err = ctx.SageMakerClient.UpdateEndpoint(ctx, ctx.EndpointName, ctx.EndpointConfigName, ctx.Deployment.Spec.RetainAllVariantProperties, excludeRetainedVariantProperties); err != nil && !clientwrapper.IsUpdateEndpoint404Error(err) {
 			return errors.Wrap(err, "Unable to update Endpoint")
 		}
 

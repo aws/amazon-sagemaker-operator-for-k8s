@@ -494,6 +494,11 @@ type DeployedImage struct {
 	SpecifiedImage *string `json:"specifiedImage,omitempty"`
 }
 
+type VariantProperty struct {
+	// +kubebuilder:validation:Enum=DesiredInstanceCount;DesiredWeight;DataCaptureConfig
+	VariantPropertyType *string `json:"variantPropertyType"`
+}
+
 // Batch Transform related struct
 type BatchStrategy string
 
