@@ -377,8 +377,8 @@ func (c *sageMakerClientWrapper) DeleteEndpoint(ctx context.Context, endpointNam
 // Delete an Endpoint. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string, retainAllVariantProperties *bool, excludeRetainedVariantProperties []sagemaker.VariantProperty) (*sagemaker.UpdateEndpointOutput, error) {
 	updateRequest := c.innerClient.UpdateEndpointRequest(&sagemaker.UpdateEndpointInput{
-		EndpointName:       &endpointName,
-		EndpointConfigName: &endpointConfigName,
+		EndpointName:                     &endpointName,
+		EndpointConfigName:               &endpointConfigName,
 		RetainAllVariantProperties:       retainAllVariantProperties,
 		ExcludeRetainedVariantProperties: excludeRetainedVariantProperties,
 	})

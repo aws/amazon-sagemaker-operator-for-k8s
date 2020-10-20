@@ -136,7 +136,7 @@ function verify_retain_varient_properties(){
   enpoint_name=$(yq r $hostingdeployment_yaml_filepath "spec.endpointName")
   endpoint_region=$(yq r $hostingdeployment_yaml_filepath "spec.region")
   hostingdeployment_name=$(yq r $hostingdeployment_yaml_filepath "metadata.name")
-  sleep 5 && verify_test "${crd_namespace}" HostingDeployment $hostingdeployment_name 40m InService && sleep 5
+  hostingdeploymet_wait_for_status $crd_namespace $hostingdeployment_name $enpoint_name $endpoint_region 40m InService
 
   # verify that the already created endpoint has instance count 1 and weight 2
   instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
@@ -152,7 +152,8 @@ function verify_retain_varient_properties(){
   # autoscalling increases instance count to 2 (while keeping the previous weight 2)
   yq w -i $autoscaling_yaml_filepath "spec.resourceId[0].endpointName" $enpoint_name
   kubectl apply -n $crd_namespace -f $autoscaling_yaml_filepath
-  sleep 5 && verify_test "${crd_namespace}" HostingDeployment $hostingdeployment_name 40m InService && sleep 5
+  hostingdeploymet_wait_for_status $crd_namespace $hostingdeployment_name $enpoint_name $endpoint_region 40m Updating
+  hostingdeploymet_wait_for_status $crd_namespace $hostingdeployment_name $enpoint_name $endpoint_region 40m InService
 
   # verify instance count is 2
   instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
@@ -171,8 +172,10 @@ function verify_retain_varient_properties(){
   # shouldn't retain the previous instance weight of 2 and change it to 3
   yq w -i $hostingdeployment_yaml_filepath "spec.productionVariants[0].initialVariantWeight" 3
   kubectl apply -n $crd_namespace -f $hostingdeployment_yaml_filepath
-  sleep 5 && verify_test "${crd_namespace}" HostingDeployment $hostingdeployment_name 40m InService && sleep 5
+  hostingdeploymet_wait_for_status $crd_namespace $hostingdeployment_name $enpoint_name $endpoint_region 40m Updating
+  hostingdeploymet_wait_for_status $crd_namespace $hostingdeployment_name $enpoint_name $endpoint_region 40m InService
   # Check if it retained the previous instance count and did not retain previous weight
+  # sleep 5 && wait_for_crd_status "${crd_namespace}" HostingDeployment $hostingdeployment_name 40m InService && sleep 5
   instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
   weight=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentWeight | awk '{printf "%.0f\n", $1}')
   if [ "${instance_count}" == "2" ] && [ "${weight}" == "3" ]; then
