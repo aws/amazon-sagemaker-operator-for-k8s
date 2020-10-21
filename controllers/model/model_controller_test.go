@@ -627,6 +627,7 @@ func createModel(withFinalizer bool, k8sName, k8sNamespace string) *modelv1.Mode
 				ContainerHostname: ToStringPtr("container-hostname"),
 				ModelDataUrl:      ToStringPtr("s3://bucket-name/model.tar.gz"),
 				Image:             ToStringPtr("123.amazon.com/xgboost:latest"),
+				Mode:              ToStringPtr("SingleModel"),
 			},
 		},
 	}

@@ -7,6 +7,7 @@ spec:
     containerHostname: xgboost
     modelDataUrl: s3://{DATA_BUCKET}/batch-transform/xgboost-mnist/model.tar.gz
     image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest
+    mode: SingleModel
   region: us-west-2
   executionRoleArn: {ROLE_ARN}
   tags:

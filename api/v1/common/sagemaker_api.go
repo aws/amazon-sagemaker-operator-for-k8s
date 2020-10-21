@@ -443,6 +443,9 @@ type ContainerDefinition struct {
 	ModelDataUrl *string `json:"modelDataUrl,omitempty"`
 
 	ModelPackageName *string `json:"modelPackageName,omitempty"`
+
+	// +kubebuilder:validation:Enum=SingleModel;MultiModel
+	Mode *string `json:"mode,omitempty"`
 }
 
 // This is something we are defining not coming from aws-sdk-go-v2
