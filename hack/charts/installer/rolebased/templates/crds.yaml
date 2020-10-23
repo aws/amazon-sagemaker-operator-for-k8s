@@ -578,6 +578,19 @@ spec:
                 will populate it with a generated name.
               maxLength: 63
               type: string
+            excludeRetainedVariantProperties:
+              items:
+                properties:
+                  variantPropertyType:
+                    enum:
+                    - DesiredInstanceCount
+                    - DesiredWeight
+                    - DataCaptureConfig
+                    type: string
+                required:
+                - variantPropertyType
+                type: object
+              type: array
             kmsKeyId:
               type: string
             models:
@@ -601,6 +614,11 @@ spec:
                             type: object
                           type: array
                         image:
+                          type: string
+                        mode:
+                          enum:
+                          - SingleModel
+                          - MultiModel
                           type: string
                         modelDataUrl:
                           type: string
@@ -676,6 +694,8 @@ spec:
             region:
               minLength: 1
               type: string
+            retainAllVariantProperties:
+              type: boolean
             sageMakerEndpoint:
               description: A custom SageMaker endpoint to use when communicating with
                 SageMaker.
@@ -1389,6 +1409,11 @@ spec:
                     type: array
                   image:
                     type: string
+                  mode:
+                    enum:
+                    - SingleModel
+                    - MultiModel
+                    type: string
                   modelDataUrl:
                     type: string
                   modelPackageName:
@@ -1415,6 +1440,11 @@ spec:
                     type: object
                   type: array
                 image:
+                  type: string
+                mode:
+                  enum:
+                  - SingleModel
+                  - MultiModel
                   type: string
                 modelDataUrl:
                   type: string

@@ -442,6 +442,9 @@ type ContainerDefinition struct {
 
 	ModelDataUrl *string `json:"modelDataUrl,omitempty"`
 
+	// +kubebuilder:validation:Enum=SingleModel;MultiModel
+	Mode *string `json:"mode,omitempty"`
+
 	ModelPackageName *string `json:"modelPackageName,omitempty"`
 }
 
