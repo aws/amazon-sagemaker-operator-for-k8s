@@ -622,6 +622,11 @@ spec:
                           type: array
                         image:
                           type: string
+                        mode:
+                          enum:
+                          - SingleModel
+                          - MultiModel
+                          type: string
                         modelDataUrl:
                           type: string
                         modelPackageName:
@@ -1411,6 +1416,11 @@ spec:
                     type: array
                   image:
                     type: string
+                  mode:
+                    enum:
+                    - SingleModel
+                    - MultiModel
+                    type: string
                   modelDataUrl:
                     type: string
                   modelPackageName:
@@ -1437,6 +1447,11 @@ spec:
                     type: object
                   type: array
                 image:
+                  type: string
+                mode:
+                  enum:
+                  - SingleModel
+                  - MultiModel
                   type: string
                 modelDataUrl:
                   type: string
