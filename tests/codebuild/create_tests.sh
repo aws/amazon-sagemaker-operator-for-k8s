@@ -177,7 +177,7 @@ function verify_hap_test()
   if [ "${number_of_policies_applied}" == "${expected_number_of_policies}" ]; then
     echo "[PASSED] All Scaling Policies were successfully applied to the specified number of endpoints"
   else
-    echo "[FAILED] One or more of the scaling policies has not been applied, test failed"
+    echo "[FAILED] ${number_of_policies_applied} scaling policy/policies were applied. Expected ${expected_number_of_policies}."
     exit 1 
   fi
 }
