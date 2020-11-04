@@ -8,17 +8,24 @@ function cleanup {
     # We want to run every command in this function, even if some fail.
     set +e
 
-    echo "Controller manager logs:"
-    kubectl -n sagemaker-k8s-operator-system logs "$(kubectl get pods -n sagemaker-k8s-operator-system | grep sagemaker-k8s-operator-controller-manager | awk '{print $1}')" manager
-
     # Describe, if the test fails the Additional field might have more helpful info.
-    echo "trainingjob description:"
-    kubectl describe trainingjob
+    # This is helpful for nonEphemeral cluster since we are not printing manager pod logs
+    echo "Job descriptions:"
+    kubectl describe TrainingJob
+    kubectl describe ProcessingJob
+    kubectl describe HyperparameterTuningJob
+    kubectl describe BatchTransformJob
+    kubectl describe HostingDeployment
+    kubectl describe HostingAutoscalingPolicy
 
-    delete_all_resources
+    delete_all_resources "default"
 
     if [ -z "${USE_EXISTING_CLUSTER}" ]
     then
+        # Managable to print logs for ephemeral cluster
+        get_manager_logs
+        # Delete the role associated with the cluster thats being deleted
+        delete_generated_role "${role_name}"
         # Tear down the cluster if we set it up.
         echo "USE_EXISTING_CLUSTER is false, tearing down cluster we created."
         eksctl delete cluster --name "${cluster_name}" --region "${CLUSTER_REGION}"
@@ -77,23 +84,13 @@ pushd sagemaker-k8s-operator
 
     # Setup the PATH for smlogs
     mv smlogs-plugin/linux.amd64/kubectl-smlogs /usr/bin/kubectl-smlogs
+popd
 
-    # Goto directory that holds the CRD  
-    pushd sagemaker-k8s-operator-install-scripts
-        # Since OPERATOR_AWS_SECRET_ACCESS_KEY and OPERATOR_AWS_ACCESS_KEY_ID defined in task definition, we will not create new user
-        ./setup_awscreds
+generate_iam_role_name "${default_operator_namespace}"
+./generate_iam_role.sh "${cluster_name}" "${default_operator_namespace}" "${role_name}" "${CLUSTER_REGION}"
 
-        echo "Deploying the operator"
-        kustomize build config/default | kubectl apply -f -
-
-    popd 
-
-popd 
-
-echo "Waiting for controller pod to be Ready"
-# Wait to increase chance that pod is ready
-# TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
-sleep 60
+#smlogs depends on clusterscope
+operator_clusterscope_deploy "${role_name}"
 
 # Run the integration test file
 ./run_all_sample_canary_tests.sh

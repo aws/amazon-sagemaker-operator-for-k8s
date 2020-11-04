@@ -58,7 +58,7 @@ get_oidc_id
 echo "Delete the trust json file if it already exists"
 delete_generated_file "${trustfile}"
 echo "Generate a trust json"
-./scripts/generate_trust_policy.sh ${CLUSTER_REGION} ${aws_account} ${oidc_id} ${OPERATOR_NAMESPACE} > "${trustfile}"
+./generate_trust_policy.sh ${CLUSTER_REGION} ${aws_account} ${oidc_id} ${OPERATOR_NAMESPACE} > "${trustfile}"
 echo "Create the IAM Role using these values"
 create_namespaced_iam_role "${trustfile}"
 echo "Cleanup for the next run!"
