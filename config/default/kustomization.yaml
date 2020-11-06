@@ -5,14 +5,6 @@ kind: Kustomization
 namespace: sagemaker-k8s-operator-system
 namePrefix: sagemaker-k8s-operator-
 
-secretGenerator:
-- envs:
-  - ./awscreds.env
-  name: awscreds
-
-
-patchesStrategicMerge:
-- manager_creds_patch.yaml
 resources:
 - ../crd
 - ../base

@@ -6,8 +6,6 @@ FROM alpine:latest
 RUN mkdir -p sagemaker-k8s-operator-install-scripts
 WORKDIR /sagemaker-k8s-operator-install-scripts
 
-COPY ./scripts/setup_awscreds .
-COPY ./scripts/delete_iam_user .
 COPY ./README.md README.md
 COPY ./config config
 

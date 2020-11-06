@@ -27,19 +27,12 @@ install: manifests create-installers
 	kubectl apply -f config/crd/bases
 
 # Build a tarball containing everything needed to install the operator onto a cluster.
-# This also removes the awscreds.env file before creating the tarball to make sure that credentials are
-# not included in the release.
 build-release-tarball: lint generate fmt vet manifests
-	rm -f ./config/default/awscreds.env
 	@# Build tarball using Dockerfile then transfer it to host filesystem by running the image and printing the file to stdout.
 	docker run "$$(docker build . --file scripts/build-release-tarball-Dockerfile --quiet)" "/bin/cat" "/sagemaker-k8s-operator-install-scripts.tar.gz" > ./bin/sagemaker-k8s-operator-install-scripts.tar.gz
 
 # Deploy operator to a Kubernetes cluster specified by your KUBECONFIG.
-# Specify OPERATOR_AWS_PROFILE or OPERATOR_AWS_ACCESS_KEY_ID/OPERATOR_AWS_SECRET_KEY as environment variables per `setup_awscreds`.
-# This will install the key you provide onto the cluster for the operator to use when interacting with AWS.
-# If no credentials are provided, this will create an IAM user/access key for this purpose.
 deploy: manifests
-	./scripts/setup_awscreds --interactive
 	kustomize build config/default | kubectl apply -f -
 
 # Delete operator resources from the Kubernetes cluster specified by KUBECONFIG.
@@ -51,8 +44,6 @@ undeploy: manifests
 	kubectl delete --all --all-namespaces batchtransformjobs.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces hostingautoscalingpolicies.sagemaker.aws.amazon.com || true
 	kubectl delete --all --all-namespaces hostingdeployments.sagemaker.aws.amazon.com || true
-	@# Need to make sure awscreds.env exists, otherwise kustomize will fail.
-	touch config/default/awscreds.env
 	kustomize build config/default | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
