@@ -178,9 +178,6 @@ function verify_hap_test()
     echo "[PASSED] All Scaling Policies were successfully applied to the specified number of endpoints"
   else
     echo "[FAILED] ${number_of_policies_applied} scaling policy/policies were applied. Expected ${expected_number_of_policies}."
-    echo "Scaling Policies: ${scaling_policies}"
-    echo "List all the applied HAP in all namespaces: "
-    kubectl get --all-namespaces hap 
     exit 1 
   fi
 }
