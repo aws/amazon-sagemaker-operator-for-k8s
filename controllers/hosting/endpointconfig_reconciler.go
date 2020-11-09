@@ -78,7 +78,9 @@ func (r *endpointConfigReconciler) Reconcile(ctx context.Context, desiredDeploym
 		return errors.Wrap(err, "Unable to interpret HostingDeployment endpoint config")
 	}
 
-	r.log.Info("Desired endpoint config", "desired", desiredEndpointConfig)
+	if desiredEndpointConfig != nil {
+		r.log.Info("Desired endpoint config", "desired", desiredEndpointConfig)
+	}
 
 	var actualEndpointConfigs map[string]*endpointconfigv1.EndpointConfig
 	if actualEndpointConfigs, err = r.getActualEndpointConfigsForHostingDeployment(ctx, desiredDeployment); err != nil {

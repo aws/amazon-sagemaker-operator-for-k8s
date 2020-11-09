@@ -337,11 +337,13 @@ spec:
                 securityGroupIds:
                   items:
                     type: string
+                  maxItems: 5
                   minItems: 1
                   type: array
                 subnets:
                   items:
                     type: string
+                  maxItems: 16
                   minItems: 1
                   type: array
               required:

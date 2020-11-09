@@ -13,12 +13,12 @@ function run_delete_canary_tests
   local crd_namespace="$1"
   echo "Running delete canary tests"
   verify_delete "${crd_namespace}" TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
-
+  verify_delete "${crd_namespace}" ProcessingJob testfiles/kmeans-mnist-processingjob.yaml
   verify_delete "${crd_namespace}" HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 
   # Create model before running batch delete test
   run_test "${crd_namespace}" testfiles/xgboost-model.yaml
-  verify_test "${crd_namespace}" Model xgboost-model 1m Created
+  verify_test "${crd_namespace}" Model xgboost-model 5m Created
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
 
   verify_delete "${crd_namespace}" BatchTransformJob testfiles/xgboost-mnist-batchtransform.yaml
@@ -47,7 +47,7 @@ function verify_delete()
   local crd_namespace="$1"
   local crd_type="$(echo "$2" | awk '{print tolower($0)}')"
   local file_name="$3"
-  local timeout=${4:-"60s"}
+  local timeout=${4:-"10m"}
 
   # Apply file and get name
   local k8s_resource_name="$(kubectl apply -n "${crd_namespace}" -f "${file_name}" -o json | jq -r ".metadata.name")"
@@ -62,6 +62,9 @@ function verify_delete()
   case $crd_type in
     trainingjob)
       jobNamePath=".status.sageMakerTrainingJobName"
+      ;;
+    processingjob)
+      jobNamePath=".status.sageMakerProcessingJobName"
       ;;
     hyperparametertuningjob)
       jobNamePath=".status.sageMakerHyperParameterTuningJobName"
@@ -110,6 +113,11 @@ function verify_sm_resource_stopping_else_fail()
     trainingjob)
       jobStatusPath=".TrainingJobStatus"
       sageMakerResourceType="training-job"
+      ;;
+
+    processingjob)
+      jobStatusPath=".ProcessingJobStatus"
+      sageMakerResourceType="processing-job"
       ;;
 
     hyperparametertuningjob)

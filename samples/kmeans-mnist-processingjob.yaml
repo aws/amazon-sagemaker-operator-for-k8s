@@ -1,0 +1,61 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: ProcessingJob
+metadata:
+  name: kmeans-mnist-processing
+spec:
+  environment:
+    - name: MYVAR
+      value: my_value
+    - name: MYVAR2
+      value: my_value2
+  appSpecification:
+    imageUri: 763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:1.5.0-cpu-py36-ubuntu16.04
+    containerEntrypoint:
+      - python
+      - /opt/ml/processing/code/kmeans_preprocessing.py
+  roleArn: arn:aws:iam::123456789012:role/service-role/AmazonSageMaker-ExecutionRole
+  region: us-west-2
+  networkConfig:
+    enableNetworkIsolation: False
+  processingOutputConfig:
+    outputs:
+      - outputName: train_data
+        s3Output:
+          s3Uri: s3://my-bucket/mnist_kmeans_example/output/
+          localPath: /opt/ml/processing/output_train/
+          s3UploadMode: EndOfJob
+      - outputName: test_data
+        s3Output:
+          s3Uri: s3://my-bucket/mnist_kmeans_example/output/
+          localPath: /opt/ml/processing/output_test/
+          s3UploadMode: EndOfJob
+      - outputName: valid_data
+        s3Output:
+          s3Uri: s3://my-bucket/mnist_kmeans_example/output/
+          localPath: /opt/ml/processing/output_valid/
+          s3UploadMode: EndOfJob
+  processingResources:
+    clusterConfig:
+      instanceCount: 1
+      instanceType: ml.m5.xlarge
+      volumeSizeInGB: 20
+  processingInputs:
+    - inputName: mnist_tar
+      s3Input:
+        s3Uri: s3://sagemaker-sample-data-us-west-2/algorithms/kmeans/mnist/mnist.pkl.gz
+        localPath: /opt/ml/processing/input
+        s3DataType: S3Prefix
+        s3InputMode: File
+        s3CompressionType: None
+    - inputName: source_code
+      s3Input:
+        s3Uri: s3://my-bucket/mnist_kmeans_example/processing_code/kmeans_preprocessing.py
+        localPath: /opt/ml/processing/code
+        s3DataType: S3Prefix
+        s3InputMode: File
+        s3CompressionType: None
+  stoppingCondition:
+    maxRuntimeInSeconds: 1800
+  tags:
+    - key: tagKey
+      value: tagValue

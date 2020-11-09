@@ -1,15 +1,19 @@
 apiVersion: sagemaker.aws.amazon.com/v1
 kind: HostingDeployment
 metadata:
-  name: xgboost-hosting
+  name: hosting-retain-varient-properties
 spec:
+  endpointName: hosting-retain-varient-properties
   region: us-west-2
+  retainAllVariantProperties: true
+  excludeRetainedVariantProperties:
+    - variantPropertyType: "DesiredWeight"
   productionVariants:
     - variantName: AllTraffic
       modelName: xgboost-model
       initialInstanceCount: 1
       instanceType: ml.r5.large
-      initialVariantWeight: 1
+      initialVariantWeight: 2
   models:
     - name: xgboost-model
       executionRoleArn: "{ROLE_ARN}"

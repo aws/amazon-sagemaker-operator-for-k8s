@@ -1,5 +1,7 @@
 #!/bin/bash
 
+default_operator_namespace="sagemaker-k8s-operator-system"
+
 # Create a resource (run a test) given a specification within a given namespace.
 # Parameter:
 #    $1: Target namespace
@@ -60,6 +62,7 @@ function delete_all_resources()
   local crd_namespace="$1"
   kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
   kubectl delete -n "$crd_namespace" trainingjob --all
+  kubectl delete -n "$crd_namespace" processingjob --all
   kubectl delete -n "$crd_namespace" batchtransformjob --all
   # HAP must be deleted before hostingdeployment
   kubectl delete -n "$crd_namespace" hostingautoscalingpolicies --all
@@ -109,4 +112,67 @@ function cleanup_default_namespace {
     rolebased_operator_install_or_delete "${default_operator_namespace}" "config/installers/rolebasedcreds" "${default_role_name}" "delete"
 }
 
+# A helper function that generates the namespace-scoped operator installer yaml file with updated namespace and role.
+# It also applies/deletes the generated installer as specified.
+# Parameter:
+#    $1: Namespace to which the op pod is installed. For cluster scope, this value is not used.
+#    $2: Path to the kustomize source
+#    $3: Name of the IAM Role to use
+#    $4: kubectl action - apply or delete the resources defined in the installer
+# TODO:  Investigate if it is possible to overlay values when we build the Kustomize targets instead.
+function rolebased_operator_install_or_delete {
+    local crd_namespace="$1"
+    local kustomize_file_path="$2"
+    local role="$3"
+    local kubectl_action="$4"
+    local aws_account=$(aws sts get-caller-identity --query Account --output text)
 
+    kustomize build "${kustomize_file_path}" > temp_file.yaml
+    sed -i "s/PLACEHOLDER-NAMESPACE/$crd_namespace/g" temp_file.yaml
+    sed -i "s/123456789012/$aws_account/g" temp_file.yaml
+    sed -i "s/DELETE_ME/$role/g" temp_file.yaml
+
+    kubectl "${kubectl_action}" -f temp_file.yaml
+    rm temp_file.yaml
+}
+
+# A function that builds the kustomize target, then deploys the CRDs and operator in cluster scope.
+# Parameter:
+#    $1: Name of the IAM Role to use
+function operator_clusterscope_deploy {
+    local role="$1"
+
+    # Allow for overriding the installation of the CRDs/controller image from the
+    # build scripts if we want to use our own installation
+
+        pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
+            echo "Deploying the operator to the default namespace"
+            rolebased_operator_install_or_delete "${default_operator_namespace}" "config/installers/rolebasedcreds" "${role}" "apply"
+        popd
+        echo "Waiting for controller pod to be Ready"
+        # Wait to increase chance that pod is ready
+        # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
+        sleep 60
+        kubectl get pods --all-namespaces | grep sagemaker
+}
+
+# A function that builds the kustomize target, then deploys the CRDs (cluster scope) and operator (namespace scope).
+# Parameter:
+#    $1: Namespace of CRD
+#    $2: Name of the IAM Role to use
+function operator_namespace_deploy {
+    local crd_namespace="$1"
+    local role="$2"
+
+    # Goto directory that holds the CRD
+    pushd sagemaker-k8s-operator/sagemaker-k8s-operator-install-scripts
+        kustomize build config/crd | kubectl apply -f -
+        rolebased_operator_install_or_delete ${crd_namespace} "config/installers/rolebasedcreds/namespaced" "${role}" "apply"
+    popd
+    echo "Waiting for controller pod to be Ready"
+    # Wait to increase chance that pod is ready
+    # TODO: Should upgrade kubectl to version that supports `kubectl wait pods --all`
+    sleep 60
+    echo "Print manager pod status"
+    kubectl get pods --all-namespaces | grep sagemaker
+}

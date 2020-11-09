@@ -31,10 +31,10 @@ import (
 // These tests are written in BDD-style using Ginkgo framework. Refer to
 // http://onsi.github.io/ginkgo to learn more.
 
-var _ = Describe("HostingDeployment", func() {
+var _ = Describe("ProcessingJob", func() {
 	var (
 		key              types.NamespacedName
-		created, fetched *HostingDeployment
+		created, fetched *ProcessingJob
 	)
 
 	BeforeEach(func() {
@@ -57,33 +57,46 @@ var _ = Describe("HostingDeployment", func() {
 				Name:      "foo",
 				Namespace: "default",
 			}
-			created = &HostingDeployment{
+			created = &ProcessingJob{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "foo",
 					Namespace: "default",
 				},
-				Spec: HostingDeploymentSpec{
-					Region:                     ToStringPtr("us-east-1"),
-					RetainAllVariantProperties: ToBoolPtr(true),
-					ExcludeRetainedVariantProperties: []commonv1.VariantProperty{
-						{VariantPropertyType: ToStringPtr("DesiredInstanceCount")},
+				Spec: ProcessingJobSpec{
+					AppSpecification: &commonv1.AppSpecification{
+						ContainerEntrypoint: []string{"python", "run_me.py"},
+						ContainerArguments:  []string{"--region", "usa"},
+						ImageURI:            "hello-world",
 					},
-					ProductionVariants: []commonv1.ProductionVariant{
-						{
-							InitialInstanceCount: ToInt64Ptr(5),
-							InstanceType:         "instance-type",
-							ModelName:            ToStringPtr("model-name"),
-							VariantName:          ToStringPtr("variant-name"),
+					ProcessingOutputConfig: &commonv1.ProcessingOutputConfig{
+						Outputs: []commonv1.ProcessingOutputStruct{
+							{
+								OutputName: "xyz",
+								S3Output: commonv1.ProcessingS3Output{
+									LocalPath:    "/opt/ml/output",
+									S3UploadMode: "EndOfJob",
+									S3Uri:        "s3://bucket/processing_output",
+								},
+							},
 						},
 					},
-					Models: []commonv1.Model{},
+					ProcessingResources: &commonv1.ProcessingResources{
+						ClusterConfig: &commonv1.ResourceConfig{
+							InstanceCount:  ToInt64Ptr(1),
+							InstanceType:   "xyz",
+							VolumeSizeInGB: ToInt64Ptr(50),
+						},
+					},
+					RoleArn:           ToStringPtr("xxxxxxxxxxxxxxxxxxxx"),
+					Region:            ToStringPtr("region-xyz"),
+					StoppingCondition: &commonv1.StoppingConditionNoSpot{},
 				},
 			}
 
 			By("creating an API obj")
 			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
 
-			fetched = &HostingDeployment{}
+			fetched = &ProcessingJob{}
 			Expect(k8sClient.Get(context.TODO(), key, fetched)).To(Succeed())
 			Expect(fetched).To(Equal(created))
 

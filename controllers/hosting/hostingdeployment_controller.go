@@ -286,7 +286,11 @@ func (r *HostingDeploymentReconciler) handleUpdates(ctx reconcileRequestContext)
 		r.Log.Info("Endpoint needs update", "endpoint name", ctx.EndpointName, "actual config name", ctx.EndpointDescription.EndpointConfigName, "desired config name", ctx.EndpointConfigName)
 
 		var output *sagemaker.UpdateEndpointOutput
-		if output, err = ctx.SageMakerClient.UpdateEndpoint(ctx, ctx.EndpointName, ctx.EndpointConfigName); err != nil && !clientwrapper.IsUpdateEndpoint404Error(err) {
+		var excludeRetainedVariantProperties []sagemaker.VariantProperty
+
+		excludeRetainedVariantProperties = sdkutil.ConvertVariantPropertiesToSageMakerVariantProperties(ctx.Deployment.Spec.ExcludeRetainedVariantProperties)
+
+		if output, err = ctx.SageMakerClient.UpdateEndpoint(ctx, ctx.EndpointName, ctx.EndpointConfigName, ctx.Deployment.Spec.RetainAllVariantProperties, excludeRetainedVariantProperties); err != nil && !clientwrapper.IsUpdateEndpoint404Error(err) {
 			return errors.Wrap(err, "Unable to update Endpoint")
 		}
 
@@ -347,7 +351,13 @@ func (r *HostingDeploymentReconciler) cleanupAndRemoveFinalizer(ctx reconcileReq
 
 // Initialize fields on the context object which will be used later.
 func (r *HostingDeploymentReconciler) initializeContext(ctx *reconcileRequestContext) error {
-	ctx.EndpointName = GetGeneratedJobName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), MaxResourceNameLength)
+	// Use user-defined endpoint name if specified
+	if ctx.Deployment.Spec.EndpointName != nil && len(*ctx.Deployment.Spec.EndpointName) > 0 {
+		ctx.EndpointName = *ctx.Deployment.Spec.EndpointName
+	} else {
+		ctx.EndpointName = GetGeneratedJobName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), MaxResourceNameLength)
+	}
+
 	r.Log.Info("SageMaker EndpointName", "name", ctx.EndpointName)
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
@@ -391,11 +401,9 @@ func (r *HostingDeploymentReconciler) createCreateEndpointInput(ctx reconcileReq
 		return nil, err
 	}
 
-	endpointName := GetGeneratedJobName(ctx.Deployment.ObjectMeta.GetUID(), ctx.Deployment.ObjectMeta.GetName(), MaxResourceNameLength)
-
 	createInput := &sagemaker.CreateEndpointInput{
 		EndpointConfigName: &endpointConfigName,
-		EndpointName:       &endpointName,
+		EndpointName:       &ctx.EndpointName,
 		Tags:               sdkutil.ConvertTagSliceToSageMakerTagSlice(ctx.Deployment.Spec.Tags),
 	}
 

@@ -15,11 +15,12 @@ function run_canary_tests
 
   echo "Starting Canary Tests"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/kmeans-mnist-processingjob.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
   # Special code for batch transform till we fix issue-59
   run_test "${crd_namespace}" testfiles/xgboost-model.yaml
   # We need to get sagemaker model before running batch transform
-  verify_test "${crd_namespace}" Model xgboost-model 1m Created
+  verify_test "${crd_namespace}" Model xgboost-model 5m Created
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
@@ -43,7 +44,7 @@ function run_canary_tests_china
   # Special code for batch transform till we fix issue-59
   run_test "${crd_namespace}" testfiles/xgboost-model-china.yaml
   # We need to get sagemaker model before running batch transform
-  verify_test "${crd_namespace}" Model xgboost-model-china 1m Created
+  verify_test "${crd_namespace}" Model xgboost-model-china 5m Created
   yq w -i testfiles/xgboost-mnist-batchtransform-china.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model-china)"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform-china.yaml
 }
@@ -71,6 +72,7 @@ function run_integration_tests
   run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test "${crd_namespace}" testfiles/hd-retain-varient-properties.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
@@ -81,11 +83,12 @@ function verify_canary_tests
   local crd_namespace="$1"
   echo "Verifying canary tests"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist 20m Completed
+  verify_test "${crd_namespace}" ProcessingJob kmeans-mnist 20m Completed
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
-  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 2m Created "3"
-  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 2m Created "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created "3"
+  verify_hap_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 5m Created "3"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
@@ -119,6 +122,72 @@ function verify_integration_tests
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
   verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
+  verify_retain_varient_properties "${crd_namespace}" testfiles/hd-retain-varient-properties.yaml
+}
+
+function verify_retain_varient_properties(){
+  local crd_namespace="$1"
+  local hostingdeployment_yaml_filepath="$2"
+  local autoscaling_yaml_filepath="testfiles/hd-autoscaling-retain-varient-properties.yaml"
+
+  echo "Varifying retain varient properties"
+
+  # endpoint is already created with instance count 1 and instance weight 2
+  enpoint_name=$(yq r $hostingdeployment_yaml_filepath "spec.endpointName")
+  endpoint_region=$(yq r $hostingdeployment_yaml_filepath "spec.region")
+  hostingdeployment_name=$(yq r $hostingdeployment_yaml_filepath "metadata.name")
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+
+  # verify that the already created endpoint has instance count 1 and weight 2
+  instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
+  weight=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentWeight | awk '{printf "%.0f\n", $1}')
+  if [ "${instance_count}" == "1" ] && [ "${weight}" == "2" ]; then
+    echo "Initial verification that instance_count is 1 and weight is 2"
+  else
+    echo "[FAILED] Ininitial hosting deployment has wrong properties. Maybe the default namespace test didn't reset the values"
+    echo "instance_count: $instance_count, weight: $weight"
+    exit 1
+  fi
+
+  # autoscalling increases instance count to 2 (while keeping the previous weight 2)
+  yq w -i $autoscaling_yaml_filepath "spec.resourceId[0].endpointName" $enpoint_name
+  kubectl apply -n $crd_namespace -f $autoscaling_yaml_filepath
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m Updating
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+
+  # verify instance count is 2
+  instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
+  if [ "${instance_count}" == "2" ]; then
+    echo "Autoscalling applied to increase instance count to 2"
+  else
+    echo "[FAILED] Failed to apply autoscaling policy in retain varient properties test"
+    echo "instance_count: $instance_count"
+    exit 1
+  fi
+
+  # re-apply hosting deployment with instance count 1 and instance weight 1
+  # retainAllVariantProperties "true" and excludeRetainedVariantProperties "DesiredWeight"
+  #
+  # This should retain the previous instance count of 2 and
+  # shouldn't retain the previous instance weight of 2 and change it to 3
+  yq w -i $hostingdeployment_yaml_filepath "spec.productionVariants[0].initialVariantWeight" 3
+  kubectl apply -n $crd_namespace -f $hostingdeployment_yaml_filepath
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m Updating
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+  # Check if it retained the previous instance count and did not retain previous weight
+  # sleep 5 && wait_for_crd_status "${crd_namespace}" HostingDeployment $hostingdeployment_name 40m InService && sleep 5
+  instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
+  weight=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentWeight | awk '{printf "%.0f\n", $1}')
+  if [ "${instance_count}" == "2" ] && [ "${weight}" == "3" ]; then
+    echo "[PASSED] Successfully tested retainAllVariantProperties and excludeRetainedVariantProperties"
+  else
+    echo "[FAILED] Failed to retain the variant properties"
+    echo "instance_count: $instance_count, weight: $weight"
+    exit 1
+  fi
+
+  # changing weight back to 2 for namaspace based tests
+  yq w -i $hostingdeployment_yaml_filepath "spec.productionVariants[0].initialVariantWeight" 2
 }
 
 
@@ -139,12 +208,12 @@ function run_hap_test()
   local hostingdeployment_type="hostingdeployment"
 
   # Create the second Endpoint
-  sed -i "s/$hosting_deployment_1/$hosting_deployment_2/g" testfiles/xgboost-hosting-deployment.yaml
+  yq w -i testfiles/xgboost-hosting-deployment.yaml "metadata.name" $hosting_deployment_2
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
 
   # Create the third Endpoint used for the custom metric also here in order to parallize
   # TODO: This test can be written much better by modularizing
-  sed -i "s/$hosting_deployment_2/$hosting_deployment_3/g" testfiles/xgboost-hosting-deployment.yaml
+  yq w -i testfiles/xgboost-hosting-deployment.yaml "metadata.name" $hosting_deployment_3
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
 
   # Endpoints must be created before autoscaling can be applied, one is already created
@@ -158,13 +227,17 @@ function run_hap_test()
   local endpoint_name_3="$(kubectl get -n "$target_namespace" "$hostingdeployment_type" "$hosting_deployment_3" -o=custom-columns=SAGEMAKER_ENDPOINT-NAME:.status.endpointArn | tail -1 | cut -d'/' -f2)"
 
   # HAP Test 1: Using the Predefined Metric
-  sed -i "s/PLACEHOLDER-ENDPOINT-1/$endpoint_name_1/g" "$file_name"
-  sed -i "s/PLACEHOLDER-ENDPOINT-2/$endpoint_name_2/g" "$file_name"
+  yq w -i "$file_name" "spec.resourceId[0].endpointName" $endpoint_name_1
+  yq w -i "$file_name" "spec.resourceId[1].endpointName" $endpoint_name_2
+
   run_test "$target_namespace" "$file_name"
-  
+
   # HAP Test 2: Using the Custom Metric
-  sed -i "s/PLACEHOLDER-ENDPOINT-3/$endpoint_name_3/g" "$file_name_custom"
+  yq w -i "$file_name_custom" "spec.resourceId[0].endpointName" $endpoint_name_3
+  yq w -i "$file_name_custom" "spec.targetTrackingScalingPolicyConfiguration.customizedMetricSpecification.dimensions[0].value" $endpoint_name_3
   run_test "$target_namespace" "$file_name_custom"
+
+  yq w -i testfiles/xgboost-hosting-deployment.yaml "metadata.name" $hosting_deployment_1
 }
 
 # This function verifies that the HostingAutoscalingPolicy is applied as expected, and checks using awscli

@@ -19,6 +19,7 @@ function inject_variables()
 function inject_all_variables
 {
   inject_variables testfiles/xgboost-mnist-trainingjob.yaml
+  inject_variables testfiles/kmeans-mnist-processingjob.yaml
   inject_variables testfiles/spot-xgboost-mnist-trainingjob.yaml
   inject_variables testfiles/xgboost-mnist-custom-endpoint.yaml
   # inject_variables testfiles/efs-xgboost-mnist-trainingjob.yaml
@@ -37,4 +38,5 @@ function inject_all_variables
   inject_variables testfiles/xgboost-mnist-hpo-china.yaml
   inject_variables testfiles/xgboost-model-china.yaml
   inject_variables testfiles/xgboost-mnist-batchtransform-china.yaml
+  inject_variables testfiles/hd-retain-varient-properties.yaml
 }

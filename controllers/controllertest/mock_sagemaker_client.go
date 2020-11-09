@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	. "container/list"
+
 	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -45,6 +46,24 @@ type MockSageMakerClientBuilder struct {
 	responses List
 	// Used to store requests received by SageMaker client.
 	requests *List
+}
+
+// Helper data structure that represents a single CreateProcessingJob response.
+type createProcessingJobResponse struct {
+	err  awserr.RequestFailure
+	data *sagemaker.CreateProcessingJobOutput
+}
+
+// Helper data structure that represents a single DescribeProcessingJob response.
+type describeProcessingJobResponse struct {
+	err  awserr.RequestFailure
+	data *sagemaker.DescribeProcessingJobOutput
+}
+
+// Helper data structure that represents a single StopProcessingJob response.
+type stopProcessingJobResponse struct {
+	err  awserr.RequestFailure
+	data *sagemaker.StopProcessingJobOutput
 }
 
 // Helper data structure that represents a single DescribeTrainingJob response.
@@ -159,6 +178,51 @@ type deleteEndpointConfigResponse struct {
 type createEndpointResponse struct {
 	err  awserr.RequestFailure
 	data *sagemaker.CreateEndpointOutput
+}
+
+// AddDescribeProcessingJobErrorResponse returns an error response to the client.
+func (m *MockSageMakerClientBuilder) AddDescribeProcessingJobErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
+	m.responses.PushBack(describeProcessingJobResponse{
+		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
+		data: nil,
+	})
+	return m
+}
+
+// AddDescribeProcessingJobResponse returns a DescribeProcessingJob response to the client.
+func (m *MockSageMakerClientBuilder) AddDescribeProcessingJobResponse(data sagemaker.DescribeProcessingJobOutput) *MockSageMakerClientBuilder {
+	m.responses.PushBack(describeProcessingJobResponse{
+		err:  nil,
+		data: &data,
+	})
+	return m
+}
+
+// AddStopProcessingJobResponse adds a StopProcessingJob response to the client.
+func (m *MockSageMakerClientBuilder) AddStopProcessingJobResponse(data sagemaker.StopProcessingJobOutput) *MockSageMakerClientBuilder {
+	m.responses.PushBack(stopProcessingJobResponse{
+		err:  nil,
+		data: &data,
+	})
+	return m
+}
+
+// AddCreateProcessingJobErrorResponse returns an error response to the client.
+func (m *MockSageMakerClientBuilder) AddCreateProcessingJobErrorResponse(code string, message string, statusCode int, reqId string) *MockSageMakerClientBuilder {
+	m.responses.PushBack(createProcessingJobResponse{
+		err:  awserr.NewRequestFailure(awserr.New(code, message, fmt.Errorf(code)), statusCode, reqId),
+		data: nil,
+	})
+	return m
+}
+
+// AddCreateProcessingJobResponse adds a CreateProcessingJob response to the client.
+func (m *MockSageMakerClientBuilder) AddCreateProcessingJobResponse(data sagemaker.CreateProcessingJobOutput) *MockSageMakerClientBuilder {
+	m.responses.PushBack(createProcessingJobResponse{
+		err:  nil,
+		data: &data,
+	})
+	return m
 }
 
 // Add a DescribeTrainingJob error response to the client.
@@ -1414,6 +1478,141 @@ func (m mockSageMakerClient) DeleteEndpointRequest(input *sagemaker.DeleteEndpoi
 	}
 
 	return sagemaker.DeleteEndpointRequest{
+		Request: mockRequest,
+	}
+}
+
+// Mock CreateProcessingJobRequest implementation. It overrides a request response with the mock data.
+// If the next response is not of type CreateProcessingJob, or there are no more responses to give, fail the test.
+func (m mockSageMakerClient) CreateProcessingJobRequest(input *sagemaker.CreateProcessingJobInput) sagemaker.CreateProcessingJobRequest {
+
+	m.requests.PushBack(input)
+
+	front := m.responses.Front()
+
+	var nextResponse interface{}
+	if front == nil {
+		message := "Not enough CreateProcessingJob responses provided for test"
+		nextResponse = createProcessingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+		m.testReporter.Error(message)
+	} else {
+		nextResponse = front.Value
+		m.responses.Remove(front)
+	}
+
+	nextCreateProcessingJobResponse, ok := nextResponse.(createProcessingJobResponse)
+	if !ok {
+		message := "CreateProcessingJob request created, next response is not of type CreateProcessingJobOutput"
+		nextCreateProcessingJobResponse = createProcessingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+	}
+
+	mockRequest := m.mockRequestBuilder()
+
+	if nextCreateProcessingJobResponse.err != nil {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Error = nextCreateProcessingJobResponse.err
+		})
+	} else {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Data = nextCreateProcessingJobResponse.data
+		})
+	}
+
+	return sagemaker.CreateProcessingJobRequest{
+		Request: mockRequest,
+	}
+}
+
+// Mock DescribeProcessingJobRequest implementation. It overrides a request response with the mock data.
+// If the next response is not of type DescribeProcessingJob, or there are no more responses to give, fail the test.
+func (m mockSageMakerClient) DescribeProcessingJobRequest(input *sagemaker.DescribeProcessingJobInput) sagemaker.DescribeProcessingJobRequest {
+
+	m.requests.PushBack(input)
+
+	front := m.responses.Front()
+
+	var nextResponse interface{}
+	if front == nil {
+		message := "Not enough DescribeProcessingJob responses provided for test"
+		nextResponse = describeProcessingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+		m.testReporter.Error(message)
+	} else {
+		nextResponse = front.Value
+		m.responses.Remove(front)
+	}
+
+	nextDescribeProcessingJobResponse, ok := nextResponse.(describeProcessingJobResponse)
+	if !ok {
+		message := "DescribeProcessingJob request created, next response is not of type DescribeProcessingJobOutput"
+		nextDescribeProcessingJobResponse = describeProcessingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+	}
+
+	mockRequest := m.mockRequestBuilder()
+
+	if nextDescribeProcessingJobResponse.err != nil {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Error = nextDescribeProcessingJobResponse.err
+		})
+	} else {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Data = nextDescribeProcessingJobResponse.data
+		})
+	}
+
+	return sagemaker.DescribeProcessingJobRequest{
+		Request: mockRequest,
+	}
+}
+
+// Mock StopProcessingJobRequest implementation. It overrides a request response with the mock data.
+// If the next response is not of type StopProcessingJob, or there are no more responses to give, fail the test.
+func (m mockSageMakerClient) StopProcessingJobRequest(input *sagemaker.StopProcessingJobInput) sagemaker.StopProcessingJobRequest {
+
+	m.requests.PushBack(input)
+
+	front := m.responses.Front()
+
+	var nextResponse interface{}
+	if front == nil {
+		message := "Not enough StopProcessingJob responses provided for test"
+		nextResponse = stopProcessingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+		m.testReporter.Error(message)
+	} else {
+		nextResponse = front.Value
+		m.responses.Remove(front)
+	}
+
+	nextStopProcessingJobResponse, ok := nextResponse.(stopProcessingJobResponse)
+	if !ok {
+		message := "StopProcessingJob request created, next response is not of type StopProcessingJobOutput"
+		nextStopProcessingJobResponse = stopProcessingJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+	}
+
+	mockRequest := m.mockRequestBuilder()
+
+	if nextStopProcessingJobResponse.err != nil {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Error = nextStopProcessingJobResponse.err
+		})
+	} else {
+		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+			r.Data = nextStopProcessingJobResponse.data
+		})
+	}
+
+	return sagemaker.StopProcessingJobRequest{
 		Request: mockRequest,
 	}
 }

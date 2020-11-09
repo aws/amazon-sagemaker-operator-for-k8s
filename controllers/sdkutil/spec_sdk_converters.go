@@ -29,6 +29,7 @@ import (
 	hostingautoscalingpolicyv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingautoscalingpolicy"
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
+	processingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/processingjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
@@ -110,6 +111,39 @@ func CreateTrainingJobSpecFromDescription(description sagemaker.DescribeTraining
 	}
 
 	return unmarshalled, nil
+}
+
+// CreateCreateProcessingJobInputFromSpec creates a CreateProcessingJobInput from a ProcessingJobSpec.
+// This panics if json libraries are unable to serialize the spec or deserialize the serialization.
+func CreateCreateProcessingJobInputFromSpec(spec processingjobv1.ProcessingJobSpec, processingJobName *string) sagemaker.CreateProcessingJobInput {
+	if input, err := createCreateProcessingJobInputFromSpec(spec, processingJobName); err == nil {
+		return input
+	} else {
+		panic("Unable to create CreateProcessingJobInput from spec : " + err.Error())
+	}
+}
+
+func createCreateProcessingJobInputFromSpec(spec processingjobv1.ProcessingJobSpec, processingJobName *string) (sagemaker.CreateProcessingJobInput, error) {
+	var output sagemaker.CreateProcessingJobInput
+
+	// clear out the KVPs from spec.
+	environmentVars := spec.Environment
+	spec.Environment = []*commonv1.KeyValuePair{}
+
+	marshalledCreateProcessingJobInput, err := json.Marshal(spec)
+
+	if err != nil {
+		return sagemaker.CreateProcessingJobInput{}, err
+	}
+
+	if err = json.Unmarshal(marshalledCreateProcessingJobInput, &output); err != nil {
+		return sagemaker.CreateProcessingJobInput{}, err
+	}
+
+	output.Environment = ConvertKeyValuePairSliceToMap(environmentVars)
+	output.ProcessingJobName = processingJobName
+
+	return output, nil
 }
 
 // CreateCreateTrainingJobInputFromSpec creates a CreateTrainingJobInput from a TrainingJobSpec.
@@ -775,10 +809,24 @@ func getResourceIDListfromDescriptions(descriptions []*applicationautoscaling.Sc
 	return resourceIDListforSpec
 }
 
+// getResourceIDForSpecFromList converts a list of ResourceID strings to the Spec format.
+func getResourceIDForSpecFromList(resourceIDList []string) []*commonv1.AutoscalingResource {
+	var resourceIDListforSpec []*commonv1.AutoscalingResource
+
+	for _, resourceID := range resourceIDList {
+		resourceID := strings.Split(resourceID, "/")
+		endpointName, variantName := resourceID[1], resourceID[3]
+		resourceIDforSpec := commonv1.AutoscalingResource{EndpointName: &endpointName, VariantName: &variantName}
+		resourceIDListforSpec = append(resourceIDListforSpec, &resourceIDforSpec)
+	}
+
+	return resourceIDListforSpec
+}
+
 // CreateHostingAutoscalingPolicySpecFromDescription creates a Kubernetes spec from a List of Descriptions
 // Review: Needs a major review and also update if additional fields are added/removed from spec
-func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy) (hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, error) {
-	transformedResourceIDs := getResourceIDListfromDescriptions(descriptions)
+func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*applicationautoscaling.DescribeScalableTargetsOutput, descriptions []*applicationautoscaling.ScalingPolicy, oldResourceIDList []string) (hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec, error) {
+	transformedResourceIDs := getResourceIDForSpecFromList(oldResourceIDList)
 
 	// This might not be needed since updates to customMetric and suspended state work out of the box
 	minCapacity := targetDescriptions[0].ScalableTargets[0].MinCapacity
@@ -812,4 +860,31 @@ func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*app
 	}
 
 	return unmarshalled, nil
+}
+
+// Converts VariantProperties to SageMaker VariantProperties
+func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []commonv1.VariantProperty) []sagemaker.VariantProperty {
+	sageMakerVariantProperties := []sagemaker.VariantProperty{}
+
+	for _, variantProperty := range variantProperties {
+		variantPropertyType := sagemaker.VariantPropertyTypeDesiredInstanceCount
+
+		switch *variantProperty.VariantPropertyType {
+		case "DesiredInstanceCount":
+			variantPropertyType = sagemaker.VariantPropertyTypeDesiredInstanceCount
+		case "DesiredWeight":
+			variantPropertyType = sagemaker.VariantPropertyTypeDesiredWeight
+		case "DataCaptureConfig":
+			variantPropertyType = sagemaker.VariantPropertyTypeDataCaptureConfig
+		default:
+			variantPropertyType = ""
+			errors.New("Error: invalid VariantPropertyType string '" + *variantProperty.VariantPropertyType + "'")
+		}
+
+		sageMakerVariantProperties = append(sageMakerVariantProperties, sagemaker.VariantProperty{
+			VariantPropertyType: variantPropertyType,
+		})
+	}
+
+	return sageMakerVariantProperties
 }

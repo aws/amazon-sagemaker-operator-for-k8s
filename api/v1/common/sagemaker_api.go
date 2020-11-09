@@ -36,6 +36,14 @@ type AlgorithmSpecification struct {
 	TrainingInputMode TrainingInputMode `json:"trainingInputMode"`
 }
 
+type AppSpecification struct {
+	ContainerArguments []string `json:"containerArguments,omitempty"`
+
+	ContainerEntrypoint []string `json:"containerEntrypoint,omitempty"`
+
+	ImageURI string `json:"imageUri,omitempty"`
+}
+
 type MetricDefinition struct {
 	// +kubebuilder:validation:MinLength=1
 	Name *string `json:"name"`
@@ -64,6 +72,68 @@ type Channel struct {
 	ShuffleConfig *ShuffleConfig `json:"shuffleConfig,omitempty"`
 }
 
+type ProcessingInput struct {
+	InputName string            `json:"inputName"`
+	S3Input   ProcessingS3Input `json:"s3Input"`
+}
+
+type ProcessingS3Input struct {
+	LocalPath LocalPath `json:"localPath"`
+
+	CompressionType CompressionType `json:"compressionType,omitempty"`
+
+	// +kubebuilder:validation:Enum=FullyReplicated;ShardedByS3Key
+	S3DataDistributionType S3DataDistributionType `json:"s3DataDistributionType,omitempty"`
+
+	// +kubebuilder:validation:Enum=S3Prefix;ManifestFile
+	S3DataType string `json:"s3DataType"`
+
+	// +kubebuilder:validation:Enum=Pipe;File
+	S3InputMode TrainingInputMode `json:"s3InputMode"`
+
+	S3Uri S3Uri `json:"s3Uri"`
+}
+
+type ProcessingOutputConfig struct {
+	// +kubebuilder:validation:MaxLength=1024
+	KmsKeyId string `json:"kmsKeyId,omitempty"`
+
+	// +kubebuilder:validation:MaxItems=10
+	Outputs []ProcessingOutputStruct `json:"outputs"`
+}
+
+type ProcessingOutputStruct struct {
+	OutputName string `json:"outputName"`
+
+	S3Output ProcessingS3Output `json:"s3Output"`
+}
+
+type ProcessingS3Output struct {
+	LocalPath LocalPath `json:"localPath"`
+
+	// +kubebuilder:validation:Enum=Continuous;EndOfJob
+	S3UploadMode string `json:"s3UploadMode"`
+
+	S3Uri S3Uri `json:"s3Uri"`
+}
+
+type ProcessingNetworkConfig struct {
+	EnableInterContainerTrafficEncryption bool `json:"enableInterContainerTrafficEncryption,omitempty"`
+
+	EnableNetworkIsolation bool `json:"enableNetworkIsolation,omitempty"`
+
+	VpcConfig *VpcConfig `json:"vpcConfig,omitempty"`
+}
+
+// +kubebuilder:validation:Enum=FullyReplicated;ShardedByS3Key
+type S3DataDistributionType string
+
+// +kubebuilder:validation:MaxLength=256
+type LocalPath string
+
+// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
+type S3Uri string
+
 type DataSource struct {
 	FileSystemDataSource *FileSystemDataSource `json:"fileSystemDataSource,omitempty"`
 
@@ -73,8 +143,7 @@ type DataSource struct {
 type S3DataSource struct {
 	AttributeNames []string `json:"attributeNames,omitempty"`
 
-	// +kubebuilder:validation:Enum=FullyReplicated;ShardedByS3Key
-	S3DataDistributionType string `json:"s3DataDistributionType,omitempty"`
+	S3DataDistributionType S3DataDistributionType `json:"s3DataDistributionType,omitempty"`
 
 	// +kubebuilder:validation:Enum=S3Prefix;ManifestFile;AugmentedManifestFile
 	S3DataType string `json:"s3DataType"`
@@ -125,12 +194,22 @@ type ResourceConfig struct {
 	VolumeSizeInGB *int64 `json:"volumeSizeInGB"`
 }
 
+type ProcessingResources struct {
+	ClusterConfig *ResourceConfig `json:"clusterConfig"`
+}
+
 type StoppingCondition struct {
 	// +kubebuilder:validation:Minimum=1
 	MaxRuntimeInSeconds *int64 `json:"maxRuntimeInSeconds,omitempty"`
 
 	// +kubebuilder:validation:Minimum=1
 	MaxWaitTimeInSeconds *int64 `json:"maxWaitTimeInSeconds,omitempty"`
+}
+
+// StoppingConditionNoSpot is used for APIs which do not support WaitTime param i.e. managed spot training not supported
+type StoppingConditionNoSpot struct {
+	// +kubebuilder:validation:Minimum=1
+	MaxRuntimeInSeconds *int64 `json:"maxRuntimeInSeconds,omitempty"`
 }
 
 type Tag struct {
@@ -149,9 +228,11 @@ type KeyValuePair struct {
 
 type VpcConfig struct {
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=5
 	SecurityGroupIds []string `json:"securityGroupIds"`
 
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=16
 	Subnets []string `json:"subnets"`
 }
 
@@ -411,6 +492,11 @@ type DeployedImage struct {
 	ResolvedImage *string `json:"resolvedImage,omitempty"`
 
 	SpecifiedImage *string `json:"specifiedImage,omitempty"`
+}
+
+type VariantProperty struct {
+	// +kubebuilder:validation:Enum=DesiredInstanceCount;DesiredWeight;DataCaptureConfig
+	VariantPropertyType *string `json:"variantPropertyType"`
 }
 
 // Batch Transform related struct

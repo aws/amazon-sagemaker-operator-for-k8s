@@ -39,6 +39,23 @@ spec:
         spec:
           description: HostingDeploymentSpec defines the desired state of HostingDeployment
           properties:
+            endpointName:
+              description: The SageMaker endpoint name. If it is empty the operator will populate it with a generated name.
+              maxLength: 63
+              type: string
+            excludeRetainedVariantProperties:
+              items:
+                properties:
+                  variantPropertyType:
+                    enum:
+                    - DesiredInstanceCount
+                    - DesiredWeight
+                    - DataCaptureConfig
+                    type: string
+                required:
+                - variantPropertyType
+                type: object
+              type: array
             kmsKeyId:
               type: string
             models:
@@ -84,11 +101,13 @@ spec:
                       securityGroupIds:
                         items:
                           type: string
+                        maxItems: 5
                         minItems: 1
                         type: array
                       subnets:
                         items:
                           type: string
+                        maxItems: 16
                         minItems: 1
                         type: array
                     required:
@@ -132,6 +151,8 @@ spec:
             region:
               minLength: 1
               type: string
+            retainAllVariantProperties:
+              type: boolean
             sageMakerEndpoint:
               description: A custom SageMaker endpoint to use when communicating with SageMaker.
               pattern: ^(https|http)://.*$

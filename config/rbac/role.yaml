@@ -129,6 +129,26 @@ rules:
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
+  - processingjobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - processingjobs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
   - trainingjobs
   verbs:
   - create
