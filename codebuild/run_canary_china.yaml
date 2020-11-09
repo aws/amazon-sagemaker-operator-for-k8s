@@ -2,6 +2,8 @@ version: 0.2
 phases:
   build:
     commands:
+      # make all shell scripts executable. This is required when running code copyied from S3
+      - find ./ -type f -name "*.sh" -exec chmod +x {} \;
       - cp release/rolebased/china/installer_china.yaml tests/codebuild/
       - cd tests
       - aws ecr get-login-password --region $CLUSTER_REGION | docker login --username AWS --password-stdin $ECR_CACHE_URI || true
