@@ -47,7 +47,7 @@ function verify_delete()
   local crd_namespace="$1"
   local crd_type="$(echo "$2" | awk '{print tolower($0)}')"
   local file_name="$3"
-  local timeout=${4:-"5m"}
+  local timeout=${4:-"10m"}
 
   # Apply file and get name
   local k8s_resource_name="$(kubectl apply -n "${crd_namespace}" -f "${file_name}" -o json | jq -r ".metadata.name")"
