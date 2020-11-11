@@ -72,6 +72,7 @@ function run_integration_tests
   run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test "${crd_namespace}" testfiles/hd-retain-varient-properties.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
@@ -122,6 +123,72 @@ function verify_integration_tests
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
   verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
+  verify_retain_varient_properties "${crd_namespace}" testfiles/hd-retain-varient-properties.yaml
+}
+
+function verify_retain_varient_properties(){
+  local crd_namespace="$1"
+  local hostingdeployment_yaml_filepath="$2"
+  local autoscaling_yaml_filepath="testfiles/hd-autoscaling-retain-varient-properties.yaml"
+
+  echo "Varifying retain varient properties"
+
+  # endpoint is already created with instance count 1 and instance weight 2
+  enpoint_name=$(yq r $hostingdeployment_yaml_filepath "spec.endpointName")
+  endpoint_region=$(yq r $hostingdeployment_yaml_filepath "spec.region")
+  hostingdeployment_name=$(yq r $hostingdeployment_yaml_filepath "metadata.name")
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+
+  # verify that the already created endpoint has instance count 1 and weight 2
+  instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
+  weight=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentWeight | awk '{printf "%.0f\n", $1}')
+  if [ "${instance_count}" == "1" ] && [ "${weight}" == "2" ]; then
+    echo "Initial verification that instance_count is 1 and weight is 2"
+  else
+    echo "[FAILED] Ininitial hosting deployment has wrong properties. Maybe the default namespace test didn't reset the values"
+    echo "instance_count: $instance_count, weight: $weight"
+    exit 1
+  fi
+
+  # autoscalling increases instance count to 2 (while keeping the previous weight 2)
+  yq w -i $autoscaling_yaml_filepath "spec.resourceId[0].endpointName" $enpoint_name
+  kubectl apply -n $crd_namespace -f $autoscaling_yaml_filepath
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m Updating
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+
+  # verify instance count is 2
+  instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
+  if [ "${instance_count}" == "2" ]; then
+    echo "Autoscalling applied to increase instance count to 2"
+  else
+    echo "[FAILED] Failed to apply autoscaling policy in retain varient properties test"
+    echo "instance_count: $instance_count"
+    exit 1
+  fi
+
+  # re-apply hosting deployment with instance count 1 and instance weight 1
+  # retainAllVariantProperties "true" and excludeRetainedVariantProperties "DesiredWeight"
+  #
+  # This should retain the previous instance count of 2 and
+  # shouldn't retain the previous instance weight of 2 and change it to 3
+  yq w -i $hostingdeployment_yaml_filepath "spec.productionVariants[0].initialVariantWeight" 3
+  kubectl apply -n $crd_namespace -f $hostingdeployment_yaml_filepath
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m Updating
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+  # Check if it retained the previous instance count and did not retain previous weight
+  # sleep 5 && wait_for_crd_status "${crd_namespace}" HostingDeployment $hostingdeployment_name 40m InService && sleep 5
+  instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
+  weight=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentWeight | awk '{printf "%.0f\n", $1}')
+  if [ "${instance_count}" == "2" ] && [ "${weight}" == "3" ]; then
+    echo "[PASSED] Successfully tested retainAllVariantProperties and excludeRetainedVariantProperties"
+  else
+    echo "[FAILED] Failed to retain the variant properties"
+    echo "instance_count: $instance_count, weight: $weight"
+    exit 1
+  fi
+
+  # changing weight back to 2 for namaspace based tests
+  yq w -i $hostingdeployment_yaml_filepath "spec.productionVariants[0].initialVariantWeight" 2
 }
 
 

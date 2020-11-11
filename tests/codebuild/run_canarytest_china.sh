@@ -13,6 +13,15 @@ if [[ -z "${DATA_BUCKET}" ]]; then
   exit 1
 fi
 
+# Optional Env variables
+
+if [ "${EKS_PRIVATE_SUBNET_1}" -a "${EKS_PRIVATE_SUBNET_2}" -a "${EKS_PUBLIC_SUBNET_1}" -a "${EKS_PUBLIC_SUBNET_2}" ];then
+  echo "Will use existing subnets to create the EKS cluster"
+  USE_EXISTING_SUBNET=True
+else
+  echo "Existing subnets not provided. Will Create new VPC during EKS cluster creation"
+fi
+
 
 # local variables
 DEPLOYMENT_NAME="ephemeral-operator-canary-"$(date '+%Y-%m-%d-%H-%M-%S')""
@@ -35,7 +44,7 @@ function download_installer_china(){
   until [ "$n" -ge 3 ]
   do
     wget --retry-connrefused --waitretry=30 --read-timeout=20 --timeout=15 -t 3 \
-      -O installer_china.yaml https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/china_test/release/rolebased/china/installer_china.yaml \
+      -O installer_china.yaml https://raw.githubusercontent.com/aws/amazon-sagemaker-operator-for-k8s/master/release/rolebased/china/installer_china.yaml \
       && break
     n=$((n+1))
     if [[ "$n" -ge 3 ]]; then
@@ -48,7 +57,11 @@ function download_installer_china(){
 }
 
 function create_eks_cluster() {
-  eksctl create cluster --name $CLUSTER_NAME --region $CLUSTER_REGION --auto-kubeconfig --timeout=30m --managed --node-type=c5.xlarge --nodes=1
+  eksctl_args=( --managed --nodes 1 --node-type=c5.xlarge --timeout=30m --region "$CLUSTER_REGION" --auto-kubeconfig )
+  [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-public-subnets="${EKS_PUBLIC_SUBNET_1},${EKS_PUBLIC_SUBNET_2}" )
+  [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-private-subnets="${EKS_PRIVATE_SUBNET_1},${EKS_PRIVATE_SUBNET_2}" )
+
+  eksctl create cluster "$CLUSTER_NAME" "${eksctl_args[@]}"
 }
 
 function install_k8s_operators() {

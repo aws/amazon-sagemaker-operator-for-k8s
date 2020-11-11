@@ -39,4 +39,5 @@ function inject_all_variables
   inject_variables testfiles/xgboost-mnist-hpo-china.yaml
   inject_variables testfiles/xgboost-model-china.yaml
   inject_variables testfiles/xgboost-mnist-batchtransform-china.yaml
+  inject_variables testfiles/hd-retain-varient-properties.yaml
 }

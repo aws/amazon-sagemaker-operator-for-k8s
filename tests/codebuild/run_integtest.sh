@@ -74,7 +74,7 @@ if [ "${need_setup_cluster}" == "true" ]; then
     readonly cluster_region="us-east-1"
 
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
-    eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.14 --fargate 
+    eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.14 --fargate
     eksctl create fargateprofile --namespace "${crd_namespace}" --cluster "${cluster_name}" --name namespace-profile --region "${cluster_region}"
     eksctl create fargateprofile --namespace "${default_operator_namespace}" --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
 
@@ -101,7 +101,9 @@ echo "[SECTION] Run integration tests for the cluster scoped operator deployment
 
 generate_iam_role_name "${default_operator_namespace}"
 default_role_name="${role_name}"  # role_name will get overwritten, save for cleanup. 
-./generate_iam_role.sh "${cluster_name}" "${default_operator_namespace}" "${default_role_name}" "${cluster_region}"
+pushd tests/codebuild
+    ./generate_iam_role.sh "${cluster_name}" "${default_operator_namespace}" "${default_role_name}" "${cluster_region}"
+popd
 
 if [ "${SKIP_INSTALLATION}" == "true" ]; then
     echo "Skipping installation of CRDs and operator"
@@ -130,7 +132,9 @@ set -e
 
 #Create the IAM Role for the given namespace
 generate_iam_role_name "${crd_namespace}"
-./generate_iam_role.sh "${cluster_name}" "${crd_namespace}" "${role_name}" "${cluster_region}"
+pushd tests/codebuild
+    ./generate_iam_role.sh "${cluster_name}" "${crd_namespace}" "${role_name}" "${cluster_region}"
+popd
 
 # Allow for overriding the installation of the CRDs/controller image from the
 # build scripts if we want to use our own installation
