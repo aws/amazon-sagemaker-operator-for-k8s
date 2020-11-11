@@ -83,6 +83,26 @@ rules:
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:
+  - hostingautoscalingpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - hostingautoscalingpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
   - hostingdeployments
   verbs:
   - get
@@ -180,6 +200,26 @@ rules:
   - get
   - update
   - patch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - processingjobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sagemaker.aws.amazon.com
+  resources:
+  - processingjobs/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - sagemaker.aws.amazon.com
   resources:

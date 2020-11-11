@@ -1,0 +1,27 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: HostingDeployment
+metadata:
+  name: named-xgboost-hosting
+spec:
+  region: us-west-2
+  endpointName: named-xgboost-hosting
+  productionVariants:
+    - variantName: AllTraffic
+      modelName: xgboost-model
+      initialInstanceCount: 1
+      instanceType: ml.r5.large
+      initialVariantWeight: 1
+  models:
+    - name: xgboost-model
+      executionRoleArn: "{ROLE_ARN}"
+      containers:
+        - containerHostname: xgboost
+          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
+          image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest
+          environment:
+            - name: my_env_key
+              value: my_env_value
+      primaryContainer: xgboost
+  tags:
+      - key: name
+        value: sagemaker-k8s-operator tag test

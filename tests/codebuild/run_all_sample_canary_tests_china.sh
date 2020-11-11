@@ -8,4 +8,6 @@ source smlogs_tests.sh
 
 run_canary_tests_china "default"
 verify_canary_tests_china "default"
+run_update_canary_tests "default"
+verify_update_canary_tests "default"
 delete_all_resources "default" # Delete all existing resources to re-use metadata names

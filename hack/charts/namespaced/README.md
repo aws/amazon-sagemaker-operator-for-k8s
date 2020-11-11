@@ -44,7 +44,7 @@ $ helm install -n <namespace> op operator_chart/
 To uninstall/delete the operator deployment, first make sure there are no jobs running, then:
 
 ```bash
-$ helm delete --purge op
-$ helm delete --purge crds
+$ helm delete -n <namespace> op
+$ helm delete -n <namespace> crds
 $ kubectl delete namespace <namespace>
 ```

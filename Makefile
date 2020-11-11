@@ -6,6 +6,7 @@ IMG_CHINA ?= 099223943020.dkr.ecr.cn-northwest-1.amazonaws.com.cn/amazon-sagemak
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 INSTALLER_PATH ?= "release"
+HELM_INSTALLER_PATH ?= "hack/charts"
 
 all: manager
 
@@ -119,5 +120,7 @@ create-installers-us: modify-base-kustomize-us
 	kustomize build config/installers/rolebasedcreds > $(INSTALLER_PATH)/rolebased/installer.yaml
 	kustomize build config/installers/rolebasedcreds/namespaced > $(INSTALLER_PATH)/rolebased/namespaced/operator.yaml
 	kustomize build config/crd > $(INSTALLER_PATH)/rolebased/namespaced/crd.yaml
+	kustomize build config/crd > $(HELM_INSTALLER_PATH)/installer/rolebased/templates/crds.yaml
+	kustomize build config/crd > $(HELM_INSTALLER_PATH)/namespaced/crd_chart/templates/crds.yaml
 
 create-installers: create-installers-china create-installers-us

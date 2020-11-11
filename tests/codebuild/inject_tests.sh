@@ -30,6 +30,7 @@ function inject_all_variables
   inject_variables testfiles/xgboost-model.yaml
   inject_variables testfiles/xgboost-mnist-batchtransform.yaml
   inject_variables testfiles/xgboost-hosting-deployment.yaml
+  inject_variables testfiles/xgboost-hosting-deployment-with-name.yaml
   inject_variables testfiles/failing-xgboost-mnist-trainingjob.yaml
   inject_variables testfiles/failing-xgboost-mnist-hpo.yaml
   inject_variables testfiles/xgboost-mnist-trainingjob-debugger.yaml
