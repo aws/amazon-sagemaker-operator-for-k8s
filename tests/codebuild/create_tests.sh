@@ -86,7 +86,7 @@ function verify_canary_tests
   verify_test "${crd_namespace}" ProcessingJob kmeans-mnist 20m Completed
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
-  verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 40m InService
+  verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 90m InService
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 5m Created
   verify_hap_test "3"
@@ -137,7 +137,7 @@ function verify_retain_varient_properties(){
   enpoint_name=$(yq r $hostingdeployment_yaml_filepath "spec.endpointName")
   endpoint_region=$(yq r $hostingdeployment_yaml_filepath "spec.region")
   hostingdeployment_name=$(yq r $hostingdeployment_yaml_filepath "metadata.name")
-  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 90m InService
 
   # verify that the already created endpoint has instance count 1 and weight 2
   instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
@@ -153,8 +153,8 @@ function verify_retain_varient_properties(){
   # autoscalling increases instance count to 2 (while keeping the previous weight 2)
   yq w -i $autoscaling_yaml_filepath "spec.resourceId[0].endpointName" $enpoint_name
   kubectl apply -n $crd_namespace -f $autoscaling_yaml_filepath
-  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m Updating
-  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 90m Updating
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 90m InService
 
   # verify instance count is 2
   instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
@@ -173,8 +173,8 @@ function verify_retain_varient_properties(){
   # shouldn't retain the previous instance weight of 2 and change it to 3
   yq w -i $hostingdeployment_yaml_filepath "spec.productionVariants[0].initialVariantWeight" 3
   kubectl apply -n $crd_namespace -f $hostingdeployment_yaml_filepath
-  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m Updating
-  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 40m InService
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 90m Updating
+  wait_for_crd_status $crd_namespace HostingDeployment $hostingdeployment_name 90m InService
   # Check if it retained the previous instance count and did not retain previous weight
   # sleep 5 && wait_for_crd_status "${crd_namespace}" HostingDeployment $hostingdeployment_name 40m InService && sleep 5
   instance_count=$(aws sagemaker describe-endpoint --endpoint-name $enpoint_name --region $endpoint_region --query ProductionVariants[0].CurrentInstanceCount)
@@ -214,9 +214,9 @@ function run_hap_test()
   update_hostingdeployment_input_metadata "${crd_namespace}" "${hosting_deployment_3}" "true"
 
   # This can be removed, but will make debugging easier with the same runtime. 
-  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_1}" 40m InService
-  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_2}" 40m InService
-  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_3}" 40m InService
+  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_1}" 90m InService
+  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_2}" 90m InService
+  verify_test "${crd_namespace}" HostingDeployment "${hosting_deployment_3}" 90m InService
 
   # HAP Test 1: Using the Predefined Metric
   yq w -i "$file_name" "spec.resourceId[0].endpointName" "${hosting_deployment_1}"
