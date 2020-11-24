@@ -19,7 +19,11 @@ package hostingautoscalingpolicy
 import (
 	"context"
 	"fmt"
+	"time"
+
+	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 	aws "github.com/aws/aws-sdk-go-v2/aws"
@@ -30,7 +34,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
 
 	hostingautoscalingpolicyv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingautoscalingpolicy"
 )
@@ -54,9 +57,10 @@ const (
 	MaxPolicyNameLength = 256
 
 	// Default values for Autoscaling in the SageMaker Service
-	ScalableDimension            = "sagemaker:variant:DesiredInstanceCount"
-	PolicyType                   = "TargetTrackingScaling"
-	DefaultAutoscalingPolicyName = "SageMakerEndpointInvocationScalingPolicy"
+	ScalableDimension                   = "sagemaker:variant:DesiredInstanceCount"
+	PolicyType                          = "TargetTrackingScaling"
+	DefaultAutoscalingPolicyName        = "SageMakerEndpointInvocationScalingPolicy"
+	DefaultSuspendedStateAttributeValue = false
 )
 
 // Reconciler reconciles a HAP object
@@ -277,6 +281,22 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	if ctx.HostingAutoscalingPolicy.Spec.PolicyType == nil {
 		policyType := PolicyType
 		ctx.HostingAutoscalingPolicy.Spec.PolicyType = &policyType
+	}
+
+	if ctx.HostingAutoscalingPolicy.Spec.SuspendedState == nil {
+		ctx.HostingAutoscalingPolicy.Spec.SuspendedState = &commonv1.HAPSuspendedState{}
+	}
+
+	if ctx.HostingAutoscalingPolicy.Spec.SuspendedState.DynamicScalingInSuspended == nil {
+		ctx.HostingAutoscalingPolicy.Spec.SuspendedState.DynamicScalingInSuspended = controllertest.ToBoolPtr(DefaultSuspendedStateAttributeValue)
+	}
+
+	if ctx.HostingAutoscalingPolicy.Spec.SuspendedState.DynamicScalingOutSuspended == nil {
+		ctx.HostingAutoscalingPolicy.Spec.SuspendedState.DynamicScalingOutSuspended = controllertest.ToBoolPtr(DefaultSuspendedStateAttributeValue)
+	}
+
+	if ctx.HostingAutoscalingPolicy.Spec.SuspendedState.ScheduledScalingSuspended == nil {
+		ctx.HostingAutoscalingPolicy.Spec.SuspendedState.ScheduledScalingSuspended = controllertest.ToBoolPtr(DefaultSuspendedStateAttributeValue)
 	}
 
 	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
