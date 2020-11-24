@@ -89,7 +89,7 @@ function verify_canary_tests
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 90m InService
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 5m Created
-  verify_hap_test "3"
+  # verify_hap_test "3"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 

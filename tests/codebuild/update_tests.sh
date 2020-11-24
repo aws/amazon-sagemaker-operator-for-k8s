@@ -36,7 +36,7 @@ function verify_update_canary_tests
 
   # At this point there are two variants in total(1 predefined and 1 custom) that have HAP applied. 
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
-  verify_hap_test "2"
+  # verify_hap_test "2"
 }
 
 
