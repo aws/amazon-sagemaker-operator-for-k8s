@@ -831,6 +831,7 @@ func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*app
 	// This might not be needed since updates to customMetric and suspended state work out of the box
 	minCapacity := targetDescriptions[0].ScalableTargets[0].MinCapacity
 	maxCapacity := targetDescriptions[0].ScalableTargets[0].MaxCapacity
+	suspendedState := targetDescriptions[0].ScalableTargets[0].SuspendedState
 
 	marshalled, err := json.Marshal(descriptions[0])
 	if err != nil {
@@ -851,6 +852,10 @@ func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*app
 	}
 
 	if _, err := obj.Set(maxCapacity, "MaxCapacity"); err != nil {
+		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
+	}
+
+	if _, err := obj.Set(suspendedState, "suspendedState"); err != nil {
 		return hostingautoscalingpolicyv1.HostingAutoscalingPolicySpec{}, err
 	}
 

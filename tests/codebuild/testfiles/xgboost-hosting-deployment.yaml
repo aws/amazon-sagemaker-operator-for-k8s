@@ -15,8 +15,9 @@ spec:
       executionRoleArn: "{ROLE_ARN}"
       containers:
         - containerHostname: xgboost
-          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
-          image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest
+          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/
+          image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
+          mode: MultiModel
           environment:
             - name: my_env_key
               value: my_env_value
