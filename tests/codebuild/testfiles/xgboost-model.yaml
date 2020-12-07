@@ -5,9 +5,8 @@ metadata:
 spec:
   primaryContainer:
     containerHostname: xgboost
-    modelDataUrl: s3://{DATA_BUCKET}/batch-transform/xgboost-mnist/
-    mode: MultiModel
-    image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
+    modelDataUrl: s3://{DATA_BUCKET}/batch-transform/xgboost-mnist/model.tar.gz
+    image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:latest
   region: us-west-2
   executionRoleArn: {ROLE_ARN}
   tags:
