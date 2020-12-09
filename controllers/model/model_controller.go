@@ -214,7 +214,9 @@ func (r *ModelReconciler) initializeContext(ctx *reconcileRequestContext) error 
 		ctx.Model.Spec.PrimaryContainer.Mode = aws.String(DefaultContainerDefinitionMode)
 	}
 	for _, container := range ctx.Model.Spec.Containers {
-		container.Mode = aws.String(DefaultContainerDefinitionMode)
+		if container.Mode == nil {
+			container.Mode = aws.String(DefaultContainerDefinitionMode)
+		}
 	}
 
 	return nil
