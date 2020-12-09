@@ -80,6 +80,11 @@ spec:
                           type: array
                         image:
                           type: string
+                        mode:
+                          enum:
+                          - SingleModel
+                          - MultiModel
+                          type: string
                         modelDataUrl:
                           type: string
                         modelPackageName:

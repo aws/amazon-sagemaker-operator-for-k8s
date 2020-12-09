@@ -46,6 +46,9 @@ const (
 
 	// Defines the maximum number of characters in a SageMaker Model SubResource name
 	MaxModelNameLength = 63
+
+	// Defines the default value for ContainerDefinition Mode
+	DefaultContainerDefinitionMode = "SingleModel"
 )
 
 // ModelReconciler reconciles a Model object
@@ -206,6 +209,15 @@ func (r *ModelReconciler) initializeContext(ctx *reconcileRequestContext) error 
 
 	ctx.SageMakerClient = clientwrapper.NewSageMakerClientWrapper(r.createSageMakerClient(awsConfig))
 	ctx.Log.Info("Loaded AWS config")
+
+	if ctx.Model.Spec.PrimaryContainer.Mode == nil {
+		ctx.Model.Spec.PrimaryContainer.Mode = aws.String(DefaultContainerDefinitionMode)
+	}
+	for _, container := range ctx.Model.Spec.Containers {
+		if container.Mode == nil {
+			container.Mode = aws.String(DefaultContainerDefinitionMode)
+		}
+	}
 
 	return nil
 }

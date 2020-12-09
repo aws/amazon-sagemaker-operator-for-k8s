@@ -249,6 +249,11 @@ func (in *ContainerDefinition) DeepCopyInto(out *ContainerDefinition) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Mode != nil {
+		in, out := &in.Mode, &out.Mode
+		*out = new(string)
+		**out = **in
+	}
 	if in.ModelPackageName != nil {
 		in, out := &in.ModelPackageName, &out.ModelPackageName
 		*out = new(string)
