@@ -33,6 +33,7 @@ import (
 
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
+	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 )
@@ -210,12 +211,12 @@ func (r *ModelReconciler) initializeContext(ctx *reconcileRequestContext) error 
 	ctx.SageMakerClient = clientwrapper.NewSageMakerClientWrapper(r.createSageMakerClient(awsConfig))
 	ctx.Log.Info("Loaded AWS config")
 
-	if ctx.Model.Spec.PrimaryContainer.Mode == nil {
-		ctx.Model.Spec.PrimaryContainer.Mode = aws.String(DefaultContainerDefinitionMode)
+	if ctx.Model.Spec.PrimaryContainer != nil && ctx.Model.Spec.PrimaryContainer.Mode == nil {
+		ctx.Model.Spec.PrimaryContainer.Mode = controllertest.ToStringPtr(DefaultContainerDefinitionMode)
 	}
 	for _, container := range ctx.Model.Spec.Containers {
 		if container.Mode == nil {
-			container.Mode = aws.String(DefaultContainerDefinitionMode)
+			container.Mode = controllertest.ToStringPtr(DefaultContainerDefinitionMode)
 		}
 	}
 

@@ -410,7 +410,7 @@ func CreateModelSpecFromDescription(description *sagemaker.DescribeModelOutput) 
 
 	if description.Containers != nil {
 		for i, _ := range description.Containers {
-			if _, err := obj.SetP(transformedContainersEnvironment[i], "Containers/"+strconv.Itoa(i)+"/.Environment"); err != nil {
+			if _, err := obj.SetP(transformedContainersEnvironment[i], "Containers."+strconv.Itoa(i)+".Environment"); err != nil {
 				return nil, err
 			}
 		}
