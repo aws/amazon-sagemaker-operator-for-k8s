@@ -9,7 +9,7 @@ resources:
 - bases/sagemaker.aws.amazon.com_processingjobs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
-patches:
+patchesStrategicMerge:
 - patches/role-arn-validation-pattern.yaml
 # [WEBHOOK] patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_trainingjobs.yaml
