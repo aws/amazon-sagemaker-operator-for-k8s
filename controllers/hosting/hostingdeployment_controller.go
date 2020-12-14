@@ -211,7 +211,7 @@ func (r *HostingDeploymentReconciler) reconcileHostingDeployment(ctx reconcileRe
 	// Updates and deletions are only supported in SageMaker when the Endpoint is "InService" (update or deletion) or "Failed" (only deletion).
 	// Thus, gate the updates/deletes according to status.
 	switch ctx.EndpointDescription.EndpointStatus {
-	case sagemaker.EndpointStatusInService:
+	case sagemaker.EndpointStatusInService, ReconcilingEndpointStatus:
 
 		// Only do updates if the object is not marked as deleted.
 		if !HasDeletionTimestamp(ctx.Deployment.ObjectMeta) {
