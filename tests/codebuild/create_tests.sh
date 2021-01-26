@@ -72,6 +72,7 @@ function run_integration_tests
   run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment-multi-container.yaml
   run_test "${crd_namespace}" testfiles/hd-retain-varient-properties.yaml
 }
 
@@ -120,6 +121,7 @@ function verify_integration_tests
   # verify_test "${crd_namespace}" TrainingJob fsx-kmeans-mnist 20m Completed
   verify_test "${crd_namespace}" HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
+  verify_test "${crd_namespace}" HostingDeployment xgboost-hosting-multi-container 90m InService
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
   verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound

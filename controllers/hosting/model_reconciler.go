@@ -285,13 +285,27 @@ func (r *modelReconciler) extractDesiredModelsFromHostingDeployment(deployment *
 		}
 
 		var primaryContainer *commonv1.ContainerDefinition
-		if primaryContainer, err = r.getPrimaryContainerDefinition(model, containers); err != nil {
-			return nil, nil, err
-		}
-
 		var modelContainers []*commonv1.ContainerDefinition
-		if modelContainers, err = r.getContainerDefinitions(model, containers, *primaryContainer.ContainerHostname); err != nil {
-			return nil, nil, err
+
+		// For multi-container, pass containers list directly - ignore primary container definition
+		if len(model.Containers) > 1 {
+			// Provide a useful log to inform users that primary container isn't being used
+			if model.PrimaryContainer != nil {
+				r.log.Info("The primary container field is ignored if more than one containers is specified")
+			}
+
+			primaryContainer = nil
+			modelContainers = model.Containers
+		} else {
+			// Determine which container is marked as primary
+			if primaryContainer, err = r.getPrimaryContainerDefinition(model, containers); err != nil {
+				return nil, nil, err
+			}
+
+			// Subtract the primary container from the list
+			if modelContainers, err = r.getContainerDefinitions(model, containers, *primaryContainer.ContainerHostname); err != nil {
+				return nil, nil, err
+			}
 		}
 		namespacedName := GetSubresourceNamespacedName(name, *deployment)
 

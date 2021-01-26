@@ -455,6 +455,8 @@ type Model struct {
 	// +kubebuilder:validation:MinItems=1
 	Containers []*ContainerDefinition `json:"containers,omitempty"`
 
+	// Primary container will be ignored if more than one container in the `containers`
+	// field is provided.
 	PrimaryContainer *string `json:"primaryContainer,omitempty"`
 
 	// +kubebuilder:validation:MinLength=20
