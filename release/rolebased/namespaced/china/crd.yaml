@@ -635,6 +635,8 @@ spec:
                   name:
                     type: string
                   primaryContainer:
+                    description: Primary container will be ignored if more than one
+                      container in the `containers` field is provided.
                     type: string
                   vpcConfig:
                     properties:

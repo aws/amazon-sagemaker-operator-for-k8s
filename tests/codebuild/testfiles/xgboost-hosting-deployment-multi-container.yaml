@@ -15,10 +15,10 @@ spec:
       executionRoleArn: "{ROLE_ARN}"
       containers:
         - containerHostname: xgboost-1
-          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/
+          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
           image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
           mode: SingleModel
         - containerHostname: xgboost-2
-          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/
+          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
           image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
           mode: SingleModel
