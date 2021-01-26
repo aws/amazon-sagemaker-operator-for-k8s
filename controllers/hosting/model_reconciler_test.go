@@ -416,6 +416,8 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(len(model.Spec.Containers)).To(Equal(2))
+				Expect(*model.Spec.Containers[0].ContainerHostname).To(Equal("present-container"))
+				Expect(*model.Spec.Containers[1].ContainerHostname).To(Equal("present-container-2"))
 			})
 
 			It("Created the k8s model without primary container", func() {
