@@ -28,4 +28,5 @@ require (
 	k8s.io/client-go v0.18.8
 	k8s.io/klog/v2 v2.2.0 // indirect
 	sigs.k8s.io/controller-runtime v0.6.2
+	sigs.k8s.io/controller-tools v0.3.0
 )
