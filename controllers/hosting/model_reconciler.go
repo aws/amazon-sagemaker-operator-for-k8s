@@ -285,13 +285,24 @@ func (r *modelReconciler) extractDesiredModelsFromHostingDeployment(deployment *
 		}
 
 		var primaryContainer *commonv1.ContainerDefinition
-		if primaryContainer, err = r.getPrimaryContainerDefinition(model, containers); err != nil {
-			return nil, nil, err
-		}
-
 		var modelContainers []*commonv1.ContainerDefinition
-		if modelContainers, err = r.getContainerDefinitions(model, containers, *primaryContainer.ContainerHostname); err != nil {
-			return nil, nil, err
+
+		// For multi-container, pass containers list directly - ignore primary container definition
+		if len(model.Containers) > 1 {
+			// Provide a useful log to inform users that primary container isn't being used
+			if model.PrimaryContainer != nil {
+				r.log.Info("The primary container field is ignored if more than one containers is specified")
+			}
+
+			primaryContainer = nil
+			modelContainers = model.Containers
+		} else {
+			// Determine which container is marked as primary
+			if primaryContainer, err = r.getPrimaryContainerDefinition(model, containers); err != nil {
+				return nil, nil, err
+			}
+
+			modelContainers = nil
 		}
 		namespacedName := GetSubresourceNamespacedName(name, *deployment)
 
@@ -360,29 +371,6 @@ func (r *modelReconciler) getAndValidateContainerMap(model *commonv1.Model) (map
 		containerMap[containerHostname] = container.DeepCopy()
 	}
 	return containerMap, nil
-}
-
-// Create a list of containers that a single model requires.
-// This does not include the primary container in the list, because the SageMaker API requires that it be separate.
-// An error is returned if a required container is not defined.
-func (r *modelReconciler) getContainerDefinitions(model *commonv1.Model, containers map[string]*commonv1.ContainerDefinition, primaryContainerHostname string) ([]*commonv1.ContainerDefinition, error) {
-	var modelContainers []*commonv1.ContainerDefinition
-	for _, container := range model.Containers {
-
-		containerName := *(container.ContainerHostname)
-		// Do not store primary container in containers slice.
-		if containerName == primaryContainerHostname {
-			continue
-		}
-
-		if toAppend, ok := containers[containerName]; ok {
-			modelContainers = append(modelContainers, toAppend.DeepCopy())
-		} else {
-			return nil, fmt.Errorf("Missing container definition: '%s'", containerName)
-		}
-	}
-
-	return modelContainers, nil
 }
 
 // Get the primary container definition for a model.

@@ -1,0 +1,24 @@
+apiVersion: sagemaker.aws.amazon.com/v1
+kind: HostingDeployment
+metadata:
+  name: xgboost-hosting-multi-container
+spec:
+  region: us-west-2
+  productionVariants:
+    - variantName: AllTraffic
+      modelName: xgboost-model
+      initialInstanceCount: 1
+      instanceType: ml.r5.large
+      initialVariantWeight: 1
+  models:
+    - name: xgboost-model
+      executionRoleArn: "{ROLE_ARN}"
+      containers:
+        - containerHostname: xgboost-1
+          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
+          image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
+          mode: SingleModel
+        - containerHostname: xgboost-2
+          modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
+          image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
+          mode: SingleModel

@@ -386,6 +386,51 @@ var _ = Describe("ModelReconciler.Reconcile", func() {
 			Expect(model.Spec.Tags[0].Value).ToNot(BeNil())
 			Expect(*model.Spec.Tags[0].Value).To(Equal(tagValue))
 		})
+
+		Context("The model has multiple containers", func() {
+			BeforeEach(func() {
+				multiContainers := []*commonv1.ContainerDefinition{
+					{
+						ContainerHostname: ToStringPtr("present-container"),
+						ModelDataUrl:      &modelDataUrl,
+					},
+					{
+						ContainerHostname: ToStringPtr("present-container-2"),
+						ModelDataUrl:      &modelDataUrl,
+					},
+				}
+
+				desired.Spec.Models[0].Containers = multiContainers
+
+				expectedModelName = GetSubresourceNamespacedName("model-name", *desired).Name
+
+				reconciler.Reconcile(context.Background(), desired, true)
+			})
+
+			It("Created the k8s model with all containers", func() {
+				var model modelv1.Model
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Namespace: k8sNamespace,
+					Name:      expectedModelName,
+				}, &model)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(len(model.Spec.Containers)).To(Equal(2))
+				Expect(*model.Spec.Containers[0].ContainerHostname).To(Equal("present-container"))
+				Expect(*model.Spec.Containers[1].ContainerHostname).To(Equal("present-container-2"))
+			})
+
+			It("Created the k8s model without primary container", func() {
+				var model modelv1.Model
+				err := k8sClient.Get(context.Background(), types.NamespacedName{
+					Namespace: k8sNamespace,
+					Name:      expectedModelName,
+				}, &model)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(model.Spec.PrimaryContainer).To(BeNil())
+			})
+		})
 	})
 })
 

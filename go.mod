@@ -25,11 +25,8 @@ require (
 	google.golang.org/protobuf v1.25.0 // indirect
 	k8s.io/api v0.18.8
 	k8s.io/apimachinery v0.18.8
-	k8s.io/cli-runtime v0.18.6 // indirect
 	k8s.io/client-go v0.18.8
-	k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac // indirect
 	k8s.io/klog/v2 v2.2.0 // indirect
 	sigs.k8s.io/controller-runtime v0.6.2
-	sigs.k8s.io/controller-tools v0.3.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.0.1 // indirect
+	sigs.k8s.io/controller-tools v0.3.0
 )
