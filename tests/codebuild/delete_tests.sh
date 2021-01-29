@@ -12,7 +12,7 @@ function run_delete_canary_tests
   set -x
   local crd_namespace="$1"
   echo "Running delete canary tests"
-  verify_delete "${crd_namespace}" TrainingJob testfiles/xgboost-mnist-trainingjob.yaml
+  verify_delete "${crd_namespace}" TrainingJob testfiles/xgboost-mnist-trainingjob-debugger.yaml
   verify_delete "${crd_namespace}" ProcessingJob testfiles/kmeans-mnist-processingjob.yaml
   verify_delete "${crd_namespace}" HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 
@@ -142,7 +142,8 @@ function verify_sm_resource_stopping_else_fail()
   esac
   
   job_status="$(aws sagemaker "describe-${sageMakerResourceType}" "--${sageMakerResourceType}-name" "${job_name}" --region us-west-2 | jq -r "${jobStatusPath}")"
-  if [ "${job_status}" != "Stopping" ] && [ "${job_status}" != "Stopped" ]; then
+  # Job can go from Stopping to completed State if job is completing already like uploading model
+  if [ "${job_status}" != "Stopping" ] && [ "${job_status}" != "Stopped" ] && ["${job_status}" != "Completed"]; then
     echo "[FAILED] AWS SageMaker resource \"${job_name}\" did not stop (status \"${job_status}\")" 
     exit 1
   else

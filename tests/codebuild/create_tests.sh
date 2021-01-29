@@ -25,7 +25,6 @@ function run_canary_tests
   run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
   run_hap_test "${crd_namespace}" named-xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml testfiles/xgboost-hostingautoscaling-custom.yaml
-  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
 }
 
 # Applies each of the resources needed for the canary tests.
@@ -91,7 +90,6 @@ function verify_canary_tests
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
   verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 5m Created
   # verify_hap_test "3"
-  verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
