@@ -395,7 +395,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should stop the SageMaker job and requeue if the job is in progress", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -417,7 +417,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should update the status and requeue if the job is stopping", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusStopping
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusStopping)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -473,7 +473,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should remove the finalizer and not requeue if the job is stopped", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusStopped
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusStopped)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -501,7 +501,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 
 	It("should remove the finalizer and not requeue if the job is failed", func() {
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusFailed
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusFailed)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -528,7 +528,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should remove the finalizer and not requeue if the job is completed", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusCompleted
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusCompleted)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -622,7 +622,7 @@ var _ = Describe("Reconciling a job without finalizer that is being deleted", fu
 	})
 
 	It("should not requeue if the job has no finalizer", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			Build()
@@ -714,7 +714,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		setTransformJobStatus(job, InitializingJobStatus)
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 
 		// Instantiate dependencies
 		sageMakerClient := builder.
@@ -757,7 +757,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		setTransformJobStatus(job, InitializingJobStatus)
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 
 		// Instantiate dependencies
 		sageMakerClient := builder.
@@ -803,7 +803,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		setTransformJobStatus(job, InitializingJobStatus)
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 
 		// Instantiate dependencies
 		sageMakerClient := builder.

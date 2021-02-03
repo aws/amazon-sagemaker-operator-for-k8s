@@ -221,7 +221,7 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 
 	log.Info("Object has been scheduled for deletion")
 	switch ctx.SageMakerDescription.TransformJobStatus {
-	case sagemaker.TransformJobStatusInProgress:
+	case aws.String(sagemaker.TransformJobStatusInProgress):
 		log.Info("Job is in_progress and has finalizer, so we need to delete it")
 		req := ctx.SageMakerClient.StopTransformJobRequest(&sagemaker.StopTransformJobInput{
 			TransformJobName: ctx.Job.Spec.TransformJobName,
@@ -234,18 +234,18 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 
 		return RequeueImmediately()
 
-	case sagemaker.TransformJobStatusStopping:
+	case aws.String(sagemaker.TransformJobStatusStopping):
 
 		log.Info("Job is stopping, nothing to do")
 		if err := r.updateJobStatus(ctx, batchtransformjobv1.BatchTransformJobStatus{
 			LastCheckTime:             Now(),
 			SageMakerTransformJobName: *ctx.Job.Spec.TransformJobName,
-			TransformJobStatus:        string(ctx.SageMakerDescription.TransformJobStatus),
+			TransformJobStatus:        *ctx.SageMakerDescription.TransformJobStatus,
 		}); err != nil {
 			return RequeueIfError(err)
 		}
 		return RequeueAfterInterval(r.PollInterval, nil)
-	case sagemaker.TransformJobStatusCompleted, sagemaker.TransformJobStatusFailed, sagemaker.TransformJobStatusStopped:
+	case aws.String(sagemaker.TransformJobStatusCompleted), aws.String(sagemaker.TransformJobStatusFailed), aws.String(sagemaker.TransformJobStatusStopped):
 		log.Info("Job is in terminal state. Done")
 		return r.removeFinalizerAndUpdate(ctx)
 	default:
@@ -286,7 +286,7 @@ func (r *BatchTransformJobReconciler) reconcileSpecWithDescription(ctx reconcile
 
 	if err := r.updateJobStatus(ctx, batchtransformjobv1.BatchTransformJobStatus{
 		LastCheckTime:             Now(),
-		TransformJobStatus:        string(ctx.SageMakerDescription.TransformJobStatus),
+		TransformJobStatus:        *ctx.SageMakerDescription.TransformJobStatus,
 		SageMakerTransformJobName: *ctx.Job.Spec.TransformJobName,
 	}); err != nil {
 		return RequeueIfError(err)
@@ -296,7 +296,7 @@ func (r *BatchTransformJobReconciler) reconcileSpecWithDescription(ctx reconcile
 	inProgress := sagemaker.TransformJobStatusInProgress
 	stopping := sagemaker.TransformJobStatusStopping
 
-	if observedStatus == inProgress || observedStatus == stopping {
+	if *observedStatus == inProgress || *observedStatus == stopping {
 		return RequeueAfterInterval(r.PollInterval, nil)
 	}
 

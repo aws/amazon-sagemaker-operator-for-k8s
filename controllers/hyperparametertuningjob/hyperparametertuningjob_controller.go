@@ -187,7 +187,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 	}
 
 	switch ctx.TuningJobDescription.HyperParameterTuningJobStatus {
-	case sagemaker.HyperParameterTuningJobStatusInProgress:
+	case aws.String(sagemaker.HyperParameterTuningJobStatusInProgress):
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			// Request to stop the job. If SageMaker returns a 404 then the job has already been deleted.
 			if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil && !clientwrapper.IsStopHyperParameterTuningJob404Error(err) {
@@ -199,19 +199,19 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 			}
 		}
 
-	case sagemaker.HyperParameterTuningJobStatusStopped, sagemaker.HyperParameterTuningJobStatusFailed, sagemaker.HyperParameterTuningJobStatusCompleted:
+	case aws.String(sagemaker.HyperParameterTuningJobStatusStopped), aws.String(sagemaker.HyperParameterTuningJobStatusFailed), aws.String(sagemaker.HyperParameterTuningJobStatusCompleted):
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			return r.cleanupAndRemoveFinalizer(ctx)
 		}
 
-	case sagemaker.HyperParameterTuningJobStatusStopping:
+	case aws.String(sagemaker.HyperParameterTuningJobStatusStopping):
 		break
 
 	default:
 		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", ctx.TuningJobDescription.HyperParameterTuningJobStatus))
 	}
 
-	status := string(ctx.TuningJobDescription.HyperParameterTuningJobStatus)
+	status := *ctx.TuningJobDescription.HyperParameterTuningJobStatus
 	additional := controllers.GetOrDefault(ctx.TuningJobDescription.FailureReason, "")
 
 	if err = r.updateStatusWithAdditional(ctx, status, additional); err != nil {

@@ -167,7 +167,7 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 	}
 
 	switch ctx.ProcessingJobDescription.ProcessingJobStatus {
-	case sagemaker.ProcessingJobStatusInProgress:
+	case aws.String(sagemaker.ProcessingJobStatusInProgress):
 		if controllers.HasDeletionTimestamp(ctx.ProcessingJob.ObjectMeta) {
 			// Request to stop the job
 			if _, err := ctx.SageMakerClient.StopProcessingJob(ctx, ctx.ProcessingJobName); err != nil && !clientwrapper.IsStopTrainingJob404Error(err) {
@@ -180,16 +180,16 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 		}
 		break
 
-	case sagemaker.ProcessingJobStatusCompleted:
+	case aws.String(sagemaker.ProcessingJobStatusCompleted):
 		fallthrough
 
-	case sagemaker.ProcessingJobStatusStopped, sagemaker.ProcessingJobStatusFailed:
+	case aws.String(sagemaker.ProcessingJobStatusStopped), aws.String(sagemaker.ProcessingJobStatusFailed):
 		if controllers.HasDeletionTimestamp(ctx.ProcessingJob.ObjectMeta) {
 			return r.removeFinalizer(ctx)
 		}
 		break
 
-	case sagemaker.ProcessingJobStatusStopping:
+	case aws.String(sagemaker.ProcessingJobStatusStopping):
 		break
 
 	default:
@@ -197,7 +197,7 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, unknownStateError)
 	}
 
-	status := string(ctx.ProcessingJobDescription.ProcessingJobStatus)
+	status := *ctx.ProcessingJobDescription.ProcessingJobStatus
 	additional := controllers.GetOrDefault(ctx.ProcessingJobDescription.FailureReason, "")
 
 	if err = r.updateStatusWithAdditional(ctx, status, additional); err != nil {

@@ -114,8 +114,8 @@ func (c *applicationAutoscalingClientWrapper) DeregisterScalableTarget(ctx conte
 // TODO: change this to return only the ScalableTargetObject for cleaner descriptions
 func (c *applicationAutoscalingClientWrapper) DescribeScalableTargets(ctx context.Context, resourceID string) (*applicationautoscaling.DescribeScalableTargetsOutput, error) {
 
-	var resourceIDList []string
-	resourceIDList = append(resourceIDList, resourceID)
+	var resourceIDList []*string
+	resourceIDList = append(resourceIDList, &resourceID)
 	// Review: This filtered response should be of size 1 by default
 	var maxResults int64 = 1
 
@@ -123,8 +123,8 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalableTargets(ctx contex
 	describeRequest := c.innerClient.DescribeScalableTargetsRequest(&applicationautoscaling.DescribeScalableTargetsInput{
 		ResourceIds:       resourceIDList,
 		MaxResults:        &maxResults,
-		ScalableDimension: "sagemaker:variant:DesiredInstanceCount",
-		ServiceNamespace:  "sagemaker",
+		ScalableDimension: aws.String("sagemaker:variant:DesiredInstanceCount"),
+		ServiceNamespace:  aws.String("sagemaker"),
 	})
 
 	describeResponse, describeError := describeRequest.Send(ctx)
@@ -140,9 +140,9 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalableTargets(ctx contex
 // returns only the scalingPolicy object else the actionDetermination gets messy
 func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx context.Context, policyName string, resourceID string) (*applicationautoscaling.ScalingPolicy, error) {
 
-	var policyNameList []string
+	var policyNameList []*string
 	var scalingPolicyDescription *applicationautoscaling.ScalingPolicy
-	policyNameList = append(policyNameList, policyName)
+	policyNameList = append(policyNameList, &policyName)
 	// Review: This filtered response should be of size 1 by default
 	var maxResults int64 = 1
 
@@ -151,8 +151,8 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 		PolicyNames:       policyNameList,
 		MaxResults:        &maxResults,
 		ResourceId:        &resourceID,
-		ScalableDimension: "sagemaker:variant:DesiredInstanceCount",
-		ServiceNamespace:  "sagemaker",
+		ScalableDimension: aws.String("sagemaker:variant:DesiredInstanceCount"),
+		ServiceNamespace:  aws.String("sagemaker"),
 	})
 
 	describeResponse, describeError := describeRequest.Send(ctx)

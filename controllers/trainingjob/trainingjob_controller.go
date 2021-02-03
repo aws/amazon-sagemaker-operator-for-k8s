@@ -185,7 +185,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	} else {
 		for i, debugJob := range ctx.TrainingJobDescription.DebugRuleEvaluationStatuses {
-			if string(debugJob.RuleEvaluationStatus) != controllers.GetOrDefault(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus, "") {
+			if *debugJob.RuleEvaluationStatus != controllers.GetOrDefault(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus, "") {
 				if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
 					return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
 				}
@@ -195,7 +195,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 	}
 
 	switch ctx.TrainingJobDescription.TrainingJobStatus {
-	case sagemaker.TrainingJobStatusInProgress:
+	case aws.String(sagemaker.TrainingJobStatusInProgress):
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			// Request to stop the job
 			if _, err := ctx.SageMakerClient.StopTrainingJob(ctx, ctx.TrainingJobName); err != nil && !clientwrapper.IsStopTrainingJob404Error(err) {
@@ -208,19 +208,19 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 		break
 
-	case sagemaker.TrainingJobStatusCompleted:
+	case aws.String(sagemaker.TrainingJobStatusCompleted):
 		if err = r.addModelPathToStatus(ctx); err != nil {
 			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add model path to status"))
 		}
 		fallthrough
 
-	case sagemaker.TrainingJobStatusStopped, sagemaker.TrainingJobStatusFailed:
+	case aws.String(sagemaker.TrainingJobStatusStopped), aws.String(sagemaker.TrainingJobStatusFailed):
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			return r.removeFinalizer(ctx)
 		}
 		break
 
-	case sagemaker.TrainingJobStatusStopping:
+	case aws.String(sagemaker.TrainingJobStatusStopping):
 		break
 
 	default:
@@ -228,11 +228,11 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", unknownStateError)
 	}
 
-	primaryStatus := string(ctx.TrainingJobDescription.TrainingJobStatus)
-	secondaryStatus := string(ctx.TrainingJobDescription.SecondaryStatus)
+	primaryStatus := *ctx.TrainingJobDescription.TrainingJobStatus
+	secondaryStatus := *ctx.TrainingJobDescription.SecondaryStatus
 	additional := controllers.GetOrDefault(ctx.TrainingJobDescription.FailureReason, "")
 
-	if ctx.TrainingJobDescription.TrainingJobStatus == sagemaker.TrainingJobStatusStopping {
+	if ctx.TrainingJobDescription.TrainingJobStatus == aws.String(sagemaker.TrainingJobStatusStopping) {
 		// Clear the secondary status if we detected stopping, since SageMaker has unclear secondary statuses during this phase
 		// Open ticket with the SageMaker team: https://t.corp.amazon.com/0411302791
 		secondaryStatus = ""

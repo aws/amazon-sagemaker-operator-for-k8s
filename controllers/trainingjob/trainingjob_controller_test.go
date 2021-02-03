@@ -1066,7 +1066,7 @@ func CreateDescribeOutputWithOnlyStatus(status sagemaker.TrainingJobStatus, seco
 func CreateDescribeOutputWithDebugJobStatus(status sagemaker.TrainingJobStatus, secondaryStatus sagemaker.SecondaryStatus, debugJobStatuses []sagemaker.RuleEvaluationStatus) sagemaker.DescribeTrainingJobOutput {
 	output := CreateDescribeOutputWithOnlyStatus(status, secondaryStatus)
 	for _, debugJobStatus := range debugJobStatuses {
-		output.DebugRuleEvaluationStatuses = append(output.DebugRuleEvaluationStatuses, sagemaker.DebugRuleEvaluationStatus{RuleEvaluationStatus: debugJobStatus})
+		output.DebugRuleEvaluationStatuses = append(output.DebugRuleEvaluationStatuses, &sagemaker.DebugRuleEvaluationStatus{RuleEvaluationStatus: debugJobStatus})
 	}
 	return output
 }

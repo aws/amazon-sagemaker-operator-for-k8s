@@ -31,6 +31,7 @@ import (
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	processingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/processingjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/pkg/errors"
@@ -263,7 +264,7 @@ func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.Hype
 	for name, value := range source.TunedHyperParameters {
 		tunedHyperParameters = append(tunedHyperParameters, &commonv1.KeyValuePair{
 			Name:  name,
-			Value: value,
+			Value: *value,
 		})
 	}
 
@@ -609,21 +610,21 @@ func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []sagemaker.Tag {
 }
 
 // ConvertKeyValuePairSliceToMap converts key value pairs to a map
-func ConvertKeyValuePairSliceToMap(kvps []*commonv1.KeyValuePair) map[string]string {
-	target := map[string]string{}
+func ConvertKeyValuePairSliceToMap(kvps []*commonv1.KeyValuePair) map[string]*string {
+	target := map[string]*string{}
 	for _, kvp := range kvps {
-		target[kvp.Name] = kvp.Value
+		target[kvp.Name] = &kvp.Value
 	}
 	return target
 }
 
 // ConvertMapToKeyValuePairSlice converts a map to a key value pair
-func ConvertMapToKeyValuePairSlice(m map[string]string) []*commonv1.KeyValuePair {
+func ConvertMapToKeyValuePairSlice(m map[string]*string) []*commonv1.KeyValuePair {
 	var kvps []*commonv1.KeyValuePair
 	for name, value := range m {
 		kvps = append(kvps, &commonv1.KeyValuePair{
 			Name:  name,
-			Value: value,
+			Value: *value,
 		})
 	}
 	return kvps
@@ -763,7 +764,7 @@ func createDeregisterScalableTargetInput(spec hostingautoscalingpolicyv1.Hosting
 	}
 
 	output.ResourceId = &resourceID
-	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
+	output.ServiceNamespace = aws.String(HostingAutoscalingPolicyServiceNamespace)
 
 	return output, nil
 }
@@ -790,7 +791,7 @@ func createDeleteScalingPolicyInput(spec hostingautoscalingpolicyv1.HostingAutos
 	output.PolicyName = spec.PolicyName
 	output.ResourceId = &resourceID
 
-	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
+	output.ServiceNamespace = aws.String(HostingAutoscalingPolicyServiceNamespace)
 
 	return output, nil
 }
@@ -887,7 +888,7 @@ func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []co
 		}
 
 		sageMakerVariantProperties = append(sageMakerVariantProperties, sagemaker.VariantProperty{
-			VariantPropertyType: variantPropertyType,
+			VariantPropertyType: &variantPropertyType,
 		})
 	}
 

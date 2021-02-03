@@ -211,7 +211,7 @@ func (r *HostingDeploymentReconciler) reconcileHostingDeployment(ctx reconcileRe
 	// Updates and deletions are only supported in SageMaker when the Endpoint is "InService" (update or deletion) or "Failed" (only deletion).
 	// Thus, gate the updates/deletes according to status.
 	switch ctx.EndpointDescription.EndpointStatus {
-	case sagemaker.EndpointStatusInService:
+	case aws.String(sagemaker.EndpointStatusInService):
 
 		// Only do updates if the object is not marked as deleted.
 		if !HasDeletionTimestamp(ctx.Deployment.ObjectMeta) {
@@ -222,32 +222,32 @@ func (r *HostingDeploymentReconciler) reconcileHostingDeployment(ctx reconcileRe
 
 		// Handle deletion by falling through.
 		fallthrough
-	case sagemaker.EndpointStatusFailed:
+	case aws.String(sagemaker.EndpointStatusFailed):
 		if HasDeletionTimestamp(ctx.Deployment.ObjectMeta) {
 			if _, err := ctx.SageMakerClient.DeleteEndpoint(ctx, &ctx.EndpointName); err != nil && !clientwrapper.IsDeleteEndpoint404Error(err) {
 				return r.updateStatusAndReturnError(ctx, ReconcilingEndpointStatus, errors.Wrap(err, "Unable to delete Endpoint"))
 			}
 		}
 		break
-	case sagemaker.EndpointStatusCreating:
+	case aws.String(sagemaker.EndpointStatusCreating):
 		fallthrough
-	case sagemaker.EndpointStatusDeleting:
+	case aws.String(sagemaker.EndpointStatusDeleting):
 		fallthrough
-	case sagemaker.EndpointStatusOutOfService:
+	case aws.String(sagemaker.EndpointStatusOutOfService):
 		fallthrough
-	case sagemaker.EndpointStatusRollingBack:
+	case aws.String(sagemaker.EndpointStatusRollingBack):
 		fallthrough
-	case sagemaker.EndpointStatusSystemUpdating:
+	case aws.String(sagemaker.EndpointStatusSystemUpdating):
 		fallthrough
-	case sagemaker.EndpointStatusUpdating:
+	case aws.String(sagemaker.EndpointStatusUpdating):
 		// The status will be updated after the switch statement.
 		r.Log.Info("Noop action, endpoint status does not allow modifications", "status", ctx.EndpointDescription.EndpointStatus)
 	}
 
-	status := string(ctx.EndpointDescription.EndpointStatus)
+	status := *ctx.EndpointDescription.EndpointStatus
 
 	// Present to the user that the endpoint is being deleted after they delete the hosting deployment.
-	if HasDeletionTimestamp(ctx.Deployment.ObjectMeta) && ctx.EndpointDescription.EndpointStatus != sagemaker.EndpointStatusDeleting {
+	if HasDeletionTimestamp(ctx.Deployment.ObjectMeta) && ctx.EndpointDescription.EndpointStatus != aws.String(sagemaker.EndpointStatusDeleting) {
 		status = string(sagemaker.EndpointStatusDeleting)
 	}
 
