@@ -17,8 +17,8 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/aws/aws-sdk-go-v2/aws"
-	cloudwatchlogs "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go/aws"
+	cloudwatchlogs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
 // Interface which enables us to mock the CloudWatchLogsClient.

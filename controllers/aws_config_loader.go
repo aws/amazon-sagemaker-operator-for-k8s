@@ -18,10 +18,9 @@ package controllers
 
 import (
 	"github.com/adammck/venv"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 // AwsConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
@@ -49,9 +48,9 @@ func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSp
 	var config aws.Config
 	var err error
 
-	if config, err = external.LoadDefaultAWSConfig(external.WithRegion(regionOverride)); err != nil {
-		return aws.Config{}, err
-	}
+	// if config, err = external.LoadDefaultAWSConfig(external.WithRegion(regionOverride)); err != nil {
+	// 	return aws.Config{}, err
+	// }
 
 	// Override SageMaker endpoint.
 	// Precendence is given to job override then operator override (from the environment variable).
@@ -71,7 +70,7 @@ func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSp
 				}, nil
 			}
 
-			return endpoints.NewDefaultResolver().ResolveEndpoint(service, region)
+			return endpoints.DefaultResolver().ResolveEndpoint(service, region)
 		}
 
 		config.EndpointResolver = aws.EndpointResolverFunc(customSageMakerResolver)

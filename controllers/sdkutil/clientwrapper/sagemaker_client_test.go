@@ -27,7 +27,7 @@ import (
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 	// +kubebuilder:scaffold:imports
 )
 
