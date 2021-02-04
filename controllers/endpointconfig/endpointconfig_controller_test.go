@@ -45,7 +45,7 @@ import (
 var _ = Describe("Reconciling an EndpointConfig while failing to get the Kubernetes job", func() {
 
 	var (
-		sageMakerClient sagemakeriface.ClientAPI
+		sageMakerClient sagemakeriface.SageMakerAPI
 	)
 
 	BeforeEach(func() {
@@ -299,7 +299,7 @@ var _ = Describe("Reconciling a endpointconfig with finalizer that is being dele
 	})
 })
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) EndpointConfigReconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string) EndpointConfigReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return EndpointConfigReconciler{
@@ -357,7 +357,7 @@ var _ = Describe("Reconciling a endpointConfig that is different than the spec",
 		receivedRequests     List
 		endpointConfig       *endpointconfigv1.EndpointConfig
 		outOfDateDescription sagemaker.DescribeEndpointConfigOutput
-		sageMakerClient      sagemakeriface.ClientAPI
+		sageMakerClient      sagemakeriface.SageMakerAPI
 		controller           EndpointConfigReconciler
 		request              ctrl.Request
 	)

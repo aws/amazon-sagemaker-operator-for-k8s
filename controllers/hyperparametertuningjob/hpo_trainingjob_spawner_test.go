@@ -45,7 +45,7 @@ import (
 )
 
 // Helper function to create a HpoTrainingJobSpawner
-func createHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) hpoTrainingJobSpawner {
+func createHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.SageMakerAPI) hpoTrainingJobSpawner {
 	return hpoTrainingJobSpawner{
 		K8sClient:       k8sClient,
 		Log:             log,

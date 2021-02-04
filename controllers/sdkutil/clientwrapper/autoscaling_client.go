@@ -18,12 +18,13 @@ package clientwrapper
 
 import (
 	"context"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go/service/applicationautoscaling/applicationautoscalingiface"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 // Provides error codes and messages
@@ -46,7 +47,7 @@ type ApplicationAutoscalingClientWrapper interface {
 }
 
 // NewApplicationAutoscalingClientWrapper creates a ApplicationAutoscaling wrapper around an existing client.
-func NewApplicationAutoscalingClientWrapper(innerClient applicationautoscalingiface.ClientAPI) ApplicationAutoscalingClientWrapper {
+func NewApplicationAutoscalingClientWrapper(innerClient applicationautoscalingiface.ApplicationAutoScalingAPI) ApplicationAutoscalingClientWrapper {
 	return &applicationAutoscalingClientWrapper{
 		innerClient: innerClient,
 	}
@@ -58,17 +59,17 @@ type ApplicationAutoscalingClientWrapperProvider func(aws.Config) ApplicationAut
 // Implementation of ApplicationAutoscaling client wrapper.
 type applicationAutoscalingClientWrapper struct {
 	ApplicationAutoscalingClientWrapper
-	innerClient applicationautoscalingiface.ClientAPI
+	innerClient applicationautoscalingiface.ApplicationAutoScalingAPI
 }
 
 // RegisterScalableTarget registers a scalable target. Returns the response output or nil if error.
 func (c *applicationAutoscalingClientWrapper) RegisterScalableTarget(ctx context.Context, autoscalingTarget *applicationautoscaling.RegisterScalableTargetInput) (*applicationautoscaling.RegisterScalableTargetOutput, error) {
 
-	createRequest := c.innerClient.RegisterScalableTargetRequest(autoscalingTarget)
-	response, err := createRequest.Send(ctx)
+	createRequest, response := c.innerClient.RegisterScalableTargetRequest(autoscalingTarget)
+	err := createRequest.Send()
 
 	if response != nil {
-		return response.RegisterScalableTargetOutput, nil
+		return response, nil
 	}
 	return nil, err
 }
@@ -76,11 +77,11 @@ func (c *applicationAutoscalingClientWrapper) RegisterScalableTarget(ctx context
 // RegisterScalableTarget registers a scalable target. Returns the response output or nil if error.
 func (c *applicationAutoscalingClientWrapper) PutScalingPolicy(ctx context.Context, autoscalingJob *applicationautoscaling.PutScalingPolicyInput) (*applicationautoscaling.PutScalingPolicyOutput, error) {
 
-	createRequest := c.innerClient.PutScalingPolicyRequest(autoscalingJob)
-	response, err := createRequest.Send(ctx)
+	createRequest, response := c.innerClient.PutScalingPolicyRequest(autoscalingJob)
+	err := createRequest.Send()
 
 	if response != nil {
-		return response.PutScalingPolicyOutput, nil
+		return response, nil
 	}
 
 	return nil, err
@@ -88,26 +89,26 @@ func (c *applicationAutoscalingClientWrapper) PutScalingPolicy(ctx context.Conte
 
 // DeleteScalingPolicy Deletes the scaling policy
 func (c *applicationAutoscalingClientWrapper) DeleteScalingPolicy(ctx context.Context, autoscalingJob *applicationautoscaling.DeleteScalingPolicyInput) (*applicationautoscaling.DeleteScalingPolicyOutput, error) {
-	deleteRequest := c.innerClient.DeleteScalingPolicyRequest(autoscalingJob)
-	deleteResponse, deleteError := deleteRequest.Send(ctx)
+	deleteRequest, deleteResponse := c.innerClient.DeleteScalingPolicyRequest(autoscalingJob)
+	deleteError := deleteRequest.Send()
 
 	if deleteError != nil {
 		return nil, deleteError
 	}
 
-	return deleteResponse.DeleteScalingPolicyOutput, deleteError
+	return deleteResponse, deleteError
 }
 
 // DeregisterScalableTarget deregisters a scalable target
 func (c *applicationAutoscalingClientWrapper) DeregisterScalableTarget(ctx context.Context, autoscalingJob *applicationautoscaling.DeregisterScalableTargetInput) (*applicationautoscaling.DeregisterScalableTargetOutput, error) {
-	deleteRequest := c.innerClient.DeregisterScalableTargetRequest(autoscalingJob)
-	deleteResponse, deleteError := deleteRequest.Send(ctx)
+	deleteRequest, deleteResponse := c.innerClient.DeregisterScalableTargetRequest(autoscalingJob)
+	deleteError := deleteRequest.Send()
 
 	if deleteError != nil {
 		return nil, deleteError
 	}
 
-	return deleteResponse.DeregisterScalableTargetOutput, deleteError
+	return deleteResponse, deleteError
 }
 
 // DescribeScalableTargets returns the scalableTarget description filtered on PolicyName and a single ResourceID
@@ -120,20 +121,20 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalableTargets(ctx contex
 	var maxResults int64 = 1
 
 	// TODO: Remove hardcoded values, might need to construct the input object
-	describeRequest := c.innerClient.DescribeScalableTargetsRequest(&applicationautoscaling.DescribeScalableTargetsInput{
+	describeRequest, describeResponse := c.innerClient.DescribeScalableTargetsRequest(&applicationautoscaling.DescribeScalableTargetsInput{
 		ResourceIds:       resourceIDList,
 		MaxResults:        &maxResults,
 		ScalableDimension: aws.String("sagemaker:variant:DesiredInstanceCount"),
 		ServiceNamespace:  aws.String("sagemaker"),
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 
 	if describeError != nil {
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeScalableTargetsOutput, describeError
+	return describeResponse, describeError
 }
 
 // DescribeScalingPolicies returns the scaling policy description filtered on PolicyName and a single ResourceID
@@ -147,7 +148,7 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 	var maxResults int64 = 1
 
 	// TODO: Remove hardcoded values, might need to construct the inputs
-	describeRequest := c.innerClient.DescribeScalingPoliciesRequest(&applicationautoscaling.DescribeScalingPoliciesInput{
+	describeRequest, describeResponse := c.innerClient.DescribeScalingPoliciesRequest(&applicationautoscaling.DescribeScalingPoliciesInput{
 		PolicyNames:       policyNameList,
 		MaxResults:        &maxResults,
 		ResourceId:        &resourceID,
@@ -155,15 +156,15 @@ func (c *applicationAutoscalingClientWrapper) DescribeScalingPolicies(ctx contex
 		ServiceNamespace:  aws.String("sagemaker"),
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 
 	if describeError != nil {
 		return scalingPolicyDescription, describeError
 	}
 
 	// Review: Slightly Hacky, but valid
-	if len(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies) == 1 {
-		scalingPolicyDescription = &(describeResponse.DescribeScalingPoliciesOutput.ScalingPolicies[0])
+	if len(describeResponse.ScalingPolicies) == 1 {
+		scalingPolicyDescription = describeResponse.ScalingPolicies[0]
 	} else {
 		scalingPolicyDescription = nil
 	}

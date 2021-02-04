@@ -19,12 +19,13 @@ package hostingautoscalingpolicy
 import (
 	. "container/list"
 	"context"
+	"time"
+
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
-	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,7 +43,7 @@ import (
 var _ = Describe("Reconciling HAP while failing to get the Kubernetes object", func() {
 
 	var (
-		applicationAutoscalingClient applicationautoscalingiface.ClientAPI
+		applicationAutoscalingClient applicationautoscalingiface.ApplicationAutoScalingAPI
 	)
 
 	BeforeEach(func() {
@@ -709,7 +710,7 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 	})
 })
 
-func createReconciler(k8sClient k8sclient.Client, applicationAutoscalingClient applicationautoscalingiface.ClientAPI) Reconciler {
+func createReconciler(k8sClient k8sclient.Client, applicationAutoscalingClient applicationautoscalingiface.ApplicationAutoScalingAPI) Reconciler {
 
 	return Reconciler{
 		Client:                             k8sClient,

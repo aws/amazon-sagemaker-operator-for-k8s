@@ -50,7 +50,7 @@ import (
 var _ = Describe("Reconciling a HostingDeployment while failing to get the Kubernetes job", func() {
 
 	var (
-		sageMakerClient sagemakeriface.ClientAPI
+		sageMakerClient sagemakeriface.SageMakerAPI
 	)
 
 	BeforeEach(func() {
@@ -873,7 +873,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 })
 
-func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) *HostingDeploymentReconciler {
+func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string) *HostingDeploymentReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return &HostingDeploymentReconciler{
@@ -887,7 +887,7 @@ func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMake
 	}
 }
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, modelReconciler ModelReconciler, endpointConfigReconciler EndpointConfigReconciler, pollIntervalStr string) *HostingDeploymentReconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, modelReconciler ModelReconciler, endpointConfigReconciler EndpointConfigReconciler, pollIntervalStr string) *HostingDeploymentReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return &HostingDeploymentReconciler{

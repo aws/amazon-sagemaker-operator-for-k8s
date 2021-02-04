@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	awsrequest "github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
@@ -100,7 +101,7 @@ type SageMakerClientWrapper interface {
 }
 
 // NewSageMakerClientWrapper creates a SageMaker wrapper around an existing client.
-func NewSageMakerClientWrapper(innerClient sagemakeriface.ClientAPI) SageMakerClientWrapper {
+func NewSageMakerClientWrapper(innerClient sagemakeriface.SageMakerAPI) SageMakerClientWrapper {
 	return &sageMakerClientWrapper{
 		innerClient: innerClient,
 	}
@@ -113,17 +114,17 @@ type SageMakerClientWrapperProvider func(aws.Config) SageMakerClientWrapper
 type sageMakerClientWrapper struct {
 	SageMakerClientWrapper
 
-	innerClient sagemakeriface.ClientAPI
+	innerClient sagemakeriface.SageMakerAPI
 }
 
 // Return a training job description or nil if error or does not exist.
 func (c *sageMakerClientWrapper) DescribeTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.DescribeTrainingJobOutput, error) {
 
-	describeRequest := c.innerClient.DescribeTrainingJobRequest(&sagemaker.DescribeTrainingJobInput{
+	describeRequest, describeResponse := c.innerClient.DescribeTrainingJobRequest(&sagemaker.DescribeTrainingJobInput{
 		TrainingJobName: &trainingJobName,
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 
 	if describeError != nil {
 		if c.isDescribeTrainingJob404Error(describeError) {
@@ -132,21 +133,21 @@ func (c *sageMakerClientWrapper) DescribeTrainingJob(ctx context.Context, traini
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeTrainingJobOutput, describeError
+	return describeResponse, describeError
 }
 
 // Create a training job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateTrainingJob(ctx context.Context, trainingJob *sagemaker.CreateTrainingJobInput) (*sagemaker.CreateTrainingJobOutput, error) {
 
-	createRequest := c.innerClient.CreateTrainingJobRequest(trainingJob)
+	createRequest, response := c.innerClient.CreateTrainingJobRequest(trainingJob)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+	awsrequest.AddToUserAgent(createRequest, controllers.SagemakerOnKubernetesUserAgentAddition)
 
-	response, err := createRequest.Send(ctx)
+	err := createRequest.Send()
 
 	if response != nil {
-		return response.CreateTrainingJobOutput, nil
+		return response, nil
 	}
 
 	return nil, err
@@ -154,17 +155,17 @@ func (c *sageMakerClientWrapper) CreateTrainingJob(ctx context.Context, training
 
 // Stops a training job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) StopTrainingJob(ctx context.Context, trainingJobName string) (*sagemaker.StopTrainingJobOutput, error) {
-	stopRequest := c.innerClient.StopTrainingJobRequest(&sagemaker.StopTrainingJobInput{
+	stopRequest, stopResponse := c.innerClient.StopTrainingJobRequest(&sagemaker.StopTrainingJobInput{
 		TrainingJobName: &trainingJobName,
 	})
 
-	stopResponse, stopError := stopRequest.Send(ctx)
+	stopError := stopRequest.Send()
 
 	if stopError != nil {
 		return nil, stopError
 	}
 
-	return stopResponse.StopTrainingJobOutput, nil
+	return stopResponse, nil
 }
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
@@ -180,11 +181,11 @@ func (c *sageMakerClientWrapper) isDescribeTrainingJob404Error(err error) bool {
 // Return a processing job description or nil if error or does not exist.
 func (c *sageMakerClientWrapper) DescribeProcessingJob(ctx context.Context, processingJobName string) (*sagemaker.DescribeProcessingJobOutput, error) {
 
-	describeRequest := c.innerClient.DescribeProcessingJobRequest(&sagemaker.DescribeProcessingJobInput{
+	describeRequest, describeResponse := c.innerClient.DescribeProcessingJobRequest(&sagemaker.DescribeProcessingJobInput{
 		ProcessingJobName: &processingJobName,
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 
 	if describeError != nil {
 		if c.isDescribeProcessingJob404Error(describeError) {
@@ -193,7 +194,7 @@ func (c *sageMakerClientWrapper) DescribeProcessingJob(ctx context.Context, proc
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeProcessingJobOutput, describeError
+	return describeResponse, describeError
 }
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
@@ -209,15 +210,15 @@ func (c *sageMakerClientWrapper) isDescribeProcessingJob404Error(err error) bool
 // Create a processing job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateProcessingJob(ctx context.Context, processingJob *sagemaker.CreateProcessingJobInput) (*sagemaker.CreateProcessingJobOutput, error) {
 
-	createRequest := c.innerClient.CreateProcessingJobRequest(processingJob)
+	createRequest, response := c.innerClient.CreateProcessingJobRequest(processingJob)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+	awsrequest.AddToUserAgent(createRequest, controllers.SagemakerOnKubernetesUserAgentAddition)
 
-	response, err := createRequest.Send(ctx)
+	err := createRequest.Send()
 
 	if err == nil {
-		return response.CreateProcessingJobOutput, nil
+		return response, nil
 	}
 
 	return nil, err
@@ -225,27 +226,27 @@ func (c *sageMakerClientWrapper) CreateProcessingJob(ctx context.Context, proces
 
 // Stops a processing job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) StopProcessingJob(ctx context.Context, processingJobName string) (*sagemaker.StopProcessingJobOutput, error) {
-	stopRequest := c.innerClient.StopProcessingJobRequest(&sagemaker.StopProcessingJobInput{
+	stopRequest, stopResponse := c.innerClient.StopProcessingJobRequest(&sagemaker.StopProcessingJobInput{
 		ProcessingJobName: &processingJobName,
 	})
 
-	stopResponse, stopError := stopRequest.Send(ctx)
+	stopError := stopRequest.Send()
 
 	if stopError != nil {
 		return nil, stopError
 	}
 
-	return stopResponse.StopProcessingJobOutput, nil
+	return stopResponse, nil
 }
 
 // Return a hyperparameter tuning job description or nil if error or does not exist.
 func (c *sageMakerClientWrapper) DescribeHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.DescribeHyperParameterTuningJobOutput, error) {
 
-	describeRequest := c.innerClient.DescribeHyperParameterTuningJobRequest(&sagemaker.DescribeHyperParameterTuningJobInput{
+	describeRequest, describeResponse := c.innerClient.DescribeHyperParameterTuningJobRequest(&sagemaker.DescribeHyperParameterTuningJobInput{
 		HyperParameterTuningJobName: &tuningJobName,
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 
 	if describeError != nil {
 		if c.isDescribeHyperParameterTuningJob404Error(describeError) {
@@ -254,21 +255,21 @@ func (c *sageMakerClientWrapper) DescribeHyperParameterTuningJob(ctx context.Con
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeHyperParameterTuningJobOutput, describeError
+	return describeResponse, describeError
 }
 
 // Create a hyperparameter tuning job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateHyperParameterTuningJob(ctx context.Context, tuningJob *sagemaker.CreateHyperParameterTuningJobInput) (*sagemaker.CreateHyperParameterTuningJobOutput, error) {
 
-	createRequest := c.innerClient.CreateHyperParameterTuningJobRequest(tuningJob)
+	createRequest, response := c.innerClient.CreateHyperParameterTuningJobRequest(tuningJob)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+	awsrequest.AddToUserAgent(createRequest, controllers.SagemakerOnKubernetesUserAgentAddition)
 
-	response, err := createRequest.Send(ctx)
+	err := createRequest.Send()
 
 	if response != nil {
-		return response.CreateHyperParameterTuningJobOutput, nil
+		return response, nil
 	}
 
 	return nil, err
@@ -276,26 +277,24 @@ func (c *sageMakerClientWrapper) CreateHyperParameterTuningJob(ctx context.Conte
 
 // Stops a hyperparameter tuning job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) StopHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.StopHyperParameterTuningJobOutput, error) {
-	stopRequest := c.innerClient.StopHyperParameterTuningJobRequest(&sagemaker.StopHyperParameterTuningJobInput{
+	stopRequest, stopResponse := c.innerClient.StopHyperParameterTuningJobRequest(&sagemaker.StopHyperParameterTuningJobInput{
 		HyperParameterTuningJobName: &tuningJobName,
 	})
 
-	stopResponse, stopError := stopRequest.Send(ctx)
+	stopError := stopRequest.Send()
 
 	if stopError != nil {
 		return nil, stopError
 	}
 
-	return stopResponse.StopHyperParameterTuningJobOutput, nil
+	return stopResponse, nil
 }
 
 // Returns a paginator for iterating through the training jobs associated with a given hyperparameter tuning job. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) HyperParameterTuningJobPaginator {
-	listRequest := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
+	_, paginator := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
 		HyperParameterTuningJobName: &tuningJobName,
 	})
-
-	paginator := sagemaker.NewListTrainingJobsForHyperParameterTuningJobPaginator(listRequest)
 
 	return &hyperParameterTuningJobPaginator{
 		paginator: &paginator,
@@ -316,11 +315,11 @@ func (c *sageMakerClientWrapper) isDescribeHyperParameterTuningJob404Error(err e
 // If the object is not found, return a nil description and nil error.
 func (c *sageMakerClientWrapper) DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error) {
 
-	describeRequest := c.innerClient.DescribeEndpointRequest(&sagemaker.DescribeEndpointInput{
+	describeRequest, describeResponse := c.innerClient.DescribeEndpointRequest(&sagemaker.DescribeEndpointInput{
 		EndpointName: &endpointName,
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 
 	if describeError != nil {
 		if c.isDescribeEndpoint404Error(describeError) {
@@ -329,7 +328,7 @@ func (c *sageMakerClientWrapper) DescribeEndpoint(ctx context.Context, endpointN
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeEndpointOutput, describeError
+	return describeResponse, describeError
 }
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
@@ -345,15 +344,15 @@ func (c *sageMakerClientWrapper) isDescribeEndpoint404Error(err error) bool {
 // Create an Endpoint. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error) {
 
-	createRequest := c.innerClient.CreateEndpointRequest(endpoint)
+	createRequest, response := c.innerClient.CreateEndpointRequest(endpoint)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+	awsrequest.AddToUserAgent(createRequest, controllers.SagemakerOnKubernetesUserAgentAddition)
 
-	response, err := createRequest.Send(ctx)
+	err := createRequest.Send()
 
 	if response != nil {
-		return response.CreateEndpointOutput, nil
+		return response, nil
 	}
 
 	return nil, err
@@ -361,45 +360,45 @@ func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *s
 
 // Delete an Endpoint. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) DeleteEndpoint(ctx context.Context, endpointName *string) (*sagemaker.DeleteEndpointOutput, error) {
-	deleteRequest := c.innerClient.DeleteEndpointRequest(&sagemaker.DeleteEndpointInput{
+	deleteRequest, deleteResponse := c.innerClient.DeleteEndpointRequest(&sagemaker.DeleteEndpointInput{
 		EndpointName: endpointName,
 	})
 
-	deleteResponse, deleteError := deleteRequest.Send(ctx)
+	deleteError := deleteRequest.Send()
 
 	if deleteError != nil {
 		return nil, deleteError
 	}
 
-	return deleteResponse.DeleteEndpointOutput, nil
+	return deleteResponse, nil
 }
 
 // Delete an Endpoint. Returns the response output or nil if error.
-func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string, retainAllVariantProperties *bool, excludeRetainedVariantProperties []sagemaker.VariantProperty) (*sagemaker.UpdateEndpointOutput, error) {
-	updateRequest := c.innerClient.UpdateEndpointRequest(&sagemaker.UpdateEndpointInput{
+func (c *sageMakerClientWrapper) UpdateEndpoint(ctx context.Context, endpointName, endpointConfigName string, retainAllVariantProperties *bool, excludeRetainedVariantProperties []*sagemaker.VariantProperty) (*sagemaker.UpdateEndpointOutput, error) {
+	updateRequest, updateResponse := c.innerClient.UpdateEndpointRequest(&sagemaker.UpdateEndpointInput{
 		EndpointName:                     &endpointName,
 		EndpointConfigName:               &endpointConfigName,
 		RetainAllVariantProperties:       retainAllVariantProperties,
 		ExcludeRetainedVariantProperties: excludeRetainedVariantProperties,
 	})
 
-	updateResponse, updateError := updateRequest.Send(ctx)
+	updateError := updateRequest.Send()
 
 	if updateError != nil {
 		return nil, updateError
 	}
 
-	return updateResponse.UpdateEndpointOutput, nil
+	return updateResponse, nil
 }
 
 // Return a model description or nil if error.
 // If the object is not found, return a nil description and nil error.
 func (c *sageMakerClientWrapper) DescribeModel(ctx context.Context, modelName string) (*sagemaker.DescribeModelOutput, error) {
-	describeRequest := c.innerClient.DescribeModelRequest(&sagemaker.DescribeModelInput{
+	describeRequest, describeResponse := c.innerClient.DescribeModelRequest(&sagemaker.DescribeModelInput{
 		ModelName: &modelName,
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 	if describeError != nil {
 		if c.isDescribeModel404Error(describeError) {
 			return nil, nil
@@ -407,7 +406,7 @@ func (c *sageMakerClientWrapper) DescribeModel(ctx context.Context, modelName st
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeModelOutput, describeError
+	return describeResponse, describeError
 }
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
@@ -423,15 +422,15 @@ func (c *sageMakerClientWrapper) isDescribeModel404Error(err error) bool {
 // Create a model. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateModel(ctx context.Context, model *sagemaker.CreateModelInput) (*sagemaker.CreateModelOutput, error) {
 
-	createRequest := c.innerClient.CreateModelRequest(model)
+	createRequest, response := c.innerClient.CreateModelRequest(model)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+	awsrequest.AddToUserAgent(createRequest, controllers.SagemakerOnKubernetesUserAgentAddition)
 
-	response, err := createRequest.Send(ctx)
+	err := createRequest.Send()
 
 	if response != nil {
-		return response.CreateModelOutput, nil
+		return response, nil
 	}
 
 	return nil, err
@@ -441,24 +440,24 @@ func (c *sageMakerClientWrapper) CreateModel(ctx context.Context, model *sagemak
 // If the object is not found, return a nil description and nil error.
 func (c *sageMakerClientWrapper) DeleteModel(ctx context.Context, model *sagemaker.DeleteModelInput) (*sagemaker.DeleteModelOutput, error) {
 
-	deleteRequest := c.innerClient.DeleteModelRequest(model)
+	deleteRequest, deleteResponse := c.innerClient.DeleteModelRequest(model)
 
-	deleteResponse, deleteError := deleteRequest.Send(ctx)
+	deleteError := deleteRequest.Send()
 
 	if deleteError != nil {
 		return nil, deleteError
 	}
-	return deleteResponse.DeleteModelOutput, deleteError
+	return deleteResponse, deleteError
 }
 
 // Return a endpointconfig description or nil if error.
 // If the object is not found, return a nil description and nil error.
 func (c *sageMakerClientWrapper) DescribeEndpointConfig(ctx context.Context, endpointconfigName string) (*sagemaker.DescribeEndpointConfigOutput, error) {
-	describeRequest := c.innerClient.DescribeEndpointConfigRequest(&sagemaker.DescribeEndpointConfigInput{
+	describeRequest, describeResponse := c.innerClient.DescribeEndpointConfigRequest(&sagemaker.DescribeEndpointConfigInput{
 		EndpointConfigName: &endpointconfigName,
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 	if describeError != nil {
 		if c.isDescribeEndpointConfig404Error(describeError) {
 			return nil, nil
@@ -466,7 +465,7 @@ func (c *sageMakerClientWrapper) DescribeEndpointConfig(ctx context.Context, end
 		return nil, describeError
 	}
 
-	return describeResponse.DescribeEndpointConfigOutput, describeError
+	return describeResponse, describeError
 }
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
@@ -482,15 +481,15 @@ func (c *sageMakerClientWrapper) isDescribeEndpointConfig404Error(err error) boo
 // Create an EndpointConfig. Returns the response output or nil if error.
 func (c *sageMakerClientWrapper) CreateEndpointConfig(ctx context.Context, endpointconfig *sagemaker.CreateEndpointConfigInput) (*sagemaker.CreateEndpointConfigOutput, error) {
 
-	createRequest := c.innerClient.CreateEndpointConfigRequest(endpointconfig)
+	createRequest, response := c.innerClient.CreateEndpointConfigRequest(endpointconfig)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(createRequest.Request, controllers.SagemakerOnKubernetesUserAgentAddition)
+	awsrequest.AddToUserAgent(createRequest, controllers.SagemakerOnKubernetesUserAgentAddition)
 
-	response, err := createRequest.Send(ctx)
+	err := createRequest.Send()
 
 	if response != nil {
-		return response.CreateEndpointConfigOutput, nil
+		return response, nil
 	}
 
 	return nil, err
@@ -499,14 +498,14 @@ func (c *sageMakerClientWrapper) CreateEndpointConfig(ctx context.Context, endpo
 //  Return a EndpointConfig delete response output or nil if error
 //  If the EndpointConfig is not found, return a nil description and nil error
 func (c *sageMakerClientWrapper) DeleteEndpointConfig(ctx context.Context, endpointConfig *sagemaker.DeleteEndpointConfigInput) (*sagemaker.DeleteEndpointConfigOutput, error) {
-	deleteRequest := c.innerClient.DeleteEndpointConfigRequest(endpointConfig)
+	deleteRequest, deleteResponse := c.innerClient.DeleteEndpointConfigRequest(endpointConfig)
 
-	deleteResponse, deleteError := deleteRequest.Send(ctx)
+	deleteError := deleteRequest.Send()
 	if deleteError != nil {
 		return nil, deleteError
 	}
 
-	return deleteResponse.DeleteEndpointConfigOutput, deleteError
+	return deleteResponse, deleteError
 }
 
 // The SageMaker API does not conform to the HTTP standard. The following methods detect

@@ -281,7 +281,7 @@ func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.Hype
 }
 
 // ConvertDebugRuleEvaluationStatusesFromSageMaker converts an array of SageMaker DebugRuleEvaluationStatus to a Kubernetes SageMaker type.
-func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []sagemaker.DebugRuleEvaluationStatus) ([]commonv1.DebugRuleEvaluationStatus, error) {
+func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []*sagemaker.DebugRuleEvaluationStatus) ([]commonv1.DebugRuleEvaluationStatus, error) {
 	var convertedStatuses []commonv1.DebugRuleEvaluationStatus
 
 	for _, status := range source {

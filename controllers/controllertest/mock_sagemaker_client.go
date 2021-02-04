@@ -26,6 +26,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	awsrequest "github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 )
@@ -558,7 +559,7 @@ func (m *MockSageMakerClientBuilder) GetAddedResponsesLen() int {
 }
 
 // Create a mock SageMaker API client given configuration.
-func (m *MockSageMakerClientBuilder) Build() sagemakeriface.ClientAPI {
+func (m *MockSageMakerClientBuilder) Build() sagemakeriface.SageMakerAPI {
 
 	if m.testReporter == nil {
 		panic("MockSageMakerClientBuilder requires non-nil test reporter.")
@@ -579,7 +580,7 @@ func (m *MockSageMakerClientBuilder) Build() sagemakeriface.ClientAPI {
 
 // Mock SageMaker API client.
 type mockSageMakerClient struct {
-	sagemakeriface.ClientAPI
+	sagemakeriface.SageMakerAPI
 
 	// List of responses to use when responding to API calls. They are returned in same order
 	// as they are stored in the list.
@@ -592,7 +593,7 @@ type mockSageMakerClient struct {
 	testReporter GinkgoTInterface
 }
 
-func (m *mockSageMakerClient) mockRequestBuilder() *aws.Request {
+func (m *mockSageMakerClient) mockRequestBuilder() *awsrequest.Request {
 	return &aws.Request{
 		HTTPRequest: &http.Request{
 			Header: map[string][]string{},
@@ -637,11 +638,11 @@ func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTra
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateTrainingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateTrainingJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextCreateTrainingJobResponse.data
 		})
 	}
@@ -682,11 +683,11 @@ func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.Describ
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeTrainingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeTrainingJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDescribeTrainingJobResponse.data
 		})
 	}
@@ -727,11 +728,11 @@ func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(i
 	mockRequest := m.mockRequestBuilder()
 
 	if nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.data
 		})
 	}
@@ -784,11 +785,11 @@ func (m mockSageMakerClient) StopTrainingJobRequest(input *sagemaker.StopTrainin
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopTrainingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopTrainingJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextStopTrainingJobResponse.data
 		})
 	}
@@ -829,11 +830,11 @@ func (m mockSageMakerClient) DescribeHyperParameterTuningJobRequest(input *sagem
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeHyperParameterTuningJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeHyperParameterTuningJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDescribeHyperParameterTuningJobResponse.data
 		})
 	}
@@ -874,11 +875,11 @@ func (m mockSageMakerClient) CreateHyperParameterTuningJobRequest(input *sagemak
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateHyperParameterTuningJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateHyperParameterTuningJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextCreateHyperParameterTuningJobResponse.data
 		})
 	}
@@ -919,11 +920,11 @@ func (m mockSageMakerClient) StopHyperParameterTuningJobRequest(input *sagemaker
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopHyperParameterTuningJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopHyperParameterTuningJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextStopHyperParameterTuningJobResponse.data
 		})
 	}
@@ -964,11 +965,11 @@ func (m mockSageMakerClient) DescribeEndpointRequest(input *sagemaker.DescribeEn
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeEndpointResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDescribeEndpointResponse.data
 		})
 	}
@@ -1009,11 +1010,11 @@ func (m mockSageMakerClient) DeleteModelRequest(input *sagemaker.DeleteModelInpu
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDeleteModelResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDeleteModelResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDeleteModelResponse.data
 		})
 	}
@@ -1054,11 +1055,11 @@ func (m mockSageMakerClient) DescribeModelRequest(input *sagemaker.DescribeModel
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeModelResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeModelResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDescribeModelResponse.data
 		})
 	}
@@ -1099,11 +1100,11 @@ func (m mockSageMakerClient) CreateModelRequest(input *sagemaker.CreateModelInpu
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateModelResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateModelResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextCreateModelResponse.data
 		})
 	}
@@ -1144,11 +1145,11 @@ func (m mockSageMakerClient) DescribeTransformJobRequest(input *sagemaker.Descri
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeTransformJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeTransformJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDescribeTransformJobResponse.data
 		})
 	}
@@ -1198,11 +1199,11 @@ func (m mockSageMakerClient) StopTransformJobRequest(input *sagemaker.StopTransf
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopTransformJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopTransformJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextStopTransformJobResponse.data
 		})
 	}
@@ -1243,11 +1244,11 @@ func (m mockSageMakerClient) DescribeEndpointConfigRequest(input *sagemaker.Desc
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeEndpointConfigResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeEndpointConfigResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDescribeEndpointConfigResponse.data
 		})
 	}
@@ -1288,11 +1289,11 @@ func (m mockSageMakerClient) CreateEndpointConfigRequest(input *sagemaker.Create
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateEndpointConfigResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateEndpointConfigResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextCreateEndpointConfigResponse.data
 		})
 	}
@@ -1333,11 +1334,11 @@ func (m mockSageMakerClient) UpdateEndpointRequest(input *sagemaker.UpdateEndpoi
 	mockRequest := m.mockRequestBuilder()
 
 	if nextUpdateEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextUpdateEndpointResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextUpdateEndpointResponse.data
 		})
 	}
@@ -1378,11 +1379,11 @@ func (m mockSageMakerClient) DeleteEndpointConfigRequest(input *sagemaker.Delete
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDeleteEndpointConfigResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDeleteEndpointConfigResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDeleteEndpointConfigResponse.data
 		})
 	}
@@ -1423,11 +1424,11 @@ func (m mockSageMakerClient) CreateEndpointRequest(input *sagemaker.CreateEndpoi
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateEndpointResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextCreateEndpointResponse.data
 		})
 	}
@@ -1468,11 +1469,11 @@ func (m mockSageMakerClient) DeleteEndpointRequest(input *sagemaker.DeleteEndpoi
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDeleteEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDeleteEndpointResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDeleteEndpointResponse.data
 		})
 	}
@@ -1513,11 +1514,11 @@ func (m mockSageMakerClient) CreateProcessingJobRequest(input *sagemaker.CreateP
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateProcessingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateProcessingJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextCreateProcessingJobResponse.data
 		})
 	}
@@ -1558,11 +1559,11 @@ func (m mockSageMakerClient) DescribeProcessingJobRequest(input *sagemaker.Descr
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeProcessingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeProcessingJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextDescribeProcessingJobResponse.data
 		})
 	}
@@ -1603,11 +1604,11 @@ func (m mockSageMakerClient) StopProcessingJobRequest(input *sagemaker.StopProce
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopProcessingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopProcessingJobResponse.err
 		})
 	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Data = nextStopProcessingJobResponse.data
 		})
 	}

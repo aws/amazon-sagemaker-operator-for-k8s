@@ -23,6 +23,7 @@ import (
 	"time"
 
 	. "container/list"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -724,7 +725,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		var actualEndpointResolver *aws.EndpointResolver = nil
 
-		endpointInspector := func(awsConfig aws.Config) sagemakeriface.ClientAPI {
+		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
 			return sageMakerClient
 		}
@@ -767,7 +768,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		var actualEndpointResolver *aws.EndpointResolver = nil
 
-		endpointInspector := func(awsConfig aws.Config) sagemakeriface.ClientAPI {
+		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
 			return sageMakerClient
 		}
@@ -813,7 +814,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		var actualEndpointResolver *aws.EndpointResolver = nil
 
-		endpointInspector := func(awsConfig aws.Config) sagemakeriface.ClientAPI {
+		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
 			return sageMakerClient
 		}
@@ -837,8 +838,8 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 })
 
 // Helper function to create a reconciler.
-func createTransformJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalSeconds int64) BatchTransformJobReconciler {
-	provider := func(_ aws.Config) sagemakeriface.ClientAPI {
+func createTransformJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalSeconds int64) BatchTransformJobReconciler {
+	provider := func(_ aws.Config) sagemakeriface.SageMakerAPI {
 		return sageMakerClient
 	}
 

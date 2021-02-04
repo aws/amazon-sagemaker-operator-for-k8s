@@ -41,28 +41,28 @@ func CreateMockAwsConfigLoader() AwsConfigLoader {
 }
 
 // Create a provider that creates a mock SageMaker client.
-func CreateMockSageMakerClientProvider(sageMakerClient sagemakeriface.ClientAPI) SageMakerClientProvider {
-	return func(_ aws.Config) sagemakeriface.ClientAPI {
+func CreateMockSageMakerClientProvider(sageMakerClient sagemakeriface.SageMakerAPI) SageMakerClientProvider {
+	return func(_ aws.Config) sagemakeriface.SageMakerAPI {
 		return sageMakerClient
 	}
 }
 
 // Create a provider that creates a mock SageMaker client wrapper.
-func CreateMockSageMakerClientWrapperProvider(sageMakerClient sagemakeriface.ClientAPI) clientwrapper.SageMakerClientWrapperProvider {
+func CreateMockSageMakerClientWrapperProvider(sageMakerClient sagemakeriface.SageMakerAPI) clientwrapper.SageMakerClientWrapperProvider {
 	return func(_ aws.Config) clientwrapper.SageMakerClientWrapper {
 		return clientwrapper.NewSageMakerClientWrapper(sageMakerClient)
 	}
 }
 
 // CreateMockAutoscalingClientProvider Create a provider that creates a mock ApplicationAutoscaling client.
-func CreateMockAutoscalingClientProvider(applicationAutoscalingClient applicationautoscalingiface.ClientAPI) ApplicationAutoscalingClientProvider {
-	return func(_ aws.Config) applicationautoscalingiface.ClientAPI {
+func CreateMockAutoscalingClientProvider(applicationAutoscalingClient applicationautoscalingiface.ApplicationAutoScalingAPI) ApplicationAutoscalingClientProvider {
+	return func(_ aws.Config) applicationautoscalingiface.ApplicationAutoScalingAPI {
 		return applicationAutoscalingClient
 	}
 }
 
 // CreateMockAutoscalingClientWrapperProvider Creates a provider that creates a mock Application client wrapper.
-func CreateMockAutoscalingClientWrapperProvider(applicationAutoscalingClient applicationautoscalingiface.ClientAPI) clientwrapper.ApplicationAutoscalingClientWrapperProvider {
+func CreateMockAutoscalingClientWrapperProvider(applicationAutoscalingClient applicationautoscalingiface.ApplicationAutoScalingAPI) clientwrapper.ApplicationAutoscalingClientWrapperProvider {
 	return func(_ aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
 		return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationAutoscalingClient)
 	}

@@ -44,7 +44,7 @@ import (
 var _ = Describe("Reconciling an model while failing to get the Kubernetes job", func() {
 
 	var (
-		sageMakerClient sagemakeriface.ClientAPI
+		sageMakerClient sagemakeriface.SageMakerAPI
 	)
 
 	BeforeEach(func() {
@@ -183,7 +183,7 @@ var _ = Describe("Reconciling a model that is different than the spec", func() {
 		receivedRequests     List
 		model                *modelv1.Model
 		outOfDateDescription sagemaker.DescribeModelOutput
-		sageMakerClient      sagemakeriface.ClientAPI
+		sageMakerClient      sagemakeriface.SageMakerAPI
 		controller           ModelReconciler
 		request              ctrl.Request
 	)
@@ -583,7 +583,7 @@ var _ = Describe("Reconciling a model with finalizer that is being deleted", fun
 	})
 })
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) ModelReconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string) ModelReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return ModelReconciler{

@@ -46,7 +46,7 @@ import (
 
 var _ = Describe("Reconciling a HyperParameterTuningJob while failing to get the Kubernetes job", func() {
 	var (
-		sageMakerClient sagemakeriface.ClientAPI
+		sageMakerClient sagemakeriface.SageMakerAPI
 
 		// The custom HPO reconciler to use
 		reconciler *Reconciler
@@ -639,7 +639,7 @@ func createMockHPOTrainingJobSpawnerProvider(spawner HPOTrainingJobSpawner) HPOT
 	}
 }
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string, hpoJobSpawner HPOTrainingJobSpawner) *Reconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string, hpoJobSpawner HPOTrainingJobSpawner) *Reconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return &Reconciler{

@@ -43,7 +43,7 @@ import (
 
 var _ = Describe("Reconciling a TrainingJob while failing to get the Kubernetes job", func() {
 	var (
-		sageMakerClient sagemakeriface.ClientAPI
+		sageMakerClient sagemakeriface.SageMakerAPI
 
 		// The custom HPO reconciler to use
 		reconciler *Reconciler
@@ -909,7 +909,7 @@ var _ = Describe("Reconciling a TrainingJob that exists", func() {
 
 })
 
-func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) *Reconciler {
+func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string) *Reconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return &Reconciler{
@@ -921,7 +921,7 @@ func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMake
 	}
 }
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) *Reconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string) *Reconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return &Reconciler{

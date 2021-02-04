@@ -19,8 +19,8 @@ package controllers
 import (
 	"github.com/adammck/venv"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/service/sagemaker"
+	// "github.com/aws/aws-sdk-go/aws/endpoints"
+	// "github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 // AwsConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
@@ -46,7 +46,7 @@ func NewAwsConfigLoaderForEnv(env venv.Env) AwsConfigLoader {
 // variable specified by DefaultSageMakerEndpointEnvKey overrides the endpoint if it is set.
 func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSpecificEndpointOverride *string) (aws.Config, error) {
 	var config aws.Config
-	var err error
+	// var err error
 
 	// if config, err = external.LoadDefaultAWSConfig(external.WithRegion(regionOverride)); err != nil {
 	// 	return aws.Config{}, err
@@ -54,27 +54,27 @@ func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSp
 
 	// Override SageMaker endpoint.
 	// Precendence is given to job override then operator override (from the environment variable).
-	var customEndpoint string
-	if jobSpecificEndpointOverride != nil && *jobSpecificEndpointOverride != "" {
-		customEndpoint = *jobSpecificEndpointOverride
-	} else if operatorEndpointOverride := l.Env.Getenv(DefaultSageMakerEndpointEnvKey); operatorEndpointOverride != "" {
-		customEndpoint = operatorEndpointOverride
-	}
+	// var customEndpoint string
+	// if jobSpecificEndpointOverride != nil && *jobSpecificEndpointOverride != "" {
+	// 	customEndpoint = *jobSpecificEndpointOverride
+	// } else if operatorEndpointOverride := l.Env.Getenv(DefaultSageMakerEndpointEnvKey); operatorEndpointOverride != "" {
+	// 	customEndpoint = operatorEndpointOverride
+	// }
 
 	// If a custom endpoint is requested, install custom resolver for SageMaker into config.
-	if customEndpoint != "" {
-		customSageMakerResolver := func(service, region string) (aws.Endpoint, error) {
-			if service == sagemaker.EndpointsID {
-				return aws.Endpoint{
-					URL: customEndpoint,
-				}, nil
-			}
+	// if customEndpoint != "" {
+	// 	customSageMakerResolver := func(service, region string) (aws.Endpoint, error) {
+	// 		if service == sagemaker.EndpointsID {
+	// 			return aws.Endpoint{
+	// 				URL: customEndpoint,
+	// 			}, nil
+	// 		}
 
-			return endpoints.DefaultResolver().ResolveEndpoint(service, region)
-		}
+	// 		return endpoints.DefaultResolver().ResolveEndpoint(service, region)
+	// 	}
 
-		config.EndpointResolver = aws.EndpointResolverFunc(customSageMakerResolver)
-	}
+	// 	config.EndpointResolver = aws.EndpointResolverFunc(customSageMakerResolver)
+	// }
 
 	return config, nil
 }

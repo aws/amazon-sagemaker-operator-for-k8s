@@ -67,7 +67,7 @@ func NewEndpointConfigReconciler(client client.Client, log logr.Logger, pollInte
 		Client:       client,
 		Log:          log,
 		PollInterval: pollInterval,
-		createSageMakerClient: func(awsConfig aws.Config) sagemakeriface.ClientAPI {
+		createSageMakerClient: func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			return sagemaker.New(awsConfig)
 		},
 		awsConfigLoader: NewAwsConfigLoader(),

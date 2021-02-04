@@ -70,10 +70,10 @@ const (
 )
 
 // SageMakerClientProvider is a Type for function that returns a SageMaker client. Used for mocking.
-type SageMakerClientProvider func(aws.Config) sagemakeriface.ClientAPI
+type SageMakerClientProvider func(aws.Config) sagemakeriface.SageMakerAPI
 
 // ApplicationAutoscalingClientProvider is a Type for function that returns a ApplicationAutoscaling client. Used for mocking.
-type ApplicationAutoscalingClientProvider func(aws.Config) applicationautoscalingiface.ClientAPI
+type ApplicationAutoscalingClientProvider func(aws.Config) applicationautoscalingiface.ApplicationAutoScalingAPI
 
 // RequeueIfError requeues if an error is found.
 func RequeueIfError(err error) (ctrl.Result, error) {
