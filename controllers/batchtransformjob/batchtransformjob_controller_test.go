@@ -925,7 +925,7 @@ func createDescriptionFromSmTransformJob(job *batchtransformjobv1.BatchTransform
 			DataSource: &sagemaker.TransformDataSource{
 				S3DataSource: &sagemaker.TransformS3DataSource{
 					S3DataType: &job.Spec.TransformInput.DataSource.S3DataSource.S3DataType,
-					S3Uri: job.Spec.TransformInput.DataSource.S3DataSource.S3Uri,
+					S3Uri:      job.Spec.TransformInput.DataSource.S3DataSource.S3Uri,
 				},
 			},
 		},

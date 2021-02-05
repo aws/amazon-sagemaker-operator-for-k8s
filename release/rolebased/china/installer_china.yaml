@@ -117,15 +117,10 @@ spec:
                     s3DataSource:
                       properties:
                         s3DataType:
-                          allOf:
-                          - enum:
-                            - S3Prefix
-                            - ManifestFile
-                            - AugmentedManifestFile
-                          - enum:
-                            - S3Prefix
-                            - ManifestFile
-                            - AugmentedManifestFile
+                          enum:
+                          - S3Prefix
+                          - ManifestFile
+                          - AugmentedManifestFile
                           type: string
                         s3Uri:
                           pattern: ^(https|s3)://([^/]+)/?(.*)$

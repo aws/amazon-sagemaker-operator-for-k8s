@@ -24,7 +24,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	awsrequest "github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
@@ -594,14 +593,14 @@ type mockSageMakerClient struct {
 }
 
 func (m *mockSageMakerClient) mockRequestBuilder() *awsrequest.Request {
-	return &aws.Request{
+	return &awsrequest.Request{
 		HTTPRequest: &http.Request{
 			Header: map[string][]string{},
 		},
 		HTTPResponse: &http.Response{},
-		Retryer:      &aws.NoOpRetryer{},
+		Retryer:      nil,
 		// Required for pagination operation.
-		Operation: &aws.Operation{
+		Operation: &awsrequest.Operation{
 			Paginator: nil,
 		},
 	}
@@ -609,7 +608,7 @@ func (m *mockSageMakerClient) mockRequestBuilder() *awsrequest.Request {
 
 // Mock CreateTrainingJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type CreateTrainingJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTrainingJobInput) sagemaker.CreateTrainingJobRequest {
+func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTrainingJobInput) (*awsrequest.Request, *sagemaker.CreateTrainingJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -647,14 +646,12 @@ func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTra
 		})
 	}
 
-	return sagemaker.CreateTrainingJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DescribeTrainingJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DescribeTrainingJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.DescribeTrainingJobInput) sagemaker.DescribeTrainingJobRequest {
+func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.DescribeTrainingJobInput) (*awsrequest.Request, *sagemaker.DescribeTrainingJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -692,71 +689,70 @@ func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.Describ
 		})
 	}
 
-	return sagemaker.DescribeTrainingJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
+// TODO : GoSDK V1 : Paginator
 // Mock ListTrainingJobsForHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type listTrainingJobsForHyperParameterTuningJobResponse, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest {
+// func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest {
 
-	m.requests.PushBack(input)
+// 	m.requests.PushBack(input)
 
-	front := m.responses.Front()
+// 	front := m.responses.Front()
 
-	var nextResponse interface{}
-	if front == nil {
-		message := "Not enough listTrainingJobsForHyperParameterTuningJobResponse responses provided for test"
-		nextResponse = listTrainingJobsForHyperParameterTuningJobResponse{
-			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
-		}
-		m.testReporter.Error(message)
-	} else {
-		nextResponse = front.Value
-		m.responses.Remove(front)
-	}
+// 	var nextResponse interface{}
+// 	if front == nil {
+// 		message := "Not enough listTrainingJobsForHyperParameterTuningJobResponse responses provided for test"
+// 		nextResponse = listTrainingJobsForHyperParameterTuningJobResponse{
+// 			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+// 		}
+// 		m.testReporter.Error(message)
+// 	} else {
+// 		nextResponse = front.Value
+// 		m.responses.Remove(front)
+// 	}
 
-	nextListTrainingJobsForHyperParameterTuningJobResponseResponse, ok := nextResponse.(listTrainingJobsForHyperParameterTuningJobResponse)
-	if !ok {
-		message := "listTrainingJobsForHyperParameterTuningJobResponse request created, next response is not of type ListTrainingJobsForHyperParameterTuningJobResponseOutput"
-		nextListTrainingJobsForHyperParameterTuningJobResponseResponse = listTrainingJobsForHyperParameterTuningJobResponse{
-			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
-		}
-	}
+// 	nextListTrainingJobsForHyperParameterTuningJobResponseResponse, ok := nextResponse.(listTrainingJobsForHyperParameterTuningJobResponse)
+// 	if !ok {
+// 		message := "listTrainingJobsForHyperParameterTuningJobResponse request created, next response is not of type ListTrainingJobsForHyperParameterTuningJobResponseOutput"
+// 		nextListTrainingJobsForHyperParameterTuningJobResponseResponse = listTrainingJobsForHyperParameterTuningJobResponse{
+// 			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+// 		}
+// 	}
 
-	mockRequest := m.mockRequestBuilder()
+// 	mockRequest := m.mockRequestBuilder()
 
-	if nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.data
-		})
-	}
+// 	if nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err != nil {
+// 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
+// 			r.Error = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err
+// 		})
+// 	} else {
+// 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
+// 			r.Data = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.data
+// 		})
+// 	}
 
-	// Required for pagination operation. I do not recommend that you test actual pagination
-	// in unit tests, as I imagine the Copy field will have to be filled out for every time you call
-	// paginator.Next.
-	copyFn := func(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest {
-		return sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest{
-			Request: mockRequest,
-			Input:   input,
-			Copy:    nil,
-		}
-	}
+// 	// Required for pagination operation. I do not recommend that you test actual pagination
+// 	// in unit tests, as I imagine the Copy field will have to be filled out for every time you call
+// 	// paginator.Next.
+// 	copyFn := func(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest {
+// 		return sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest{
+// 			Request: mockRequest,
+// 			Input:   input,
+// 			Copy:    nil,
+// 		}
+// 	}
 
-	return sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest{
-		Request: mockRequest,
-		Copy:    copyFn,
-	}
-}
+// 	return sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest{
+// 		Request: mockRequest,
+// 		Copy:    copyFn,
+// 	}
+// }
 
 // Mock StopTrainingJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type StopTrainingJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) StopTrainingJobRequest(input *sagemaker.StopTrainingJobInput) sagemaker.StopTrainingJobRequest {
+func (m mockSageMakerClient) StopTrainingJobRequest(input *sagemaker.StopTrainingJobInput) (*awsrequest.Request, *sagemaker.StopTrainingJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -794,14 +790,12 @@ func (m mockSageMakerClient) StopTrainingJobRequest(input *sagemaker.StopTrainin
 		})
 	}
 
-	return sagemaker.StopTrainingJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DescribeHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DescribeHyperParameterTuningJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DescribeHyperParameterTuningJobRequest(input *sagemaker.DescribeHyperParameterTuningJobInput) sagemaker.DescribeHyperParameterTuningJobRequest {
+func (m mockSageMakerClient) DescribeHyperParameterTuningJobRequest(input *sagemaker.DescribeHyperParameterTuningJobInput) (*awsrequest.Request, *sagemaker.DescribeHyperParameterTuningJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -839,14 +833,12 @@ func (m mockSageMakerClient) DescribeHyperParameterTuningJobRequest(input *sagem
 		})
 	}
 
-	return sagemaker.DescribeHyperParameterTuningJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock CreateHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type CreateHyperParameterTuningJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) CreateHyperParameterTuningJobRequest(input *sagemaker.CreateHyperParameterTuningJobInput) sagemaker.CreateHyperParameterTuningJobRequest {
+func (m mockSageMakerClient) CreateHyperParameterTuningJobRequest(input *sagemaker.CreateHyperParameterTuningJobInput) (*awsrequest.Request, *sagemaker.CreateHyperParameterTuningJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -884,14 +876,12 @@ func (m mockSageMakerClient) CreateHyperParameterTuningJobRequest(input *sagemak
 		})
 	}
 
-	return sagemaker.CreateHyperParameterTuningJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock StopHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type StopHyperParameterTuningJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) StopHyperParameterTuningJobRequest(input *sagemaker.StopHyperParameterTuningJobInput) sagemaker.StopHyperParameterTuningJobRequest {
+func (m mockSageMakerClient) StopHyperParameterTuningJobRequest(input *sagemaker.StopHyperParameterTuningJobInput) (*awsrequest.Request, *sagemaker.StopHyperParameterTuningJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -929,14 +919,12 @@ func (m mockSageMakerClient) StopHyperParameterTuningJobRequest(input *sagemaker
 		})
 	}
 
-	return sagemaker.StopHyperParameterTuningJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DescribeEndpointRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DescribeEndpoint, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DescribeEndpointRequest(input *sagemaker.DescribeEndpointInput) sagemaker.DescribeEndpointRequest {
+func (m mockSageMakerClient) DescribeEndpointRequest(input *sagemaker.DescribeEndpointInput) (*awsrequest.Request, *sagemaker.DescribeEndpointOutput) {
 
 	m.requests.PushBack(input)
 
@@ -974,14 +962,12 @@ func (m mockSageMakerClient) DescribeEndpointRequest(input *sagemaker.DescribeEn
 		})
 	}
 
-	return sagemaker.DescribeEndpointRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DeleteModelRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DeleteModel, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DeleteModelRequest(input *sagemaker.DeleteModelInput) sagemaker.DeleteModelRequest {
+func (m mockSageMakerClient) DeleteModelRequest(input *sagemaker.DeleteModelInput) (*awsrequest.Request, *sagemaker.DeleteModelOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1019,14 +1005,12 @@ func (m mockSageMakerClient) DeleteModelRequest(input *sagemaker.DeleteModelInpu
 		})
 	}
 
-	return sagemaker.DeleteModelRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DescribeModelRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DescribeModel, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DescribeModelRequest(input *sagemaker.DescribeModelInput) sagemaker.DescribeModelRequest {
+func (m mockSageMakerClient) DescribeModelRequest(input *sagemaker.DescribeModelInput) (*awsrequest.Request, *sagemaker.DescribeModelOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1064,14 +1048,12 @@ func (m mockSageMakerClient) DescribeModelRequest(input *sagemaker.DescribeModel
 		})
 	}
 
-	return sagemaker.DescribeModelRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock CreateModelRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type CreateModel, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) CreateModelRequest(input *sagemaker.CreateModelInput) sagemaker.CreateModelRequest {
+func (m mockSageMakerClient) CreateModelRequest(input *sagemaker.CreateModelInput) (*awsrequest.Request, *sagemaker.CreateModelOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1109,14 +1091,12 @@ func (m mockSageMakerClient) CreateModelRequest(input *sagemaker.CreateModelInpu
 		})
 	}
 
-	return sagemaker.CreateModelRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DescribeTransformJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DescribeTransformJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DescribeTransformJobRequest(input *sagemaker.DescribeTransformJobInput) sagemaker.DescribeTransformJobRequest {
+func (m mockSageMakerClient) DescribeTransformJobRequest(input *sagemaker.DescribeTransformJobInput) (*awsrequest.Request, *sagemaker.DescribeTransformJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1154,9 +1134,7 @@ func (m mockSageMakerClient) DescribeTransformJobRequest(input *sagemaker.Descri
 		})
 	}
 
-	return sagemaker.DescribeTransformJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Add a AddStopTransformJobResponse response to the client.
@@ -1170,7 +1148,7 @@ func (m *MockSageMakerClientBuilder) AddStopTransformJobResponse(data sagemaker.
 
 // Mock StopTransformJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type StopTransformJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) StopTransformJobRequest(input *sagemaker.StopTransformJobInput) sagemaker.StopTransformJobRequest {
+func (m mockSageMakerClient) StopTransformJobRequest(input *sagemaker.StopTransformJobInput) (*awsrequest.Request, *sagemaker.StopTransformJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1208,14 +1186,12 @@ func (m mockSageMakerClient) StopTransformJobRequest(input *sagemaker.StopTransf
 		})
 	}
 
-	return sagemaker.StopTransformJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DescribeEndpointConfigRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DescribeEndpointConfig, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DescribeEndpointConfigRequest(input *sagemaker.DescribeEndpointConfigInput) sagemaker.DescribeEndpointConfigRequest {
+func (m mockSageMakerClient) DescribeEndpointConfigRequest(input *sagemaker.DescribeEndpointConfigInput) (*awsrequest.Request, *sagemaker.DescribeEndpointConfigOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1253,14 +1229,12 @@ func (m mockSageMakerClient) DescribeEndpointConfigRequest(input *sagemaker.Desc
 		})
 	}
 
-	return sagemaker.DescribeEndpointConfigRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock CreateEndpointConfigRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type CreateEndpointConfig, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) CreateEndpointConfigRequest(input *sagemaker.CreateEndpointConfigInput) sagemaker.CreateEndpointConfigRequest {
+func (m mockSageMakerClient) CreateEndpointConfigRequest(input *sagemaker.CreateEndpointConfigInput) (*awsrequest.Request, *sagemaker.CreateEndpointConfigOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1298,14 +1272,12 @@ func (m mockSageMakerClient) CreateEndpointConfigRequest(input *sagemaker.Create
 		})
 	}
 
-	return sagemaker.CreateEndpointConfigRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock UpdateEndpointRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type UpdateEndpoint, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) UpdateEndpointRequest(input *sagemaker.UpdateEndpointInput) sagemaker.UpdateEndpointRequest {
+func (m mockSageMakerClient) UpdateEndpointRequest(input *sagemaker.UpdateEndpointInput) (*awsrequest.Request, *sagemaker.UpdateEndpointOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1343,14 +1315,12 @@ func (m mockSageMakerClient) UpdateEndpointRequest(input *sagemaker.UpdateEndpoi
 		})
 	}
 
-	return sagemaker.UpdateEndpointRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DeleteEndpointConfigRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DeleteEndpointConfig, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DeleteEndpointConfigRequest(input *sagemaker.DeleteEndpointConfigInput) sagemaker.DeleteEndpointConfigRequest {
+func (m mockSageMakerClient) DeleteEndpointConfigRequest(input *sagemaker.DeleteEndpointConfigInput) (*awsrequest.Request, *sagemaker.DeleteEndpointConfigOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1388,14 +1358,12 @@ func (m mockSageMakerClient) DeleteEndpointConfigRequest(input *sagemaker.Delete
 		})
 	}
 
-	return sagemaker.DeleteEndpointConfigRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock CreateEndpointRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type CreateEndpoint, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) CreateEndpointRequest(input *sagemaker.CreateEndpointInput) sagemaker.CreateEndpointRequest {
+func (m mockSageMakerClient) CreateEndpointRequest(input *sagemaker.CreateEndpointInput) (*awsrequest.Request, *sagemaker.CreateEndpointOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1433,14 +1401,12 @@ func (m mockSageMakerClient) CreateEndpointRequest(input *sagemaker.CreateEndpoi
 		})
 	}
 
-	return sagemaker.CreateEndpointRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DeleteEndpointRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DeleteEndpoint, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DeleteEndpointRequest(input *sagemaker.DeleteEndpointInput) sagemaker.DeleteEndpointRequest {
+func (m mockSageMakerClient) DeleteEndpointRequest(input *sagemaker.DeleteEndpointInput) (*awsrequest.Request, *sagemaker.DeleteEndpointOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1478,14 +1444,12 @@ func (m mockSageMakerClient) DeleteEndpointRequest(input *sagemaker.DeleteEndpoi
 		})
 	}
 
-	return sagemaker.DeleteEndpointRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock CreateProcessingJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type CreateProcessingJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) CreateProcessingJobRequest(input *sagemaker.CreateProcessingJobInput) sagemaker.CreateProcessingJobRequest {
+func (m mockSageMakerClient) CreateProcessingJobRequest(input *sagemaker.CreateProcessingJobInput) (*awsrequest.Request, *sagemaker.CreateProcessingJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1523,14 +1487,12 @@ func (m mockSageMakerClient) CreateProcessingJobRequest(input *sagemaker.CreateP
 		})
 	}
 
-	return sagemaker.CreateProcessingJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock DescribeProcessingJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DescribeProcessingJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) DescribeProcessingJobRequest(input *sagemaker.DescribeProcessingJobInput) sagemaker.DescribeProcessingJobRequest {
+func (m mockSageMakerClient) DescribeProcessingJobRequest(input *sagemaker.DescribeProcessingJobInput) (*awsrequest.Request, *sagemaker.DescribeProcessingJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1568,14 +1530,12 @@ func (m mockSageMakerClient) DescribeProcessingJobRequest(input *sagemaker.Descr
 		})
 	}
 
-	return sagemaker.DescribeProcessingJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
 
 // Mock StopProcessingJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type StopProcessingJob, or there are no more responses to give, fail the test.
-func (m mockSageMakerClient) StopProcessingJobRequest(input *sagemaker.StopProcessingJobInput) sagemaker.StopProcessingJobRequest {
+func (m mockSageMakerClient) StopProcessingJobRequest(input *sagemaker.StopProcessingJobInput) (*awsrequest.Request, *sagemaker.StopProcessingJobOutput) {
 
 	m.requests.PushBack(input)
 
@@ -1613,7 +1573,5 @@ func (m mockSageMakerClient) StopProcessingJobRequest(input *sagemaker.StopProce
 		})
 	}
 
-	return sagemaker.StopProcessingJobRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nil
 }
