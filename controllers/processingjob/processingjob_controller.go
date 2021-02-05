@@ -194,7 +194,7 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 		break
 
 	default:
-		unknownStateError := errors.New(fmt.Sprintf("Unknown Processing Job Status: %s", ctx.ProcessingJobDescription.ProcessingJobStatus))
+		unknownStateError := errors.New(fmt.Sprintf("Unknown Processing Job Status: %s", *ctx.ProcessingJobDescription.ProcessingJobStatus))
 		return r.updateStatusAndReturnError(ctx, unknownStateError)
 	}
 

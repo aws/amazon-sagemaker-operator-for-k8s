@@ -225,7 +225,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		break
 
 	default:
-		unknownStateError := errors.New(fmt.Sprintf("Unknown Training Job Status: %s", ctx.TrainingJobDescription.TrainingJobStatus))
+		unknownStateError := errors.New(fmt.Sprintf("Unknown Training Job Status: %s", *ctx.TrainingJobDescription.TrainingJobStatus))
 		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", unknownStateError)
 	}
 

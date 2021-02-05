@@ -209,7 +209,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		break
 
 	default:
-		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", ctx.TuningJobDescription.HyperParameterTuningJobStatus))
+		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", *ctx.TuningJobDescription.HyperParameterTuningJobStatus))
 	}
 
 	status := *ctx.TuningJobDescription.HyperParameterTuningJobStatus
