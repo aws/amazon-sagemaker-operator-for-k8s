@@ -33,6 +33,7 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	aws "github.com/aws/aws-sdk-go/aws"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/go-logr/logr"
 )
@@ -63,7 +64,7 @@ func NewTrainingJobReconciler(client client.Client, log logr.Logger, pollInterva
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
-			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
+			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(awssession.New(), &cfg))
 		},
 		awsConfigLoader: controllers.NewAwsConfigLoader(),
 	}

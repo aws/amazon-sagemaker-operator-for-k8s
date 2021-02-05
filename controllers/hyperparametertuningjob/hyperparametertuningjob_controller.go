@@ -34,6 +34,7 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
 	"github.com/aws/aws-sdk-go/aws"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
@@ -65,7 +66,7 @@ func NewHyperparameterTuningJobReconciler(client client.Client, log logr.Logger,
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
-			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
+			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(awssession.New(), &cfg))
 		},
 		createHPOTrainingJobSpawner: NewHPOTrainingJobSpawner,
 		awsConfigLoader:             controllers.NewAwsConfigLoader(),

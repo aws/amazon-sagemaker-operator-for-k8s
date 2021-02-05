@@ -28,8 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	aws "github.com/aws/aws-sdk-go/aws"
-	awsrequest "github.com/aws/aws-sdk-go/aws/request"
 	awserr "github.com/aws/aws-sdk-go/aws/awserr"
+	awsrequest "github.com/aws/aws-sdk-go/aws/request"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 
@@ -67,7 +68,7 @@ func NewBatchTransformJobReconciler(client client.Client, log logr.Logger, pollI
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
-			return sagemaker.New(cfg)
+			return sagemaker.New(awssession.New(), &cfg)
 		},
 		awsConfigLoader: NewAwsConfigLoader(),
 	}
