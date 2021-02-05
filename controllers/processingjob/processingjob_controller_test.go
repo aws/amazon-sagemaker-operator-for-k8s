@@ -32,6 +32,7 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -260,7 +261,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 				BeforeEach(func() {
 					mockSageMakerClientBuilder.
 						AddCreateProcessingJobResponse(sagemaker.CreateProcessingJobOutput{}).
-						AddDescribeProcessingJobResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.ProcessingJobStatusInProgress))
+						AddDescribeProcessingJobResponse(CreateDescribeOutputWithOnlyStatus(aws.String(sagemaker.ProcessingJobStatusInProgress)))
 
 					shouldHaveDeletionTimestamp = false
 					shouldHaveFinalizer = true
@@ -291,7 +292,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 
 	Context("ProcessingJob exists", func() {
 
-		var expectedStatus sagemaker.ProcessingJobStatus
+		var expectedStatus *string
 
 		BeforeEach(func() {
 			shouldHaveFinalizer = true
@@ -299,7 +300,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 
 		Context("ProcessingJob has status 'InProgress'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.ProcessingJobStatusInProgress
+				expectedStatus = aws.String(sagemaker.ProcessingJobStatusInProgress)
 				mockSageMakerClientBuilder.
 					AddDescribeProcessingJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 			})
@@ -310,7 +311,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectProcessingJobStatusToBe(processingJob, string(expectedStatus))
+					ExpectProcessingJobStatusToBe(processingJob, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -327,7 +328,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 			When("HasDeletionTimestamp", func() {
 				BeforeEach(func() {
 					shouldHaveDeletionTimestamp = true
-					expectedStatus = sagemaker.ProcessingJobStatusStopping
+					expectedStatus = aws.String(sagemaker.ProcessingJobStatusStopping)
 					mockSageMakerClientBuilder.
 						AddStopProcessingJobResponse(sagemaker.StopProcessingJobOutput{}).
 						AddDescribeProcessingJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
@@ -342,14 +343,14 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 				})
 
 				It("Updates status to 'Stopping' and does not delete ProcessingJob", func() {
-					ExpectProcessingJobStatusToBe(processingJob, string(expectedStatus))
+					ExpectProcessingJobStatusToBe(processingJob, *expectedStatus)
 				})
 			})
 		})
 
 		Context("ProcessingJob has status 'Stopping'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.ProcessingJobStatusStopping
+				expectedStatus = aws.String(sagemaker.ProcessingJobStatusStopping)
 				mockSageMakerClientBuilder.
 					AddDescribeProcessingJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 			})
@@ -360,7 +361,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectProcessingJobStatusToBe(processingJob, string(expectedStatus))
+					ExpectProcessingJobStatusToBe(processingJob, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -393,7 +394,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 			var failureReason string
 
 			BeforeEach(func() {
-				expectedStatus = sagemaker.ProcessingJobStatusFailed
+				expectedStatus = aws.String(sagemaker.ProcessingJobStatusFailed)
 				failureReason = "Failure within the processing job"
 
 				// Add the failure reason to the describe output
@@ -410,7 +411,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectProcessingJobStatusToBe(processingJob, string(expectedStatus))
+					ExpectProcessingJobStatusToBe(processingJob, *expectedStatus)
 				})
 
 				It("Has the additional field set", func() {
@@ -445,7 +446,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 
 		Context("ProcessingJob has status 'Stopped'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.ProcessingJobStatusStopped
+				expectedStatus = aws.String(sagemaker.ProcessingJobStatusStopped)
 				mockSageMakerClientBuilder.
 					AddDescribeProcessingJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 			})
@@ -456,7 +457,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectProcessingJobStatusToBe(processingJob, string(expectedStatus))
+					ExpectProcessingJobStatusToBe(processingJob, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -487,7 +488,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 
 		Context("ProcessingJob has status 'Completed'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.ProcessingJobStatusCompleted
+				expectedStatus = aws.String(sagemaker.ProcessingJobStatusCompleted)
 				mockSageMakerClientBuilder.
 					AddDescribeProcessingJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 			})
@@ -498,7 +499,7 @@ var _ = Describe("Reconciling a ProcessingJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectProcessingJobStatusToBe(processingJob, string(expectedStatus))
+					ExpectProcessingJobStatusToBe(processingJob, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -673,7 +674,7 @@ func ExpectProcessingJobToBeDeleted(processingJob *processingjobv1.ProcessingJob
 }
 
 // Helper function to create a DescribeProcessingJobOutput.
-func CreateDescribeOutputWithOnlyStatus(status sagemaker.ProcessingJobStatus) sagemaker.DescribeProcessingJobOutput {
+func CreateDescribeOutputWithOnlyStatus(status *string) sagemaker.DescribeProcessingJobOutput {
 	return sagemaker.DescribeProcessingJobOutput{
 		ProcessingJobStatus: status,
 	}

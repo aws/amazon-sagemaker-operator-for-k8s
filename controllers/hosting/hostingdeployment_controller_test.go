@@ -28,6 +28,7 @@ import (
 
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/go-logr/logr"
@@ -250,7 +251,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 			Context("SageMaker endpoint resource exists", func() {
 				BeforeEach(func() {
 					mockSageMakerClientBuilder.
-						AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, "outdated-"+endpointConfigSageMakerName)).
+						AddDescribeEndpointResponse(CreateDescribeOutput(aws.String(sagemaker.EndpointStatusInService), "outdated-"+endpointConfigSageMakerName)).
 						AddUpdateEndpointResponse(sagemaker.UpdateEndpointOutput{EndpointArn: ToStringPtr("xyz")})
 
 					shouldHaveDeletionTimestamp = false
@@ -276,7 +277,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 					mockSageMakerClientBuilder.
 						AddDescribeEndpointErrorResponse(clientwrapper.DescribeEndpoint404Code, clientwrapper.DescribeEndpoint404MessagePrefix, 400, "request id").
 						AddCreateEndpointResponse(sagemaker.CreateEndpointOutput{}).
-						AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.EndpointStatusCreating))
+						AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(aws.String(sagemaker.EndpointStatusCreating)))
 
 					shouldHaveDeletionTimestamp = false
 					shouldHaveFinalizer = true
@@ -325,7 +326,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 	Context("Endpoint exists in K8s", func() {
 
-		var expectedStatus sagemaker.EndpointStatus
+		var expectedStatus *string
 
 		BeforeEach(func() {
 			shouldHaveFinalizer = true
@@ -334,7 +335,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 		Context("Endpoint has status 'Creating'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.EndpointStatusCreating
+				expectedStatus = aws.String(sagemaker.EndpointStatusCreating)
 				mockSageMakerClientBuilder.
 					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 
@@ -346,7 +347,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -393,7 +394,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 		Context("Endpoint has status 'Deleting'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.EndpointStatusDeleting
+				expectedStatus = aws.String(sagemaker.EndpointStatusDeleting)
 				mockSageMakerClientBuilder.
 					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 
@@ -405,7 +406,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -439,7 +440,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 		Context("Endpoint has status 'OutOfService'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.EndpointStatusOutOfService
+				expectedStatus = aws.String(sagemaker.EndpointStatusOutOfService)
 				mockSageMakerClientBuilder.
 					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 
@@ -451,7 +452,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -485,7 +486,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 		Context("Endpoint has status 'RollingBack'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.EndpointStatusRollingBack
+				expectedStatus = aws.String(sagemaker.EndpointStatusRollingBack)
 				mockSageMakerClientBuilder.
 					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 
@@ -497,7 +498,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -533,7 +534,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -567,7 +568,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 		Context("Endpoint has status 'SystemUpdating'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.EndpointStatusSystemUpdating
+				expectedStatus = aws.String(sagemaker.EndpointStatusSystemUpdating)
 				mockSageMakerClientBuilder.
 					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 
@@ -579,7 +580,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -613,7 +614,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 		Context("Endpoint has status 'Updating'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.EndpointStatusUpdating
+				expectedStatus = aws.String(sagemaker.EndpointStatusUpdating)
 				mockSageMakerClientBuilder.
 					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 
@@ -625,7 +626,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 
 				Context("Does not have a finalizer", func() {
@@ -660,7 +661,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 		Context("Endpoint has status 'Failed'", func() {
 
 			BeforeEach(func() {
-				expectedStatus = sagemaker.EndpointStatusFailed
+				expectedStatus = aws.String(sagemaker.EndpointStatusFailed)
 				mockSageMakerClientBuilder.
 					AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus))
 
@@ -673,7 +674,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(deployment, string(expectedStatus))
+					ExpectStatusToBe(deployment, *expectedStatus)
 				})
 				Context("Does not have a finalizer", func() {
 					BeforeEach(func() {
@@ -713,7 +714,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 			Context("HasDeletionTimestamp", func() {
 				BeforeEach(func() {
 					mockSageMakerClientBuilder.
-						AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.EndpointStatusInService)).
+						AddDescribeEndpointResponse(CreateDescribeOutputWithOnlyStatus(aws.String(sagemaker.EndpointStatusInService))).
 						AddDeleteEndpointResponse(sagemaker.DeleteEndpointOutput{})
 
 					shouldHaveDeletionTimestamp = true
@@ -753,7 +754,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 					BeforeEach(func() {
 						mockSageMakerClientBuilder.
-							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, "outdated-"+endpointConfigSageMakerName))
+							AddDescribeEndpointResponse(CreateDescribeOutput(aws.String(sagemaker.EndpointStatusInService), "outdated-"+endpointConfigSageMakerName))
 					})
 
 					Context("The update succeeds", func() {
@@ -793,7 +794,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 
 						It("Calls UpdateEndpoint", func() {
 							ExpectRequestToUpdateHostingDeployment(receivedRequests.Front().Next().Value, deployment, endpointConfigSageMakerName)
-							ExpectUpdateRequestToHaveRetainVariantProperty(receivedRequests.Front().Next().Value, deployment, true, sagemaker.VariantPropertyTypeDesiredInstanceCount)
+							ExpectUpdateRequestToHaveRetainVariantProperty(receivedRequests.Front().Next().Value, deployment, true, aws.String(sagemaker.VariantPropertyTypeDesiredInstanceCount))
 						})
 
 						It("Requeues after interval", func() {
@@ -835,7 +836,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				Context("The HostingDeployment endpointconfig name is the same as SageMaker", func() {
 					BeforeEach(func() {
 						mockSageMakerClientBuilder.
-							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, endpointConfigSageMakerName))
+							AddDescribeEndpointResponse(CreateDescribeOutput(aws.String(sagemaker.EndpointStatusInService), endpointConfigSageMakerName))
 					})
 
 					It("Creates resources", func() {
@@ -854,7 +855,7 @@ var _ = Describe("Reconciling a HostingDeployment that exists", func() {
 				Context("EndpointName is defined by user", func() {
 					BeforeEach(func() {
 						mockSageMakerClientBuilder.
-							AddDescribeEndpointResponse(CreateDescribeOutput(sagemaker.EndpointStatusInService, endpointConfigSageMakerName))
+							AddDescribeEndpointResponse(CreateDescribeOutput(aws.String(sagemaker.EndpointStatusInService), endpointConfigSageMakerName))
 
 						deployment.Spec.EndpointName = ToStringPtr("my-endpoint")
 					})
@@ -953,8 +954,8 @@ func (r *mockModelReconciler) Reconcile(ctx context.Context, desiredDeployment *
 }
 
 // Mock implementation of GetSageMakerModelNames.
-func (r *mockModelReconciler) GetSageMakerModelNames(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) (map[string]string, error) {
-	return map[string]string{}, nil
+func (r *mockModelReconciler) GetSageMakerModelNames(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) (map[string]*string, error) {
+	return map[string]*string{}, nil
 }
 
 // Call tracker for sub reconcilers (ModelReconciler/EndpointConfigReconciler).
@@ -1204,7 +1205,7 @@ func ExpectRequestToUpdateHostingDeployment(req interface{}, deployment *hosting
 	Expect(*updateRequest.EndpointConfigName).To(Equal(expectedEndpointConfigName))
 }
 
-func ExpectUpdateRequestToHaveRetainVariantProperty(req interface{}, deployment *hostingv1.HostingDeployment, expectedRetainVariantProperty bool, expectedExcludeRetainProperty sagemaker.VariantPropertyType) {
+func ExpectUpdateRequestToHaveRetainVariantProperty(req interface{}, deployment *hostingv1.HostingDeployment, expectedRetainVariantProperty bool, expectedExcludeRetainProperty *string) {
 	Expect(req).To(BeAssignableToTypeOf((*sagemaker.UpdateEndpointInput)(nil)))
 
 	updateRequest := req.(*sagemaker.UpdateEndpointInput)
@@ -1221,14 +1222,14 @@ func ExpectUpdateRequestToHaveRetainVariantProperty(req interface{}, deployment 
 }
 
 // Helper function to create a DescribeEndpointOutput.
-func CreateDescribeOutputWithOnlyStatus(status sagemaker.EndpointStatus) sagemaker.DescribeEndpointOutput {
+func CreateDescribeOutputWithOnlyStatus(status *string) sagemaker.DescribeEndpointOutput {
 	return sagemaker.DescribeEndpointOutput{
 		EndpointStatus: status,
 	}
 }
 
 // Helper function to create a DescribeEndpointOutput.
-func CreateDescribeOutput(status sagemaker.EndpointStatus, endpointConfigName string) sagemaker.DescribeEndpointOutput {
+func CreateDescribeOutput(status *string, endpointConfigName string) sagemaker.DescribeEndpointOutput {
 	output := CreateDescribeOutputWithOnlyStatus(status)
 	output.EndpointConfigName = &endpointConfigName
 	return output

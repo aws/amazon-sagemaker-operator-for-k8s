@@ -34,6 +34,7 @@ import (
 
 	"github.com/adammck/venv"
 	"github.com/aws/aws-sdk-go/aws"
+	awsendpoints "github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/google/uuid"
@@ -723,7 +724,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 			AddDescribeTransformJobResponse(description).
 			Build()
 
-		var actualEndpointResolver *aws.EndpointResolver = nil
+		var actualEndpointResolver *awsendpoints.Resolver = nil
 
 		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
@@ -742,7 +743,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(actualEndpointResolver).ToNot(BeNil())
-		actualEndpoint, err := (*actualEndpointResolver).ResolveEndpoint(sagemaker.EndpointsID, uuid.New().String())
+		actualEndpoint, err := (*actualEndpointResolver).EndpointFor(sagemaker.EndpointsID, uuid.New().String())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
@@ -766,7 +767,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 			AddDescribeTransformJobResponse(description).
 			Build()
 
-		var actualEndpointResolver *aws.EndpointResolver = nil
+		var actualEndpointResolver *awsendpoints.Resolver = nil
 
 		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
@@ -785,7 +786,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(actualEndpointResolver).ToNot(BeNil())
-		actualEndpoint, err := (*actualEndpointResolver).ResolveEndpoint(sagemaker.EndpointsID, uuid.New().String())
+		actualEndpoint, err := (*actualEndpointResolver).EndpointFor(sagemaker.EndpointsID, uuid.New().String())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
@@ -812,7 +813,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 			AddDescribeTransformJobResponse(description).
 			Build()
 
-		var actualEndpointResolver *aws.EndpointResolver = nil
+		var actualEndpointResolver *awsendpoints.Resolver = nil
 
 		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
@@ -831,7 +832,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(actualEndpointResolver).ToNot(BeNil())
-		actualEndpoint, err := (*actualEndpointResolver).ResolveEndpoint(sagemaker.EndpointsID, uuid.New().String())
+		actualEndpoint, err := (*actualEndpointResolver).EndpointFor(sagemaker.EndpointsID, uuid.New().String())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
@@ -923,8 +924,8 @@ func createDescriptionFromSmTransformJob(job *batchtransformjobv1.BatchTransform
 			ContentType: job.Spec.TransformInput.ContentType,
 			DataSource: &sagemaker.TransformDataSource{
 				S3DataSource: &sagemaker.TransformS3DataSource{
-					S3DataType: sagemaker.S3DataType(job.Spec.TransformInput.DataSource.S3DataSource.S3DataType),
-					S3Uri:      job.Spec.TransformInput.DataSource.S3DataSource.S3Uri,
+					S3DataType: &job.Spec.TransformInput.DataSource.S3DataSource.S3DataType,
+					S3Uri: job.Spec.TransformInput.DataSource.S3DataSource.S3Uri,
 				},
 			},
 		},
@@ -933,7 +934,7 @@ func createDescriptionFromSmTransformJob(job *batchtransformjobv1.BatchTransform
 		},
 		TransformResources: &sagemaker.TransformResources{
 			InstanceCount: job.Spec.TransformResources.InstanceCount,
-			InstanceType:  sagemaker.TransformInstanceType(job.Spec.TransformResources.InstanceType),
+			InstanceType:  &job.Spec.TransformResources.InstanceType,
 		},
 	}
 }

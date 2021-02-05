@@ -34,6 +34,7 @@ import (
 	"github.com/go-logr/logr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -237,7 +238,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			BeforeEach(func() {
 				mockSageMakerClientBuilder.
 					AddCreateHyperParameterTuningJobResponse(sagemaker.CreateHyperParameterTuningJobOutput{}).
-					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(sagemaker.HyperParameterTuningJobStatusInProgress, bestTrainingJob, statusCounters))
+					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(aws.String(sagemaker.HyperParameterTuningJobStatusInProgress), bestTrainingJob, statusCounters))
 
 				shouldHaveDeletionTimestamp = false
 				shouldHaveFinalizer = true
@@ -271,7 +272,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 
 	Context("HyperParameterTuningJob exists", func() {
 
-		var expectedStatus sagemaker.HyperParameterTuningJobStatus
+		var expectedStatus *string
 
 		BeforeEach(func() {
 			shouldHaveFinalizer = true
@@ -279,7 +280,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 
 		Context("HyperParameterTuningJob has status 'InProgress'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.HyperParameterTuningJobStatusInProgress
+				expectedStatus = aws.String(sagemaker.HyperParameterTuningJobStatusInProgress)
 				mockSageMakerClientBuilder.
 					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob, statusCounters))
 			})
@@ -290,7 +291,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
+					ExpectStatusToBe(tuningJob, *expectedStatus)
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
@@ -320,7 +321,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			When("HasDeletionTimestamp", func() {
 				BeforeEach(func() {
 					shouldHaveDeletionTimestamp = true
-					expectedStatus = sagemaker.HyperParameterTuningJobStatusStopping
+					expectedStatus = aws.String(sagemaker.HyperParameterTuningJobStatusStopping)
 					mockSageMakerClientBuilder.
 						AddStopHyperParameterTuningJobResponse(sagemaker.StopHyperParameterTuningJobOutput{}).
 						AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob, statusCounters))
@@ -335,14 +336,14 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Updates status to 'Stopping' and does not delete HyperParameterTuningJob", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
+					ExpectStatusToBe(tuningJob, *expectedStatus)
 				})
 			})
 		})
 
 		Context("HyperParameterTuningJob has status 'Stopping'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.HyperParameterTuningJobStatusStopping
+				expectedStatus = aws.String(sagemaker.HyperParameterTuningJobStatusStopping)
 				mockSageMakerClientBuilder.
 					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob, statusCounters))
 			})
@@ -353,7 +354,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
+					ExpectStatusToBe(tuningJob, *expectedStatus)
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
@@ -399,7 +400,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 			var failureReason string
 
 			BeforeEach(func() {
-				expectedStatus = sagemaker.HyperParameterTuningJobStatusFailed
+				expectedStatus = aws.String(sagemaker.HyperParameterTuningJobStatusFailed)
 				failureReason = "Failure within the hpo job"
 
 				// Add the failure reason to the describe output
@@ -416,7 +417,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
+					ExpectStatusToBe(tuningJob, *expectedStatus)
 				})
 
 				It("Has the additional field set", func() {
@@ -483,7 +484,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 
 		Context("HyperParameterTuningJob has status 'Stopped'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.HyperParameterTuningJobStatusStopped
+				expectedStatus = aws.String(sagemaker.HyperParameterTuningJobStatusStopped)
 				mockSageMakerClientBuilder.
 					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob, statusCounters))
 			})
@@ -494,7 +495,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
+					ExpectStatusToBe(tuningJob, *expectedStatus)
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
@@ -543,7 +544,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 
 		Context("HyperParameterTuningJob has status 'Completed'", func() {
 			BeforeEach(func() {
-				expectedStatus = sagemaker.HyperParameterTuningJobStatusCompleted
+				expectedStatus = aws.String(sagemaker.HyperParameterTuningJobStatusCompleted)
 
 				mockSageMakerClientBuilder.
 					AddDescribeHyperParameterTuningJobResponse(CreateDescribeOutputWithOnlyStatus(expectedStatus, bestTrainingJob, statusCounters))
@@ -555,7 +556,7 @@ var _ = Describe("Reconciling a HyperParameterTuningJob that exists", func() {
 				})
 
 				It("Updates status", func() {
-					ExpectStatusToBe(tuningJob, string(expectedStatus))
+					ExpectStatusToBe(tuningJob, *expectedStatus)
 				})
 
 				It("Attempts to spawn missing Training Jobs", func() {
@@ -790,7 +791,7 @@ func ExpectTrainingJobStatusCountersToBe(tuningJob *hpojobv1.HyperparameterTunin
 }
 
 // Helper function to create a DescribeHyperParameterTuningJobOutput.
-func CreateDescribeOutputWithOnlyStatus(status sagemaker.HyperParameterTuningJobStatus, bestTrainingJob *sagemaker.HyperParameterTrainingJobSummary, statusCounters *sagemaker.TrainingJobStatusCounters) sagemaker.DescribeHyperParameterTuningJobOutput {
+func CreateDescribeOutputWithOnlyStatus(status *string, bestTrainingJob *sagemaker.HyperParameterTrainingJobSummary, statusCounters *sagemaker.TrainingJobStatusCounters) sagemaker.DescribeHyperParameterTuningJobOutput {
 	return sagemaker.DescribeHyperParameterTuningJobOutput{
 		HyperParameterTuningJobStatus: status,
 		BestTrainingJob:               bestTrainingJob,

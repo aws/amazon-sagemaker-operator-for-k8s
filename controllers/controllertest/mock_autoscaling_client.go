@@ -252,9 +252,9 @@ func (m *mockApplicationAutoscalingClient) mockRequestBuilder() *awsrequest.Requ
 			Header: map[string][]string{},
 		},
 		HTTPResponse: &http.Response{},
-		Retryer:      &aws.NoOpRetryer{},
+		Retryer:      nil,
 		// Required for pagination operation.
-		Operation: &aws.Operation{
+		Operation: &awsrequest.Operation{
 			Paginator: nil,
 		},
 	}

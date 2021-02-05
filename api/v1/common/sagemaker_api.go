@@ -408,7 +408,7 @@ type ObjectiveStatus string
 // Hosting related types
 
 type ProductionVariant struct {
-	AcceleratorType ProductionVariantAcceleratorType `json:"acceleratorType,omitempty"`
+	AcceleratorType *string `json:"acceleratorType,omitempty"`
 
 	// +kubebuilder:validation:Minimum=1
 	InitialInstanceCount *int64 `json:"initialInstanceCount"`
@@ -427,8 +427,6 @@ type ProductionVariant struct {
 	// +kubebuilder:validation:MinLength=1
 	VariantName *string `json:"variantName"`
 }
-
-type ProductionVariantAcceleratorType string
 
 type ProductionVariantInstanceType string
 
@@ -536,14 +534,11 @@ type TransformDataSource struct {
 
 type TransformS3DataSource struct {
 	// +kubebuilder:validation:Enum=S3Prefix;ManifestFile;AugmentedManifestFile
-	S3DataType S3DataType `json:"s3DataType"`
+	S3DataType string `json:"s3DataType"`
 
 	// +kubebuilder:validation:Pattern="^(https|s3)://([^/]+)/?(.*)$"
 	S3Uri *string `json:"s3Uri"`
 }
-
-// +kubebuilder:validation:Enum=S3Prefix;ManifestFile;AugmentedManifestFile
-type S3DataType string
 
 type SplitType string
 
