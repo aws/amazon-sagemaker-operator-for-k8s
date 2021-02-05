@@ -290,16 +290,17 @@ func (c *sageMakerClientWrapper) StopHyperParameterTuningJob(ctx context.Context
 	return stopResponse, nil
 }
 
+// TODO : GoSDK V1 : Paginator
 // Returns a paginator for iterating through the training jobs associated with a given hyperparameter tuning job. Returns the response output or nil if error.
-func (c *sageMakerClientWrapper) ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) HyperParameterTuningJobPaginator {
-	_, paginator := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
-		HyperParameterTuningJobName: &tuningJobName,
-	})
+// func (c *sageMakerClientWrapper) ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) HyperParameterTuningJobPaginator {
+// 	_, paginator := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
+// 		HyperParameterTuningJobName: &tuningJobName,
+// 	})
 
-	return &hyperParameterTuningJobPaginator{
-		paginator: &paginator,
-	}
-}
+// 	return &hyperParameterTuningJobPaginator{
+// 		paginator: &paginator,
+// 	}
+// }
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
 // to an HTTP 404 not found.
@@ -586,28 +587,29 @@ type HyperParameterTuningJobPaginator interface {
 	Err() error
 }
 
-type hyperParameterTuningJobPaginator struct {
-	paginator *sagemaker.ListTrainingJobsForHyperParameterTuningJobPaginator
-}
+// TODO : GoSDK V1 : Paginator
+// type hyperParameterTuningJobPaginator struct {
+// 	paginator *sagemaker.ListTrainingJobsForHyperParameterTuningJobPaginator
+// }
 
-var _ HyperParameterTuningJobPaginator = (*hyperParameterTuningJobPaginator)(nil)
+// var _ HyperParameterTuningJobPaginator = (*hyperParameterTuningJobPaginator)(nil)
 
-// Next will attempt to retrieve the next page of training jobs.
-func (p *hyperParameterTuningJobPaginator) Next(ctx context.Context) bool {
-	return p.paginator.Next(ctx)
-}
+// // Next will attempt to retrieve the next page of training jobs.
+// func (p *hyperParameterTuningJobPaginator) Next(ctx context.Context) bool {
+// 	return p.paginator.Next(ctx)
+// }
 
-// CurrentPage returns the list of training job summaries provided by the current page.
-func (p *hyperParameterTuningJobPaginator) CurrentPage() []sagemaker.HyperParameterTrainingJobSummary {
-	page := p.paginator.CurrentPage()
+// // CurrentPage returns the list of training job summaries provided by the current page.
+// func (p *hyperParameterTuningJobPaginator) CurrentPage() []sagemaker.HyperParameterTrainingJobSummary {
+// 	page := p.paginator.CurrentPage()
 
-	return page.TrainingJobSummaries
-}
+// 	return page.TrainingJobSummaries
+// }
 
-// Err returns the error the paginator encountered when retrieving the next page.
-func (p *hyperParameterTuningJobPaginator) Err() error {
-	return p.paginator.Err()
-}
+// // Err returns the error the paginator encountered when retrieving the next page.
+// func (p *hyperParameterTuningJobPaginator) Err() error {
+// 	return p.paginator.Err()
+// }
 
 // IsRecoverableError determines if type of error is trasient and can be resolved without user intervention by reconciling
 // Before using this method determine if all other errors for your use-case can be categorized as non-recoverable

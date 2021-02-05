@@ -129,7 +129,7 @@ type reconcileRequestContext struct {
 	EndpointName string
 
 	// A map of k8s model names to their SageMaker model names.
-	ModelNames map[string]string
+	ModelNames map[string]*string
 
 	// The name of the SageMaker EndpointConfig
 	EndpointConfigName string
@@ -287,7 +287,7 @@ func (r *HostingDeploymentReconciler) handleUpdates(ctx reconcileRequestContext)
 		r.Log.Info("Endpoint needs update", "endpoint name", ctx.EndpointName, "actual config name", ctx.EndpointDescription.EndpointConfigName, "desired config name", ctx.EndpointConfigName)
 
 		var output *sagemaker.UpdateEndpointOutput
-		var excludeRetainedVariantProperties []sagemaker.VariantProperty
+		var excludeRetainedVariantProperties []*sagemaker.VariantProperty
 
 		excludeRetainedVariantProperties = sdkutil.ConvertVariantPropertiesToSageMakerVariantProperties(ctx.Deployment.Spec.ExcludeRetainedVariantProperties)
 

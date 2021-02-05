@@ -583,10 +583,10 @@ func replaceFloat64WithInt64(obj *gabs.Container, path string, toConvert float64
 }
 
 // ConvertProductionVariantSummarySlice creates a []*commonv1.ProductionVariantSummary from the equivalent SageMaker type.
-func ConvertProductionVariantSummarySlice(pvs []sagemaker.ProductionVariantSummary) ([]*commonv1.ProductionVariantSummary, error) {
+func ConvertProductionVariantSummarySlice(pvs []*sagemaker.ProductionVariantSummary) ([]*commonv1.ProductionVariantSummary, error) {
 	productionVariants := []*commonv1.ProductionVariantSummary{}
 	for _, pv := range pvs {
-		if converted, err := ConvertProductionVariantSummary(&pv); err != nil {
+		if converted, err := ConvertProductionVariantSummary(pv); err != nil {
 			return nil, err
 		} else {
 			productionVariants = append(productionVariants, converted)
@@ -597,10 +597,10 @@ func ConvertProductionVariantSummarySlice(pvs []sagemaker.ProductionVariantSumma
 }
 
 // ConvertTagSliceToSageMakerTagSlice converts Tags to Sagemaker Tags
-func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []sagemaker.Tag {
-	sageMakerTags := []sagemaker.Tag{}
+func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []*sagemaker.Tag {
+	sageMakerTags := []*sagemaker.Tag{}
 	for _, tag := range tags {
-		sageMakerTags = append(sageMakerTags, sagemaker.Tag{
+		sageMakerTags = append(sageMakerTags, &sagemaker.Tag{
 			Key:   tag.Key,
 			Value: tag.Value,
 		})
@@ -869,8 +869,8 @@ func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*app
 }
 
 // Converts VariantProperties to SageMaker VariantProperties
-func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []commonv1.VariantProperty) []sagemaker.VariantProperty {
-	sageMakerVariantProperties := []sagemaker.VariantProperty{}
+func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []commonv1.VariantProperty) []*sagemaker.VariantProperty {
+	sageMakerVariantProperties := []*sagemaker.VariantProperty{}
 
 	for _, variantProperty := range variantProperties {
 		variantPropertyType := sagemaker.VariantPropertyTypeDesiredInstanceCount
@@ -887,7 +887,7 @@ func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []co
 			errors.New("Error: invalid VariantPropertyType string '" + *variantProperty.VariantPropertyType + "'")
 		}
 
-		sageMakerVariantProperties = append(sageMakerVariantProperties, sagemaker.VariantProperty{
+		sageMakerVariantProperties = append(sageMakerVariantProperties, &sagemaker.VariantProperty{
 			VariantPropertyType: &variantPropertyType,
 		})
 	}

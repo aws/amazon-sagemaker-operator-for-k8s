@@ -102,18 +102,18 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 		scalableTarget := applicationautoscaling.ScalableTarget{
 			ResourceId: &resourceId,
 		}
-		scalableTargets := []applicationautoscaling.ScalableTarget{scalableTarget}
+		scalableTargets := []*applicationautoscaling.ScalableTarget{&scalableTarget}
 		scalingPolicy := applicationautoscaling.ScalingPolicy{
 			PolicyName: &policyName,
 			PolicyARN:  &policyArn,
 			ResourceId: &resourceId,
 		}
-		scalingPolicies := []applicationautoscaling.ScalingPolicy{scalingPolicy}
+		scalingPolicies := []*applicationautoscaling.ScalingPolicy{&scalingPolicy}
 
 		applicationAutoscalingClient := mockAutoscalingClientBuilder.
 			AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
 			AddDescribeScalingPoliciesResponse(applicationautoscaling.DescribeScalingPoliciesOutput{
-				ScalingPolicies: []applicationautoscaling.ScalingPolicy{},
+				ScalingPolicies: []*applicationautoscaling.ScalingPolicy{},
 			}).
 			AddRegisterScalableTargetsResponse(applicationautoscaling.RegisterScalableTargetOutput{}).
 			AddPutScalingPolicyResponse(applicationautoscaling.PutScalingPolicyOutput{
@@ -150,7 +150,7 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 			PolicyARN:  &policyArn,
 			ResourceId: &resourceId,
 		}
-		scalingPolicies := []applicationautoscaling.ScalingPolicy{scalingPolicy}
+		scalingPolicies := []*applicationautoscaling.ScalingPolicy{&scalingPolicy}
 
 		applicationAutoscalingClient := mockAutoscalingClientBuilder.
 			AddDescribeScalableTargetsResponse(applicationautoscaling.DescribeScalableTargetsOutput{}).
@@ -184,7 +184,7 @@ var _ = Describe("Reconciling HAP that does not exist", func() {
 		scalableTarget := applicationautoscaling.ScalableTarget{
 			ResourceId: &resourceId,
 		}
-		scalableTargets := []applicationautoscaling.ScalableTarget{scalableTarget}
+		scalableTargets := []*applicationautoscaling.ScalableTarget{&scalableTarget}
 		scalingPolicy := &applicationautoscaling.ScalingPolicy{
 			PolicyName: &policyName,
 			PolicyARN:  &policyArn,
@@ -257,7 +257,7 @@ var _ = Describe("Reconciling an HAP that is different from the spec", func() {
 		scalableTarget := applicationautoscaling.ScalableTarget{
 			ResourceId: &resourceID,
 		}
-		scalableTargets := []applicationautoscaling.ScalableTarget{scalableTarget}
+		scalableTargets := []*applicationautoscaling.ScalableTarget{&scalableTarget}
 		scalingPolicy := &applicationautoscaling.ScalingPolicy{
 			PolicyName: &policyName,
 			PolicyARN:  &policyArn,
@@ -589,7 +589,7 @@ var _ = Describe("Reconciling an HAP with finalizer that is being deleted", func
 		scalableTarget := applicationautoscaling.ScalableTarget{
 			ResourceId: &resourceID,
 		}
-		scalableTargets := []applicationautoscaling.ScalableTarget{scalableTarget}
+		scalableTargets := []*applicationautoscaling.ScalableTarget{&scalableTarget}
 		scalingPolicy := &applicationautoscaling.ScalingPolicy{
 			PolicyName: &policyName,
 			PolicyARN:  &policyArn,

@@ -6,7 +6,6 @@ require (
 	github.com/Jeffail/gabs/v2 v2.5.1
 	github.com/adammck/venv v0.0.0-20160819025605-8a9c907a37d3
 	github.com/aws/aws-sdk-go v1.37.3
-	github.com/aws/aws-sdk-go-v2/service/sagemaker v1.1.0
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0 // indirect

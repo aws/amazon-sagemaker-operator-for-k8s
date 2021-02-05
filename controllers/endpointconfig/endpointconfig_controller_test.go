@@ -371,7 +371,7 @@ var _ = Describe("Reconciling a endpointConfig that is different than the spec",
 			EndpointConfigName: ToStringPtr("endpointConfig name"),
 			EndpointConfigArn:  ToStringPtr("endpointConfig arn"),
 			KmsKeyId:           ToStringPtr(endpointConfig.Spec.KmsKeyId),
-			ProductionVariants: []sagemaker.ProductionVariant{},
+			ProductionVariants: []*sagemaker.ProductionVariant{},
 		}
 
 		for _, pv := range endpointConfig.Spec.ProductionVariants {
