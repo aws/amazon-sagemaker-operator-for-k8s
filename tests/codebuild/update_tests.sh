@@ -9,6 +9,12 @@ source inject_tests.sh
 function run_update_canary_tests
 {
   local crd_namespace="$1"
+
+  echo "Injecting variables into tests"
+  inject_all_variables
+
+  echo "Starting Update Tests"
+  update_hap_test "${crd_namespace}" named-xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml
 }
 
 # Parameter:
@@ -18,12 +24,6 @@ function run_update_integration_tests
   echo "Running update integration tests"
   local crd_namespace="$1"
   run_update_canary_tests "${crd_namespace}"
-
-  echo "Injecting variables into tests"
-  inject_all_variables
-
-  echo "Starting Update Tests"
-  update_hap_test "${crd_namespace}" named-xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
@@ -33,6 +33,10 @@ function verify_update_canary_tests
 {
   local crd_namespace="$1"
   echo "Verifying update tests"
+
+  # At this point there are two variants in total(1 predefined and 1 custom) that have HAP applied. 
+  verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
+  verify_hap_test "2"
 }
 
 
@@ -45,9 +49,6 @@ function verify_update_integration_tests
   local crd_namespace="$1"
   verify_update_canary_tests
 
-  # At this point there are two variants in total(1 predefined and 1 custom) that have HAP applied. 
-  verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
-  # verify_hap_test "2"
 }
 
 # Updates the ResourceID List and the MaxCapacity in the spec to check for updates 
@@ -56,14 +57,15 @@ function verify_update_integration_tests
 #    $2: K8s Name of the hostingdeployment to apply autoscaling 
 #    $3: Filename of the hap test to update
 function update_hap_test()
-{
+{ 
+  local random_string=$RANDOM
   local target_namespace="$1"
-  local hosting_deployment_1="$2"
+  local hosting_deployment_1="${2}-${random_string}"
   local file_name="$3"
   local hostingdeployment_type="hostingdeployment"
   local updated_filename="${file_name}-updated-${target_namespace}"
 
-  # Copy and update the test file
+  # Copy and update the test file 
   cp "${file_name}" "${updated_filename}"
   # Update the Resource ID list to remove one endpoint/variant
   yq d -i "${updated_filename}" "spec.resourceId[1]"
@@ -73,6 +75,6 @@ function update_hap_test()
   # HAP Test 1: Using the Predefined Metric
   run_test "$target_namespace" "$updated_filename"
 
-  yq w -i testfiles/xgboost-hosting-deployment.yaml "metadata.name" ${hosting_deployment_1}
+  # Cleanup the copied file
   rm "${updated_filename}"
 }
