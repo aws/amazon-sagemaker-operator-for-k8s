@@ -24,7 +24,6 @@ function run_canary_tests
   yq w -i testfiles/xgboost-mnist-batchtransform.yaml "spec.modelName" "$(get_sagemaker_model_from_k8s_model "${crd_namespace}" xgboost-model)"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-batchtransform.yaml 
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment.yaml
-  run_hap_test "${crd_namespace}" named-xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml testfiles/xgboost-hostingautoscaling-custom.yaml
 }
 
 # Applies each of the resources needed for the canary tests.
@@ -72,6 +71,7 @@ function run_integration_tests
   run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment-multi-container.yaml
+  run_hap_test "${crd_namespace}" named-xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml testfiles/xgboost-hostingautoscaling-custom.yaml
   run_test "${crd_namespace}" testfiles/hd-retain-varient-properties.yaml
 }
 
@@ -87,9 +87,6 @@ function verify_canary_tests
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 90m InService
-  verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
-  verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 5m Created
-  # verify_hap_test "3"
 }
 
 # Verifies that all resources were created and are running/completed for the canary tests.
@@ -123,6 +120,9 @@ function verify_integration_tests
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status
   verify_debug_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m NoIssuesFound
+  verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-predefined 5m Created
+  verify_test "${crd_namespace}" HostingAutoscalingPolicy hap-custom-metric 5m Created
+  # verify_hap_test "3"
   verify_retain_varient_properties "${crd_namespace}" testfiles/hd-retain-varient-properties.yaml
 }
 
@@ -200,8 +200,9 @@ function verify_retain_varient_properties(){
 #    $4: Filename of the custom metric hap test to run
 function run_hap_test()
 {
+  local random_string=$RANDOM
   local target_namespace="$1"
-  local hosting_deployment_1="$2"
+  local hosting_deployment_1="${2}-${random_string}"
   local file_name="$3"
   local file_name_custom="$4"
   local hosting_deployment_2="${hosting_deployment_1}-2"
