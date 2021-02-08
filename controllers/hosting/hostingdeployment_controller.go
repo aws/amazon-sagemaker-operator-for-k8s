@@ -211,8 +211,8 @@ func (r *HostingDeploymentReconciler) reconcileHostingDeployment(ctx reconcileRe
 
 	// Updates and deletions are only supported in SageMaker when the Endpoint is "InService" (update or deletion) or "Failed" (only deletion).
 	// Thus, gate the updates/deletes according to status.
-	switch ctx.EndpointDescription.EndpointStatus {
-	case aws.String(sagemaker.EndpointStatusInService):
+	switch *ctx.EndpointDescription.EndpointStatus {
+	case sagemaker.EndpointStatusInService:
 
 		// Only do updates if the object is not marked as deleted.
 		if !HasDeletionTimestamp(ctx.Deployment.ObjectMeta) {
@@ -223,24 +223,24 @@ func (r *HostingDeploymentReconciler) reconcileHostingDeployment(ctx reconcileRe
 
 		// Handle deletion by falling through.
 		fallthrough
-	case aws.String(sagemaker.EndpointStatusFailed):
+	case sagemaker.EndpointStatusFailed:
 		if HasDeletionTimestamp(ctx.Deployment.ObjectMeta) {
 			if _, err := ctx.SageMakerClient.DeleteEndpoint(ctx, &ctx.EndpointName); err != nil && !clientwrapper.IsDeleteEndpoint404Error(err) {
 				return r.updateStatusAndReturnError(ctx, ReconcilingEndpointStatus, errors.Wrap(err, "Unable to delete Endpoint"))
 			}
 		}
 		break
-	case aws.String(sagemaker.EndpointStatusCreating):
+	case sagemaker.EndpointStatusCreating:
 		fallthrough
-	case aws.String(sagemaker.EndpointStatusDeleting):
+	case sagemaker.EndpointStatusDeleting:
 		fallthrough
-	case aws.String(sagemaker.EndpointStatusOutOfService):
+	case sagemaker.EndpointStatusOutOfService:
 		fallthrough
-	case aws.String(sagemaker.EndpointStatusRollingBack):
+	case sagemaker.EndpointStatusRollingBack:
 		fallthrough
-	case aws.String(sagemaker.EndpointStatusSystemUpdating):
+	case sagemaker.EndpointStatusSystemUpdating:
 		fallthrough
-	case aws.String(sagemaker.EndpointStatusUpdating):
+	case sagemaker.EndpointStatusUpdating:
 		// The status will be updated after the switch statement.
 		r.Log.Info("Noop action, endpoint status does not allow modifications", "status", ctx.EndpointDescription.EndpointStatus)
 	}

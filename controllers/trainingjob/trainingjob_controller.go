@@ -195,8 +195,8 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	}
 
-	switch ctx.TrainingJobDescription.TrainingJobStatus {
-	case aws.String(sagemaker.TrainingJobStatusInProgress):
+	switch *ctx.TrainingJobDescription.TrainingJobStatus {
+	case sagemaker.TrainingJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			// Request to stop the job
 			if _, err := ctx.SageMakerClient.StopTrainingJob(ctx, ctx.TrainingJobName); err != nil && !clientwrapper.IsStopTrainingJob404Error(err) {
@@ -209,19 +209,19 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 		break
 
-	case aws.String(sagemaker.TrainingJobStatusCompleted):
+	case sagemaker.TrainingJobStatusCompleted:
 		if err = r.addModelPathToStatus(ctx); err != nil {
 			return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add model path to status"))
 		}
 		fallthrough
 
-	case aws.String(sagemaker.TrainingJobStatusStopped), aws.String(sagemaker.TrainingJobStatusFailed):
+	case sagemaker.TrainingJobStatusStopped, sagemaker.TrainingJobStatusFailed:
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			return r.removeFinalizer(ctx)
 		}
 		break
 
-	case aws.String(sagemaker.TrainingJobStatusStopping):
+	case sagemaker.TrainingJobStatusStopping:
 		break
 
 	default:

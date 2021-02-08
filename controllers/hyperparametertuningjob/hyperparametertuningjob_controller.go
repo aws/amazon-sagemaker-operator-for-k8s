@@ -187,8 +187,8 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to add best training job to status"))
 	}
 
-	switch ctx.TuningJobDescription.HyperParameterTuningJobStatus {
-	case aws.String(sagemaker.HyperParameterTuningJobStatusInProgress):
+	switch *ctx.TuningJobDescription.HyperParameterTuningJobStatus {
+	case sagemaker.HyperParameterTuningJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			// Request to stop the job. If SageMaker returns a 404 then the job has already been deleted.
 			if _, err := ctx.SageMakerClient.StopHyperParameterTuningJob(ctx, ctx.TuningJobName); err != nil && !clientwrapper.IsStopHyperParameterTuningJob404Error(err) {
@@ -200,12 +200,12 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 			}
 		}
 
-	case aws.String(sagemaker.HyperParameterTuningJobStatusStopped), aws.String(sagemaker.HyperParameterTuningJobStatusFailed), aws.String(sagemaker.HyperParameterTuningJobStatusCompleted):
+	case sagemaker.HyperParameterTuningJobStatusStopped, sagemaker.HyperParameterTuningJobStatusFailed, sagemaker.HyperParameterTuningJobStatusCompleted:
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			return r.cleanupAndRemoveFinalizer(ctx)
 		}
 
-	case aws.String(sagemaker.HyperParameterTuningJobStatusStopping):
+	case sagemaker.HyperParameterTuningJobStatusStopping:
 		break
 
 	default:

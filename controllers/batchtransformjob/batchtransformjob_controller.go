@@ -222,8 +222,8 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 	}
 
 	log.Info("Object has been scheduled for deletion")
-	switch ctx.SageMakerDescription.TransformJobStatus {
-	case aws.String(sagemaker.TransformJobStatusInProgress):
+	switch *ctx.SageMakerDescription.TransformJobStatus {
+	case sagemaker.TransformJobStatusInProgress:
 		log.Info("Job is in_progress and has finalizer, so we need to delete it")
 		req, _ := ctx.SageMakerClient.StopTransformJobRequest(&sagemaker.StopTransformJobInput{
 			TransformJobName: ctx.Job.Spec.TransformJobName,
@@ -236,7 +236,7 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 
 		return RequeueImmediately()
 
-	case aws.String(sagemaker.TransformJobStatusStopping):
+	case sagemaker.TransformJobStatusStopping:
 
 		log.Info("Job is stopping, nothing to do")
 		if err := r.updateJobStatus(ctx, batchtransformjobv1.BatchTransformJobStatus{
@@ -247,7 +247,7 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 			return RequeueIfError(err)
 		}
 		return RequeueAfterInterval(r.PollInterval, nil)
-	case aws.String(sagemaker.TransformJobStatusCompleted), aws.String(sagemaker.TransformJobStatusFailed), aws.String(sagemaker.TransformJobStatusStopped):
+	case sagemaker.TransformJobStatusCompleted, sagemaker.TransformJobStatusFailed, sagemaker.TransformJobStatusStopped:
 		log.Info("Job is in terminal state. Done")
 		return r.removeFinalizerAndUpdate(ctx)
 	default:
