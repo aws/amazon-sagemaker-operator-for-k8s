@@ -25,7 +25,7 @@ spec:
     trainingInputMode: File
   roleArn: {ROLE_ARN}
   region: us-west-2
-  sageMakerEndpoint: https://sagemaker.us-west-2.amazonaws.com
+  # sageMakerEndpoint: https://sagemaker.us-west-2.amazonaws.com
   outputDataConfig:
     s3OutputPath: s3://{DATA_BUCKET}/xgboost
   resourceConfig:
