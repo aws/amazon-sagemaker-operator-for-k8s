@@ -64,7 +64,12 @@ func NewTrainingJobReconciler(client client.Client, log logr.Logger, pollInterva
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
-			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(awssession.New(), &cfg))
+			session, _ := awssession.NewSessionWithOptions(
+				awssession.Options{
+					SharedConfigState: awssession.SharedConfigEnable,
+					Config:            cfg,
+				})
+			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(session))
 		},
 		awsConfigLoader: controllers.NewAwsConfigLoader(),
 	}

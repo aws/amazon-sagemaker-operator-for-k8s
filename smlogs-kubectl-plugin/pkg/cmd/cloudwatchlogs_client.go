@@ -41,7 +41,12 @@ func (m concreteCloudWatchLogsClient) FilterLogEventsRequest(input *cloudwatchlo
 
 // Create client wrapped by interface to allow for mocking.
 func createCloudWatchLogsClientForConfig(awsConfig aws.Config) mockableCloudWatchLogsClient {
+	session, _ := awssession.NewSessionWithOptions(
+		awssession.Options{
+			SharedConfigState: awssession.SharedConfigEnable,
+			Config:            awsConfig,
+		})
 	return concreteCloudWatchLogsClient{
-		client: cloudwatchlogs.New(awssession.New(), &awsConfig),
+		client: cloudwatchlogs.New(session),
 	}
 }

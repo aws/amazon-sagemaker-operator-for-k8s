@@ -69,7 +69,12 @@ func NewModelReconciler(client client.Client, log logr.Logger, pollInterval time
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
-			return sagemaker.New(awssession.New(), &awsConfig)
+			session, _ := awssession.NewSessionWithOptions(
+				awssession.Options{
+					SharedConfigState: awssession.SharedConfigEnable,
+					Config:            awsConfig,
+				})
+			return sagemaker.New(session)
 		},
 		awsConfigLoader: NewAwsConfigLoader(),
 	}

@@ -80,7 +80,12 @@ func NewHostingAutoscalingPolicyReconciler(client client.Client, log logr.Logger
 		Log:          log,
 		PollInterval: pollInterval,
 		createApplicationAutoscalingClient: func(cfg aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
-			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(awssession.New(), &cfg))
+			session, _ := awssession.NewSessionWithOptions(
+				awssession.Options{
+					SharedConfigState: awssession.SharedConfigEnable,
+					Config:            cfg,
+				})
+			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(session))
 		},
 		awsConfigLoader: controllers.NewAwsConfigLoader(),
 	}
