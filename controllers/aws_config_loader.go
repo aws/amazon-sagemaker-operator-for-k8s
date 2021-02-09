@@ -19,8 +19,8 @@ package controllers
 import (
 	"github.com/adammck/venv"
 	"github.com/aws/aws-sdk-go/aws"
+	awsendpoints "github.com/aws/aws-sdk-go/aws/endpoints"
 	awssession "github.com/aws/aws-sdk-go/aws/session"
-	// "github.com/aws/aws-sdk-go/aws/endpoints"
 	// "github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
@@ -42,6 +42,7 @@ func NewAwsConfigLoaderForEnv(env venv.Env) AwsConfigLoader {
 	}
 }
 
+// CreateNewAWSSessionFromConfig returns an AWS session using AWS Config
 func CreateNewAWSSessionFromConfig(cfg aws.Config) *awssession.Session {
 	sess, _ := awssession.NewSessionWithOptions(
 		awssession.Options{
@@ -74,17 +75,17 @@ func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSp
 
 	// If a custom endpoint is requested, install custom resolver for SageMaker into config.
 	if customEndpoint != "" {
-		// customSageMakerResolver := func(service, region string) (aws.Endpoint, error) {
-		// 	if service == sagemaker.EndpointsID {
-		// 		return aws.Endpoint{
-		// 			URL: customEndpoint,
-		// 		}, nil
-		// 	}
+		customSageMakerResolver := func(service, region string, optFns ...func(*awsendpoints.Options)) (awsendpoints.ResolvedEndpoint, error) {
+			if service == "sagemaker" {
+				return awsendpoints.ResolvedEndpoint{
+					URL: customEndpoint,
+				}, nil
+			}
 
-		// 	return endpoints.DefaultResolver().ResolveEndpoint(service, region)
-		// }
+			return awsendpoints.DefaultResolver().EndpointFor(service, region)
+		}
 
-		// config.EndpointResolver = aws.EndpointResolverFunc(customSageMakerResolver)
+		config.EndpointResolver = awsendpoints.ResolverFunc(customSageMakerResolver)
 	}
 
 	return config, nil
