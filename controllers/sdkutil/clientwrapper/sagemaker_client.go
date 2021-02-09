@@ -146,11 +146,11 @@ func (c *sageMakerClientWrapper) CreateTrainingJob(ctx context.Context, training
 
 	err := createRequest.Send()
 
-	if response != nil {
-		return response, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, err
+	return response, nil
 }
 
 // Stops a training job. Returns the response output or nil if error.
@@ -352,11 +352,11 @@ func (c *sageMakerClientWrapper) CreateEndpoint(ctx context.Context, endpoint *s
 
 	err := createRequest.Send()
 
-	if response != nil {
-		return response, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, err
+	return response, nil
 }
 
 // Delete an Endpoint. Returns the response output or nil if error.
@@ -430,11 +430,11 @@ func (c *sageMakerClientWrapper) CreateModel(ctx context.Context, model *sagemak
 
 	err := createRequest.Send()
 
-	if response != nil {
-		return response, nil
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, err
+	return response, nil
 }
 
 // Return a model delete or nil if error.
@@ -489,11 +489,10 @@ func (c *sageMakerClientWrapper) CreateEndpointConfig(ctx context.Context, endpo
 
 	err := createRequest.Send()
 
-	if response != nil {
-		return response, nil
+	if err != nil {
+		return nil, err
 	}
-
-	return nil, err
+	return response, nil
 }
 
 //  Return a EndpointConfig delete response output or nil if error
