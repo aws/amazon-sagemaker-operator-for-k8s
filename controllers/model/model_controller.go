@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/go-logr/logr"
@@ -68,13 +67,8 @@ func NewModelReconciler(client client.Client, log logr.Logger, pollInterval time
 		Client:       client,
 		Log:          log,
 		PollInterval: pollInterval,
-		createSageMakerClient: func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
-			session, _ := awssession.NewSessionWithOptions(
-				awssession.Options{
-					SharedConfigState: awssession.SharedConfigEnable,
-					Config:            awsConfig,
-				})
-			return sagemaker.New(session)
+		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
+			return sagemaker.New(CreateNewAWSSessionFromConfig(cfg))
 		},
 		awsConfigLoader: NewAwsConfigLoader(),
 	}

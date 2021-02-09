@@ -19,6 +19,7 @@ package controllers
 import (
 	"github.com/adammck/venv"
 	"github.com/aws/aws-sdk-go/aws"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
 	// "github.com/aws/aws-sdk-go/aws/endpoints"
 	// "github.com/aws/aws-sdk-go/service/sagemaker"
 )
@@ -39,6 +40,15 @@ func NewAwsConfigLoaderForEnv(env venv.Env) AwsConfigLoader {
 	return AwsConfigLoader{
 		Env: env,
 	}
+}
+
+func CreateNewAWSSessionFromConfig(cfg aws.Config) *awssession.Session {
+	sess, _ := awssession.NewSessionWithOptions(
+		awssession.Options{
+			SharedConfigState: awssession.SharedConfigEnable,
+			Config:            cfg,
+		})
+	return sess
 }
 
 // LoadAwsConfigWithOverrides loads default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.

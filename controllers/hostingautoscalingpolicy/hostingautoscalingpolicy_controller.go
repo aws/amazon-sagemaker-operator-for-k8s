@@ -27,7 +27,6 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 	aws "github.com/aws/aws-sdk-go/aws"
-	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -80,12 +79,8 @@ func NewHostingAutoscalingPolicyReconciler(client client.Client, log logr.Logger
 		Log:          log,
 		PollInterval: pollInterval,
 		createApplicationAutoscalingClient: func(cfg aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
-			session, _ := awssession.NewSessionWithOptions(
-				awssession.Options{
-					SharedConfigState: awssession.SharedConfigEnable,
-					Config:            cfg,
-				})
-			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(session))
+			sess := controllers.CreateNewAWSSessionFromConfig(cfg)
+			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(sess))
 		},
 		awsConfigLoader: controllers.NewAwsConfigLoader(),
 	}

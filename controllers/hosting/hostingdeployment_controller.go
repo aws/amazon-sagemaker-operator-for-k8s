@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/aws/aws-sdk-go/aws"
-	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 
@@ -68,12 +67,7 @@ func NewHostingDeploymentReconciler(client client.Client, log logr.Logger, pollI
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
-			session, _ := awssession.NewSessionWithOptions(
-				awssession.Options{
-					SharedConfigState: awssession.SharedConfigEnable,
-					Config:            cfg,
-				})
-			return sagemaker.New(session)
+			return sagemaker.New(CreateNewAWSSessionFromConfig(cfg))
 		},
 		awsConfigLoader:                NewAwsConfigLoader(),
 		createModelReconciler:          NewModelReconciler,
