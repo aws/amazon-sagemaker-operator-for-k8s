@@ -80,7 +80,7 @@ type ProcessingInput struct {
 type ProcessingS3Input struct {
 	LocalPath LocalPath `json:"localPath"`
 
-	CompressionType CompressionType `json:"compressionType,omitempty"`
+	CompressionType CompressionType `json:"s3CompressionType,omitempty"`
 
 	// +kubebuilder:validation:Enum=FullyReplicated;ShardedByS3Key
 	S3DataDistributionType S3DataDistributionType `json:"s3DataDistributionType,omitempty"`
