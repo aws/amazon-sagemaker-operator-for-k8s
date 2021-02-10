@@ -14,7 +14,7 @@ function run_delete_canary_tests
   echo "Running delete canary tests"
   verify_delete "${crd_namespace}" TrainingJob testfiles/xgboost-mnist-trainingjob-debugger.yaml
   verify_delete "${crd_namespace}" ProcessingJob testfiles/kmeans-mnist-processingjob.yaml
-  # verify_delete "${crd_namespace}" HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
+  verify_delete "${crd_namespace}" HyperparameterTuningJob testfiles/xgboost-mnist-hpo.yaml
 
   # Create model before running batch delete test
   run_test "${crd_namespace}" testfiles/xgboost-model.yaml

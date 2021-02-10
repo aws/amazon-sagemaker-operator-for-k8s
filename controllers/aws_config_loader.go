@@ -63,7 +63,6 @@ func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSp
 		return aws.Config{Region: aws.String(regionOverride)}, nil
 	}
 
-	// TODO : GoSDK V1 Migration
 	// Override SageMaker endpoint.
 	// Precendence is given to job override then operator override (from the environment variable).
 	var customEndpoint string

@@ -84,7 +84,7 @@ type SageMakerClientWrapper interface {
 	CreateHyperParameterTuningJob(ctx context.Context, tuningJob *sagemaker.CreateHyperParameterTuningJobInput) (*sagemaker.CreateHyperParameterTuningJobOutput, error)
 	StopHyperParameterTuningJob(ctx context.Context, tuningJobName string) (*sagemaker.StopHyperParameterTuningJobOutput, error)
 
-	ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) HyperParameterTuningJobPaginator
+	ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string, nextToken *string) (*sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput, error)
 
 	DescribeEndpoint(ctx context.Context, endpointName string) (*sagemaker.DescribeEndpointOutput, error)
 	CreateEndpoint(ctx context.Context, endpoint *sagemaker.CreateEndpointInput) (*sagemaker.CreateEndpointOutput, error)
@@ -268,11 +268,10 @@ func (c *sageMakerClientWrapper) CreateHyperParameterTuningJob(ctx context.Conte
 
 	err := createRequest.Send()
 
-	if response != nil {
-		return response, nil
+	if err != nil {
+		return nil, err
 	}
-
-	return nil, err
+	return response, nil
 }
 
 // Stops a hyperparameter tuning job. Returns the response output or nil if error.
@@ -290,17 +289,19 @@ func (c *sageMakerClientWrapper) StopHyperParameterTuningJob(ctx context.Context
 	return stopResponse, nil
 }
 
-// TODO : GoSDK V1 : Paginator
 // Returns a paginator for iterating through the training jobs associated with a given hyperparameter tuning job. Returns the response output or nil if error.
-// func (c *sageMakerClientWrapper) ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string) HyperParameterTuningJobPaginator {
-// 	_, paginator := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
-// 		HyperParameterTuningJobName: &tuningJobName,
-// 	})
+func (c *sageMakerClientWrapper) ListTrainingJobsForHyperParameterTuningJob(ctx context.Context, tuningJobName string, nextToken *string) (*sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput, error) {
+	req, hpoTrainingJobOutput := c.innerClient.ListTrainingJobsForHyperParameterTuningJobRequest(&sagemaker.ListTrainingJobsForHyperParameterTuningJobInput{
+		HyperParameterTuningJobName: &tuningJobName,
+		NextToken:                   nextToken,
+	})
+	err := req.Send()
 
-// 	return &hyperParameterTuningJobPaginator{
-// 		paginator: &paginator,
-// 	}
-// }
+	if err != nil {
+		return nil, err
+	}
+	return hpoTrainingJobOutput, nil
+}
 
 // The SageMaker API does not conform to the HTTP standard. This detects if a SageMaker error response is equivalent
 // to an HTTP 404 not found.
@@ -578,37 +579,6 @@ func IsStopHyperParameterTuningJob404Error(err error) bool {
 
 	return false
 }
-
-// HyperParameterTuningJobPaginator wraps the SageMaker ListTrainingJobsForHyperParameterTuningJobPaginator.
-type HyperParameterTuningJobPaginator interface {
-	Next(context.Context) bool
-	CurrentPage() []sagemaker.HyperParameterTrainingJobSummary
-	Err() error
-}
-
-// TODO : GoSDK V1 : Paginator
-// type hyperParameterTuningJobPaginator struct {
-// 	paginator *sagemaker.ListTrainingJobsForHyperParameterTuningJobPaginator
-// }
-
-// var _ HyperParameterTuningJobPaginator = (*hyperParameterTuningJobPaginator)(nil)
-
-// // Next will attempt to retrieve the next page of training jobs.
-// func (p *hyperParameterTuningJobPaginator) Next(ctx context.Context) bool {
-// 	return p.paginator.Next(ctx)
-// }
-
-// // CurrentPage returns the list of training job summaries provided by the current page.
-// func (p *hyperParameterTuningJobPaginator) CurrentPage() []sagemaker.HyperParameterTrainingJobSummary {
-// 	page := p.paginator.CurrentPage()
-
-// 	return page.TrainingJobSummaries
-// }
-
-// // Err returns the error the paginator encountered when retrieving the next page.
-// func (p *hyperParameterTuningJobPaginator) Err() error {
-// 	return p.paginator.Err()
-// }
 
 // IsRecoverableError determines if type of error is trasient and can be resolved without user intervention by reconciling
 // Before using this method determine if all other errors for your use-case can be categorized as non-recoverable
