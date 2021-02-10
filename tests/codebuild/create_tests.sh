@@ -16,7 +16,7 @@ function run_canary_tests
   echo "Starting Canary Tests"
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml
   run_test "${crd_namespace}" testfiles/kmeans-mnist-processingjob.yaml
-  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
+  # run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
   # Special code for batch transform till we fix issue-59
   run_test "${crd_namespace}" testfiles/xgboost-model.yaml
   # We need to get sagemaker model before running batch transform
@@ -67,8 +67,8 @@ function run_integration_tests
   run_test "${crd_namespace}" testfiles/xgboost-mnist-custom-endpoint.yaml
   # run_test "${crd_namespace}" testfiles/efs-xgboost-mnist-trainingjob.yaml
   # run_test "${crd_namespace}" testfiles/fsx-kmeans-mnist-trainingjob.yaml
-  run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
-  run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
+  # run_test "${crd_namespace}" testfiles/spot-xgboost-mnist-hpo.yaml
+  # run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo-custom-endpoint.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob-debugger.yaml
   run_test "${crd_namespace}" testfiles/xgboost-hosting-deployment-multi-container.yaml
   run_hap_test "${crd_namespace}" named-xgboost-hosting testfiles/xgboost-hostingautoscaling.yaml testfiles/xgboost-hostingautoscaling-custom.yaml
@@ -84,7 +84,7 @@ function verify_canary_tests
   echo "Verifying canary tests"
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist 20m Completed
   verify_test "${crd_namespace}" ProcessingJob kmeans-mnist 20m Completed
-  verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
+  # verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting 90m InService
 }
@@ -114,8 +114,8 @@ function verify_integration_tests
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-custom-endpoint 20m Completed
   # verify_test "${crd_namespace}" TrainingJob efs-xgboost-mnist 20m Completed
   # verify_test "${crd_namespace}" TrainingJob fsx-kmeans-mnist 20m Completed
-  verify_test "${crd_namespace}" HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
-  verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
+  # verify_test "${crd_namespace}" HyperparameterTuningJob spot-xgboost-mnist-hpo 20m Completed
+  # verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo-custom-endpoint 20m Completed
   verify_test "${crd_namespace}" HostingDeployment xgboost-hosting-multi-container 90m InService
   verify_test "${crd_namespace}" TrainingJob xgboost-mnist-debugger 20m Completed
   # Verify that debug job has status

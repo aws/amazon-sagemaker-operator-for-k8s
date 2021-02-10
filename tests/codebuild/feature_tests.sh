@@ -19,7 +19,7 @@ function run_feature_integration_tests
   local crd_namespace="$1"
   run_feature_canary_tests
 
-  run_test "${crd_namespace}" testfiles/failing-xgboost-mnist-hpo.yaml
+  # run_test "${crd_namespace}" testfiles/failing-xgboost-mnist-hpo.yaml
   run_test "${crd_namespace}" testfiles/failing-xgboost-mnist-trainingjob.yaml
 }
 
@@ -82,19 +82,19 @@ function verify_feature_integration_tests
   fi
   echo "[SUCCESS] TrainingJob with Failed status has additional set"
 
-  if ! wait_for_crd_status "$crd_namespace" HyperParameterTuningJob failing-xgboost-mnist-hpo 10m Failed; then
-    echo "[FAILED] Failing hyperparameter tuning job never reached status Failed"
-    exit 1
-  fi
-  if ! verify_resource_has_additional "$crd_namespace" HyperParameterTuningJob failing-xgboost-mnist-hpo; then
-    echo "[FAILED] Failing hyperparameter tuning job does not have any additional status set"
-    exit 1
-  fi
-  if ! verify_failed_trainingjobs_from_hpo_have_additional "$crd_namespace" failing-xgboost-mnist-hpo; then
-    echo "[FAILED] Not all failed training jobs in failing HPO job contained the additional in their statuses"
-    exit 1
-  fi
-  echo "[SUCCESS] HyperParameterTuningJob with Failed status has its additional status set and set for all TrainingJobs"
+  # if ! wait_for_crd_status "$crd_namespace" HyperParameterTuningJob failing-xgboost-mnist-hpo 10m Failed; then
+  #   echo "[FAILED] Failing hyperparameter tuning job never reached status Failed"
+  #   exit 1
+  # fi
+  # if ! verify_resource_has_additional "$crd_namespace" HyperParameterTuningJob failing-xgboost-mnist-hpo; then
+  #   echo "[FAILED] Failing hyperparameter tuning job does not have any additional status set"
+  #   exit 1
+  # fi
+  # if ! verify_failed_trainingjobs_from_hpo_have_additional "$crd_namespace" failing-xgboost-mnist-hpo; then
+  #   echo "[FAILED] Not all failed training jobs in failing HPO job contained the additional in their statuses"
+  #   exit 1
+  # fi
+  # echo "[SUCCESS] HyperParameterTuningJob with Failed status has its additional status set and set for all TrainingJobs"
 }
 
 # This function verifies that a given training job has a failure reason in the 
