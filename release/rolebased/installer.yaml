@@ -1636,13 +1636,13 @@ spec:
                     type: string
                   s3Input:
                     properties:
-                      compressionType:
+                      localPath:
+                        maxLength: 256
+                        type: string
+                      s3CompressionType:
                         enum:
                         - None
                         - Gzip
-                        type: string
-                      localPath:
-                        maxLength: 256
                         type: string
                       s3DataDistributionType:
                         allOf:
