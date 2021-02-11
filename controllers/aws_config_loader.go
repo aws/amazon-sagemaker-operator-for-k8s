@@ -21,7 +21,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	awsendpoints "github.com/aws/aws-sdk-go/aws/endpoints"
 	awssession "github.com/aws/aws-sdk-go/aws/session"
-	// "github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 // AwsConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
@@ -57,7 +56,6 @@ func CreateNewAWSSessionFromConfig(cfg aws.Config) *awssession.Session {
 // variable specified by DefaultSageMakerEndpointEnvKey overrides the endpoint if it is set.
 func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSpecificEndpointOverride *string) (aws.Config, error) {
 	var config aws.Config
-	// var err error
 
 	if regionOverride != "" {
 		return aws.Config{Region: aws.String(regionOverride)}, nil
