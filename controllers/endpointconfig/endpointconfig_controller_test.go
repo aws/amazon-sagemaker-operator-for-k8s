@@ -376,7 +376,7 @@ var _ = Describe("Reconciling a endpointConfig that is different than the spec",
 
 		for _, pv := range endpointConfig.Spec.ProductionVariants {
 			outOfDateDescription.ProductionVariants = append(outOfDateDescription.ProductionVariants, &sagemaker.ProductionVariant{
-				AcceleratorType:      ToStringPtr(*pv.AcceleratorType),
+				AcceleratorType:      pv.AcceleratorType,
 				InitialInstanceCount: ToInt64Ptr(*pv.InitialInstanceCount + 1),
 				InitialVariantWeight: ToFloat64Ptr(float64(*pv.InitialVariantWeight)),
 				ModelName:            ToStringPtr(*pv.ModelName),
