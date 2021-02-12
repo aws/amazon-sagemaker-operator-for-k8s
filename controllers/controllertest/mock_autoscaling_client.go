@@ -288,16 +288,11 @@ func (m mockApplicationAutoscalingClient) DescribeScalableTargetsRequest(input *
 	mockRequest := m.mockRequestBuilder()
 
 	if nextdescribeScalableTargetsResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextdescribeScalableTargetsResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextdescribeScalableTargetsResponse.targetData
-		})
+		mockRequest.Error = nextdescribeScalableTargetsResponse.err
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextdescribeScalableTargetsResponse.targetData
 }
 
 // Mock DescribeScalingPoliciesRequest implementation. It overrides a request response with the mock data.
@@ -330,16 +325,11 @@ func (m mockApplicationAutoscalingClient) DescribeScalingPoliciesRequest(input *
 	mockRequest := m.mockRequestBuilder()
 
 	if nextdescribeScalingPolicyResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextdescribeScalingPolicyResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextdescribeScalingPolicyResponse.policyData
-		})
+		mockRequest.Error = nextdescribeScalingPolicyResponse.err
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextdescribeScalingPolicyResponse.policyData
 }
 
 // Mock RegisterScalableTargetRequest implementation. It overrides a request response with the mock data.
@@ -373,16 +363,11 @@ func (m mockApplicationAutoscalingClient) RegisterScalableTargetRequest(input *a
 	mockRequest := m.mockRequestBuilder()
 
 	if nextregisterScalableTargetResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextregisterScalableTargetResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextregisterScalableTargetResponse.targetData
-		})
+		mockRequest.Error = nextregisterScalableTargetResponse.err
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextregisterScalableTargetResponse.targetData
 }
 
 // Mock PutScalingPolicyRequest implementation. It overrides a request response with the mock data.
@@ -416,16 +401,11 @@ func (m mockApplicationAutoscalingClient) PutScalingPolicyRequest(input *applica
 	mockRequest := m.mockRequestBuilder()
 
 	if nextputScalingPolicyResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextputScalingPolicyResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextputScalingPolicyResponse.policyData
-		})
+		mockRequest.Error = nextputScalingPolicyResponse.err
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextputScalingPolicyResponse.policyData
 }
 
 // Mock DeregisterScalableTargetRequest implementation. It overrides a request response with the mock data.
@@ -459,16 +439,11 @@ func (m mockApplicationAutoscalingClient) DeregisterScalableTargetRequest(input 
 	mockRequest := m.mockRequestBuilder()
 
 	if nextderegisterScalableTargetResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextderegisterScalableTargetResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextderegisterScalableTargetResponse.targetData
-		})
+		mockRequest.Error = nextderegisterScalableTargetResponse.err
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextderegisterScalableTargetResponse.targetData
 }
 
 // Mock DeleteScalingPolicyRequest implementation. It overrides a request response with the mock data.
@@ -502,14 +477,9 @@ func (m mockApplicationAutoscalingClient) DeleteScalingPolicyRequest(input *appl
 	mockRequest := m.mockRequestBuilder()
 
 	if nextdeleteScalingPolicyResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextdeleteScalingPolicyResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextdeleteScalingPolicyResponse.policyData
-		})
+		mockRequest.Error = nextdeleteScalingPolicyResponse.err
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextdeleteScalingPolicyResponse.policyData
 }
