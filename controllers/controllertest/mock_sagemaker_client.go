@@ -682,63 +682,42 @@ func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.Describ
 	return mockRequest, nextDescribeTrainingJobResponse.data
 }
 
-// TODO : GoSDK V1 : Paginator
 // Mock ListTrainingJobsForHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type listTrainingJobsForHyperParameterTuningJobResponse, or there are no more responses to give, fail the test.
-// func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest {
+func (m mockSageMakerClient) ListTrainingJobsForHyperParameterTuningJobRequest(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) (*awsrequest.Request, *sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput) {
 
-// 	m.requests.PushBack(input)
+	m.requests.PushBack(input)
 
-// 	front := m.responses.Front()
+	front := m.responses.Front()
 
-// 	var nextResponse interface{}
-// 	if front == nil {
-// 		message := "Not enough listTrainingJobsForHyperParameterTuningJobResponse responses provided for test"
-// 		nextResponse = listTrainingJobsForHyperParameterTuningJobResponse{
-// 			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
-// 		}
-// 		m.testReporter.Error(message)
-// 	} else {
-// 		nextResponse = front.Value
-// 		m.responses.Remove(front)
-// 	}
+	var nextResponse interface{}
+	if front == nil {
+		message := "Not enough listTrainingJobsForHyperParameterTuningJobResponse responses provided for test"
+		nextResponse = listTrainingJobsForHyperParameterTuningJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+		m.testReporter.Error(message)
+	} else {
+		nextResponse = front.Value
+		m.responses.Remove(front)
+	}
 
-// 	nextListTrainingJobsForHyperParameterTuningJobResponseResponse, ok := nextResponse.(listTrainingJobsForHyperParameterTuningJobResponse)
-// 	if !ok {
-// 		message := "listTrainingJobsForHyperParameterTuningJobResponse request created, next response is not of type ListTrainingJobsForHyperParameterTuningJobResponseOutput"
-// 		nextListTrainingJobsForHyperParameterTuningJobResponseResponse = listTrainingJobsForHyperParameterTuningJobResponse{
-// 			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
-// 		}
-// 	}
+	nextListTrainingJobsForHyperParameterTuningJobResponseResponse, ok := nextResponse.(listTrainingJobsForHyperParameterTuningJobResponse)
+	if !ok {
+		message := "listTrainingJobsForHyperParameterTuningJobResponse request created, next response is not of type ListTrainingJobsForHyperParameterTuningJobResponseOutput"
+		nextListTrainingJobsForHyperParameterTuningJobResponseResponse = listTrainingJobsForHyperParameterTuningJobResponse{
+			err: awserr.NewRequestFailure(awserr.New("test error", message, fmt.Errorf(message)), 500, "request id"),
+		}
+	}
 
-// 	mockRequest := m.mockRequestBuilder()
+	mockRequest := m.mockRequestBuilder()
 
-// 	if nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err != nil {
-// 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-// 			r.Error = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err
-// 		})
-// 	} else {
-// 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-// 			r.Data = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.data
-// 		})
-// 	}
-
-// 	// Required for pagination operation. I do not recommend that you test actual pagination
-// 	// in unit tests, as I imagine the Copy field will have to be filled out for every time you call
-// 	// paginator.Next.
-// 	copyFn := func(input *sagemaker.ListTrainingJobsForHyperParameterTuningJobInput) sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest {
-// 		return sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest{
-// 			Request: mockRequest,
-// 			Input:   input,
-// 			Copy:    nil,
-// 		}
-// 	}
-
-// 	return sagemaker.ListTrainingJobsForHyperParameterTuningJobRequest{
-// 		Request: mockRequest,
-// 		Copy:    copyFn,
-// 	}
-// }
+	if nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err != nil {
+		mockRequest.Error = nextListTrainingJobsForHyperParameterTuningJobResponseResponse.err
+		return mockRequest, nil
+	}
+	return mockRequest, nextListTrainingJobsForHyperParameterTuningJobResponseResponse.data
+}
 
 // Mock StopTrainingJobRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type StopTrainingJob, or there are no more responses to give, fail the test.

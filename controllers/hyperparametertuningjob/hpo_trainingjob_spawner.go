@@ -233,6 +233,7 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 	// The goroutines will block on writes; this goroutine will consume concurrently
 	// so that they finish.
 	errorsChannel := make(chan error)
+	errors := []error{}
 
 	var nextToken *string = nil
 
@@ -241,6 +242,7 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 		hpoTrainingJobOutput, err := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName, nextToken)
 		if err != nil {
 			s.Log.Info("Error while getting training jobs", "err", err)
+			errors = append(errors, err)
 			break
 		}
 
@@ -276,7 +278,7 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 
 	// Concurrent to the deletion goroutines, read every error from the channel and
 	// save them in a slice.
-	errors := []error{}
+
 	for err := range errorsChannel {
 		errors = append(errors, err)
 	}
