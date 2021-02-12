@@ -233,7 +233,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 	secondaryStatus := *ctx.TrainingJobDescription.SecondaryStatus
 	additional := controllers.GetOrDefault(ctx.TrainingJobDescription.FailureReason, "")
 
-	if ctx.TrainingJobDescription.TrainingJobStatus == aws.String(sagemaker.TrainingJobStatusStopping) {
+	if *ctx.TrainingJobDescription.TrainingJobStatus == string(sagemaker.TrainingJobStatusStopping) {
 		// Clear the secondary status if we detected stopping, since SageMaker has unclear secondary statuses during this phase
 		// Open ticket with the SageMaker team: https://t.corp.amazon.com/0411302791
 		secondaryStatus = ""
