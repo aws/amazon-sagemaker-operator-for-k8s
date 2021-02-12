@@ -640,13 +640,10 @@ func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTra
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateTrainingJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextCreateTrainingJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextCreateTrainingJobResponse.data
 }
 
 // Mock DescribeTrainingJobRequest implementation. It overrides a request response with the mock data.
@@ -683,13 +680,10 @@ func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.Describ
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeTrainingJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDescribeTrainingJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDescribeTrainingJobResponse.data
 }
 
 // TODO : GoSDK V1 : Paginator
@@ -784,13 +778,10 @@ func (m mockSageMakerClient) StopTrainingJobRequest(input *sagemaker.StopTrainin
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopTrainingJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextStopTrainingJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextStopTrainingJobResponse.data
 }
 
 // Mock DescribeHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
@@ -827,13 +818,10 @@ func (m mockSageMakerClient) DescribeHyperParameterTuningJobRequest(input *sagem
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeHyperParameterTuningJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDescribeHyperParameterTuningJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDescribeHyperParameterTuningJobResponse.data
 }
 
 // Mock CreateHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
@@ -870,13 +858,10 @@ func (m mockSageMakerClient) CreateHyperParameterTuningJobRequest(input *sagemak
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateHyperParameterTuningJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextCreateHyperParameterTuningJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextCreateHyperParameterTuningJobResponse.data
 }
 
 // Mock StopHyperParameterTuningJobRequest implementation. It overrides a request response with the mock data.
@@ -913,13 +898,10 @@ func (m mockSageMakerClient) StopHyperParameterTuningJobRequest(input *sagemaker
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopHyperParameterTuningJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextStopHyperParameterTuningJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextStopHyperParameterTuningJobResponse.data
 }
 
 // Mock DescribeEndpointRequest implementation. It overrides a request response with the mock data.
@@ -956,13 +938,10 @@ func (m mockSageMakerClient) DescribeEndpointRequest(input *sagemaker.DescribeEn
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeEndpointResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDescribeEndpointResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDescribeEndpointResponse.data
 }
 
 // Mock DeleteModelRequest implementation. It overrides a request response with the mock data.
@@ -999,13 +978,10 @@ func (m mockSageMakerClient) DeleteModelRequest(input *sagemaker.DeleteModelInpu
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDeleteModelResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDeleteModelResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDeleteModelResponse.data
 }
 
 // Mock DescribeModelRequest implementation. It overrides a request response with the mock data.
@@ -1042,13 +1018,10 @@ func (m mockSageMakerClient) DescribeModelRequest(input *sagemaker.DescribeModel
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeModelResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDescribeModelResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDescribeModelResponse.data
 }
 
 // Mock CreateModelRequest implementation. It overrides a request response with the mock data.
@@ -1085,13 +1058,10 @@ func (m mockSageMakerClient) CreateModelRequest(input *sagemaker.CreateModelInpu
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateModelResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextCreateModelResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextCreateModelResponse.data
 }
 
 // Mock DescribeTransformJobRequest implementation. It overrides a request response with the mock data.
@@ -1128,13 +1098,10 @@ func (m mockSageMakerClient) DescribeTransformJobRequest(input *sagemaker.Descri
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeTransformJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDescribeTransformJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDescribeTransformJobResponse.data
 }
 
 // Add a AddStopTransformJobResponse response to the client.
@@ -1180,13 +1147,10 @@ func (m mockSageMakerClient) StopTransformJobRequest(input *sagemaker.StopTransf
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopTransformJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextStopTransformJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextStopTransformJobResponse.data
 }
 
 // Mock DescribeEndpointConfigRequest implementation. It overrides a request response with the mock data.
@@ -1223,13 +1187,10 @@ func (m mockSageMakerClient) DescribeEndpointConfigRequest(input *sagemaker.Desc
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeEndpointConfigResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDescribeEndpointConfigResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDescribeEndpointConfigResponse.data
 }
 
 // Mock CreateEndpointConfigRequest implementation. It overrides a request response with the mock data.
@@ -1266,13 +1227,10 @@ func (m mockSageMakerClient) CreateEndpointConfigRequest(input *sagemaker.Create
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateEndpointConfigResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextCreateEndpointConfigResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextCreateEndpointConfigResponse.data
 }
 
 // Mock UpdateEndpointRequest implementation. It overrides a request response with the mock data.
@@ -1309,13 +1267,10 @@ func (m mockSageMakerClient) UpdateEndpointRequest(input *sagemaker.UpdateEndpoi
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextUpdateEndpointResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextUpdateEndpointResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextUpdateEndpointResponse.data
 }
 
 // Mock DeleteEndpointConfigRequest implementation. It overrides a request response with the mock data.
@@ -1352,13 +1307,10 @@ func (m mockSageMakerClient) DeleteEndpointConfigRequest(input *sagemaker.Delete
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDeleteEndpointConfigResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDeleteEndpointConfigResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDeleteEndpointConfigResponse.data
 }
 
 // Mock CreateEndpointRequest implementation. It overrides a request response with the mock data.
@@ -1395,13 +1347,10 @@ func (m mockSageMakerClient) CreateEndpointRequest(input *sagemaker.CreateEndpoi
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateEndpointResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextCreateEndpointResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextCreateEndpointResponse.data
 }
 
 // Mock DeleteEndpointRequest implementation. It overrides a request response with the mock data.
@@ -1438,13 +1387,10 @@ func (m mockSageMakerClient) DeleteEndpointRequest(input *sagemaker.DeleteEndpoi
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDeleteEndpointResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDeleteEndpointResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDeleteEndpointResponse.data
 }
 
 // Mock CreateProcessingJobRequest implementation. It overrides a request response with the mock data.
@@ -1481,13 +1427,10 @@ func (m mockSageMakerClient) CreateProcessingJobRequest(input *sagemaker.CreateP
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextCreateProcessingJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextCreateProcessingJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextCreateProcessingJobResponse.data
 }
 
 // Mock DescribeProcessingJobRequest implementation. It overrides a request response with the mock data.
@@ -1524,13 +1467,10 @@ func (m mockSageMakerClient) DescribeProcessingJobRequest(input *sagemaker.Descr
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextDescribeProcessingJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextDescribeProcessingJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextDescribeProcessingJobResponse.data
 }
 
 // Mock StopProcessingJobRequest implementation. It overrides a request response with the mock data.
@@ -1567,11 +1507,8 @@ func (m mockSageMakerClient) StopProcessingJobRequest(input *sagemaker.StopProce
 		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = nextStopProcessingJobResponse.err
 		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Data = nextStopProcessingJobResponse.data
-		})
+		return mockRequest, nil
 	}
 
-	return mockRequest, nil
+	return mockRequest, nextStopProcessingJobResponse.data
 }
