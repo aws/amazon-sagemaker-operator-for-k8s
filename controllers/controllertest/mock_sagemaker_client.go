@@ -637,9 +637,7 @@ func (m mockSageMakerClient) CreateTrainingJobRequest(input *sagemaker.CreateTra
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateTrainingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextCreateTrainingJobResponse.err
-		})
+		mockRequest.Error = nextCreateTrainingJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -677,9 +675,7 @@ func (m mockSageMakerClient) DescribeTrainingJobRequest(input *sagemaker.Describ
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeTrainingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDescribeTrainingJobResponse.err
-		})
+		mockRequest.Error = nextDescribeTrainingJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -775,9 +771,7 @@ func (m mockSageMakerClient) StopTrainingJobRequest(input *sagemaker.StopTrainin
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopTrainingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextStopTrainingJobResponse.err
-		})
+		mockRequest.Error = nextStopTrainingJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -815,9 +809,7 @@ func (m mockSageMakerClient) DescribeHyperParameterTuningJobRequest(input *sagem
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeHyperParameterTuningJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDescribeHyperParameterTuningJobResponse.err
-		})
+		mockRequest.Error = nextDescribeHyperParameterTuningJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -855,9 +847,7 @@ func (m mockSageMakerClient) CreateHyperParameterTuningJobRequest(input *sagemak
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateHyperParameterTuningJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextCreateHyperParameterTuningJobResponse.err
-		})
+		mockRequest.Error = nextCreateHyperParameterTuningJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -895,9 +885,7 @@ func (m mockSageMakerClient) StopHyperParameterTuningJobRequest(input *sagemaker
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopHyperParameterTuningJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextStopHyperParameterTuningJobResponse.err
-		})
+		mockRequest.Error = nextStopHyperParameterTuningJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -935,9 +923,7 @@ func (m mockSageMakerClient) DescribeEndpointRequest(input *sagemaker.DescribeEn
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDescribeEndpointResponse.err
-		})
+		mockRequest.Error = nextDescribeEndpointResponse.err
 		return mockRequest, nil
 	}
 
@@ -975,9 +961,7 @@ func (m mockSageMakerClient) DeleteModelRequest(input *sagemaker.DeleteModelInpu
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDeleteModelResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDeleteModelResponse.err
-		})
+		mockRequest.Error = nextDeleteModelResponse.err
 		return mockRequest, nil
 	}
 
@@ -1015,9 +999,7 @@ func (m mockSageMakerClient) DescribeModelRequest(input *sagemaker.DescribeModel
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeModelResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDescribeModelResponse.err
-		})
+		mockRequest.Error = nextDescribeModelResponse.err
 		return mockRequest, nil
 	}
 
@@ -1055,9 +1037,7 @@ func (m mockSageMakerClient) CreateModelRequest(input *sagemaker.CreateModelInpu
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateModelResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextCreateModelResponse.err
-		})
+		mockRequest.Error = nextCreateModelResponse.err
 		return mockRequest, nil
 	}
 
@@ -1095,9 +1075,7 @@ func (m mockSageMakerClient) DescribeTransformJobRequest(input *sagemaker.Descri
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeTransformJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDescribeTransformJobResponse.err
-		})
+		mockRequest.Error = nextDescribeTransformJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -1144,9 +1122,7 @@ func (m mockSageMakerClient) StopTransformJobRequest(input *sagemaker.StopTransf
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopTransformJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextStopTransformJobResponse.err
-		})
+		mockRequest.Error = nextStopTransformJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -1184,9 +1160,7 @@ func (m mockSageMakerClient) DescribeEndpointConfigRequest(input *sagemaker.Desc
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeEndpointConfigResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDescribeEndpointConfigResponse.err
-		})
+		mockRequest.Error = nextDescribeEndpointConfigResponse.err
 		return mockRequest, nil
 	}
 
@@ -1224,9 +1198,7 @@ func (m mockSageMakerClient) CreateEndpointConfigRequest(input *sagemaker.Create
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateEndpointConfigResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextCreateEndpointConfigResponse.err
-		})
+		mockRequest.Error = nextCreateEndpointConfigResponse.err
 		return mockRequest, nil
 	}
 
@@ -1264,9 +1236,7 @@ func (m mockSageMakerClient) UpdateEndpointRequest(input *sagemaker.UpdateEndpoi
 	mockRequest := m.mockRequestBuilder()
 
 	if nextUpdateEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextUpdateEndpointResponse.err
-		})
+		mockRequest.Error = nextUpdateEndpointResponse.err
 		return mockRequest, nil
 	}
 
@@ -1304,9 +1274,7 @@ func (m mockSageMakerClient) DeleteEndpointConfigRequest(input *sagemaker.Delete
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDeleteEndpointConfigResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDeleteEndpointConfigResponse.err
-		})
+		mockRequest.Error = nextDeleteEndpointConfigResponse.err
 		return mockRequest, nil
 	}
 
@@ -1344,9 +1312,7 @@ func (m mockSageMakerClient) CreateEndpointRequest(input *sagemaker.CreateEndpoi
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextCreateEndpointResponse.err
-		})
+		mockRequest.Error = nextCreateEndpointResponse.err
 		return mockRequest, nil
 	}
 
@@ -1384,9 +1350,7 @@ func (m mockSageMakerClient) DeleteEndpointRequest(input *sagemaker.DeleteEndpoi
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDeleteEndpointResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDeleteEndpointResponse.err
-		})
+		mockRequest.Error = nextDeleteEndpointResponse.err
 		return mockRequest, nil
 	}
 
@@ -1424,9 +1388,7 @@ func (m mockSageMakerClient) CreateProcessingJobRequest(input *sagemaker.CreateP
 	mockRequest := m.mockRequestBuilder()
 
 	if nextCreateProcessingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextCreateProcessingJobResponse.err
-		})
+		mockRequest.Error = nextCreateProcessingJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -1464,9 +1426,7 @@ func (m mockSageMakerClient) DescribeProcessingJobRequest(input *sagemaker.Descr
 	mockRequest := m.mockRequestBuilder()
 
 	if nextDescribeProcessingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextDescribeProcessingJobResponse.err
-		})
+		mockRequest.Error = nextDescribeProcessingJobResponse.err
 		return mockRequest, nil
 	}
 
@@ -1504,9 +1464,7 @@ func (m mockSageMakerClient) StopProcessingJobRequest(input *sagemaker.StopProce
 	mockRequest := m.mockRequestBuilder()
 
 	if nextStopProcessingJobResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
-			r.Error = nextStopProcessingJobResponse.err
-		})
+		mockRequest.Error = nextStopProcessingJobResponse.err
 		return mockRequest, nil
 	}
 
