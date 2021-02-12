@@ -597,8 +597,8 @@ var _ = Describe("ModelReconciler.GetSageMakerModelNames", func() {
 		names, err := reconciler.GetSageMakerModelNames(context.Background(), desired)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(names).To(Equal(map[string]string{
-			modelName: sageMakerModelName,
+		Expect(names).To(Equal(map[string]*string{
+			modelName: &sageMakerModelName,
 		}))
 	})
 
