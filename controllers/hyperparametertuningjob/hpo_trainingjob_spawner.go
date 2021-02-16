@@ -88,7 +88,7 @@ func (s hpoTrainingJobSpawner) SpawnMissingTrainingJobs(ctx context.Context, hpo
 	for {
 		hpoTrainingJobOutput, err := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName, nextToken)
 		if err != nil {
-			s.Log.Info("Error while getting training jobs", "err", err)
+			s.Log.Error(err, "Error while getting training jobs")
 			break
 		}
 
@@ -120,9 +120,8 @@ func (s hpoTrainingJobSpawner) SpawnMissingTrainingJobs(ctx context.Context, hpo
 
 		if hpoTrainingJobOutput.NextToken == nil {
 			break
-		} else {
-			nextToken = hpoTrainingJobOutput.NextToken
 		}
+		nextToken = hpoTrainingJobOutput.NextToken
 	}
 
 	// Wait for all requests to finish.
@@ -241,7 +240,7 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 	for {
 		hpoTrainingJobOutput, err := s.SageMakerClient.ListTrainingJobsForHyperParameterTuningJob(ctx, hpoJobName, nextToken)
 		if err != nil {
-			s.Log.Info("Error while getting training jobs", "err", err)
+			s.Log.Error(err, "Error while getting training jobs")
 			errors = append(errors, err)
 			break
 		}
