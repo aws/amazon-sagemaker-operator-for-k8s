@@ -538,7 +538,7 @@ func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMake
 		Log:                   ctrl.Log,
 		PollInterval:          pollInterval,
 		createSageMakerClient: CreateMockSageMakerClientWrapperProvider(sageMakerClient),
-		awsConfigLoader:       CreateMockAwsConfigLoader(),
+		awsConfigLoader:       CreateMockAWSConfigLoader(),
 	}
 }
 
@@ -550,7 +550,7 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 		Log:                   ctrl.Log,
 		PollInterval:          pollInterval,
 		createSageMakerClient: CreateMockSageMakerClientWrapperProvider(sageMakerClient),
-		awsConfigLoader:       CreateMockAwsConfigLoader(),
+		awsConfigLoader:       CreateMockAWSConfigLoader(),
 	}
 }
 

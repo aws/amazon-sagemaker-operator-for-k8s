@@ -591,7 +591,7 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 		Log:                   ctrl.Log,
 		PollInterval:          pollInterval,
 		createSageMakerClient: CreateMockSageMakerClientProvider(sageMakerClient),
-		awsConfigLoader:       CreateMockAwsConfigLoader(),
+		awsConfigLoader:       CreateMockAWSConfigLoader(),
 	}
 }
 

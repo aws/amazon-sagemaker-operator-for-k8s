@@ -54,7 +54,7 @@ type BatchTransformJobReconciler struct {
 
 	PollInterval          time.Duration
 	createSageMakerClient SageMakerClientProvider
-	awsConfigLoader       AwsConfigLoader
+	awsConfigLoader       AWSConfigLoader
 }
 
 // +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=batchtransformjobs,verbs=get;list;watch;create;update;patch;delete
@@ -69,7 +69,7 @@ func NewBatchTransformJobReconciler(client client.Client, log logr.Logger, pollI
 		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
 			return sagemaker.New(CreateNewAWSSessionFromConfig(cfg))
 		},
-		awsConfigLoader: NewAwsConfigLoader(),
+		awsConfigLoader: NewAWSConfigLoader(),
 	}
 }
 
@@ -113,7 +113,7 @@ func (r *BatchTransformJobReconciler) reconcileJob(ctx reconcileRequestContext) 
 		return RequeueImmediately()
 	}
 
-	if awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Job.Spec.Region, ctx.Job.Spec.SageMakerEndpoint); err != nil {
+	if awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.Job.Spec.Region, ctx.Job.Spec.SageMakerEndpoint); err != nil {
 		log.Error(err, "Error loading AWS config")
 		return NoRequeue()
 	} else {

@@ -882,7 +882,7 @@ func createReconcilerWithMockedDependencies(k8sClient k8sclient.Client, sageMake
 		Log:                            ctrl.Log,
 		PollInterval:                   pollInterval,
 		createSageMakerClient:          CreateMockSageMakerClientProvider(sageMakerClient),
-		awsConfigLoader:                CreateMockAwsConfigLoader(),
+		awsConfigLoader:                CreateMockAWSConfigLoader(),
 		createModelReconciler:          createModelReconcilerProvider(&mockModelReconciler{}),
 		createEndpointConfigReconciler: createEndpointConfigReconcilerProvider(&mockEndpointConfigReconciler{}),
 	}
@@ -896,7 +896,7 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 		Log:                            ctrl.Log,
 		PollInterval:                   pollInterval,
 		createSageMakerClient:          CreateMockSageMakerClientProvider(sageMakerClient),
-		awsConfigLoader:                CreateMockAwsConfigLoader(),
+		awsConfigLoader:                CreateMockAWSConfigLoader(),
 		createModelReconciler:          createModelReconcilerProvider(modelReconciler),
 		createEndpointConfigReconciler: createEndpointConfigReconcilerProvider(endpointConfigReconciler),
 	}

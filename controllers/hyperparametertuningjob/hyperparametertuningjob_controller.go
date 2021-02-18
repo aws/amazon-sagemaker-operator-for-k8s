@@ -54,7 +54,7 @@ type Reconciler struct {
 	PollInterval time.Duration
 
 	createSageMakerClient       clientwrapper.SageMakerClientWrapperProvider
-	awsConfigLoader             controllers.AwsConfigLoader
+	awsConfigLoader             controllers.AWSConfigLoader
 	createHPOTrainingJobSpawner HPOTrainingJobSpawnerProvider
 }
 
@@ -69,7 +69,7 @@ func NewHyperparameterTuningJobReconciler(client client.Client, log logr.Logger,
 			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(sess))
 		},
 		createHPOTrainingJobSpawner: NewHPOTrainingJobSpawner,
-		awsConfigLoader:             controllers.NewAwsConfigLoader(),
+		awsConfigLoader:             controllers.NewAWSConfigLoader(),
 	}
 }
 
@@ -237,7 +237,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	ctx.TuningJobName = *ctx.TuningJob.Spec.HyperParameterTuningJobName
 	ctx.Log.Info("TuningJob", "name", ctx.TuningJobName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.TuningJob.Spec.Region, ctx.TuningJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.TuningJob.Spec.Region, ctx.TuningJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

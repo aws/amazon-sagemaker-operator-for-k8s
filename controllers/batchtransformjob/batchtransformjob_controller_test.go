@@ -734,7 +734,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		}
 
 		// Instantiate controller and reconciliation request.
-		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAwsConfigLoaderForEnv(mockEnv), 1)
+		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAWSConfigLoaderForEnv(mockEnv), 1)
 		request := CreateReconciliationRequest(job.ObjectMeta.Name, job.ObjectMeta.Namespace)
 
 		// Run test
@@ -777,7 +777,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		}
 
 		// Instantiate controller and reconciliation request.
-		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAwsConfigLoaderForEnv(mockEnv), 1)
+		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAWSConfigLoaderForEnv(mockEnv), 1)
 		request := CreateReconciliationRequest(job.ObjectMeta.Name, job.ObjectMeta.Namespace)
 
 		// Run test
@@ -823,7 +823,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		}
 
 		// Instantiate controller and reconciliation request.
-		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAwsConfigLoaderForEnv(mockEnv), 1)
+		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAWSConfigLoaderForEnv(mockEnv), 1)
 		request := CreateReconciliationRequest(job.ObjectMeta.Name, job.ObjectMeta.Namespace)
 
 		// Run test
@@ -846,11 +846,11 @@ func createTransformJobReconcilerForSageMakerClient(k8sClient client.Client, sag
 		return sageMakerClient
 	}
 
-	return createTransformJobReconciler(k8sClient, provider, CreateMockAwsConfigLoader(), pollIntervalSeconds)
+	return createTransformJobReconciler(k8sClient, provider, CreateMockAWSConfigLoader(), pollIntervalSeconds)
 }
 
 // Helper function to create a reconciler.
-func createTransformJobReconciler(k8sClient client.Client, sageMakerClientProvider SageMakerClientProvider, awsConfigLoader AwsConfigLoader, pollIntervalSeconds int64) BatchTransformJobReconciler {
+func createTransformJobReconciler(k8sClient client.Client, sageMakerClientProvider SageMakerClientProvider, awsConfigLoader AWSConfigLoader, pollIntervalSeconds int64) BatchTransformJobReconciler {
 	return BatchTransformJobReconciler{
 		Client:                k8sClient,
 		Log:                   ctrl.Log,

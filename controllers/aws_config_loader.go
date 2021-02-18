@@ -23,26 +23,28 @@ import (
 	awssession "github.com/aws/aws-sdk-go/aws/session"
 )
 
-// AwsConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
+// AWSConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
 // This uses venv.Env for mocking in tests.
-type AwsConfigLoader struct {
+type AWSConfigLoader struct {
 	Env venv.Env
 }
 
-// NewAwsConfigLoader creates an AwsConfigLoader with the default OS environment.
-func NewAwsConfigLoader() AwsConfigLoader {
-	return NewAwsConfigLoaderForEnv(venv.OS())
+// NewAWSConfigLoader creates an AWSConfigLoader with the default OS environment.
+func NewAWSConfigLoader() AWSConfigLoader {
+	return NewAWSConfigLoaderForEnv(venv.OS())
 }
 
-// NewAwsConfigLoaderForEnv returns a AwsConfigLoader for the specified environment.
-func NewAwsConfigLoaderForEnv(env venv.Env) AwsConfigLoader {
-	return AwsConfigLoader{
+// NewAWSConfigLoaderForEnv returns a AWSConfigLoader for the specified environment.
+func NewAWSConfigLoaderForEnv(env venv.Env) AWSConfigLoader {
+	return AWSConfigLoader{
 		Env: env,
 	}
 }
 
 // CreateNewAWSSessionFromConfig returns an AWS session using AWS Config
 func CreateNewAWSSessionFromConfig(cfg aws.Config) *awssession.Session {
+	// Use SharedConfigEnable for OIDC
+	// https://github.com/aws/aws-sdk-go/issues/3101
 	sess, _ := awssession.NewSessionWithOptions(
 		awssession.Options{
 			SharedConfigState: awssession.SharedConfigEnable,
@@ -54,11 +56,11 @@ func CreateNewAWSSessionFromConfig(cfg aws.Config) *awssession.Session {
 // LoadAwsConfigWithOverrides loads default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.
 // If specified, jobSpecificEndpointOverride always overrides the endpoint. Otherwise, the environment
 // variable specified by DefaultSageMakerEndpointEnvKey overrides the endpoint if it is set.
-func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSpecificEndpointOverride *string) (aws.Config, error) {
+func (l AWSConfigLoader) LoadAwsConfigWithOverrides(regionOverride *string, jobSpecificEndpointOverride *string) (aws.Config, error) {
 	var config aws.Config
 
-	if regionOverride != "" {
-		return aws.Config{Region: aws.String(regionOverride)}, nil
+	if regionOverride != nil {
+		return aws.Config{Region: regionOverride}, nil
 	}
 
 	// Override SageMaker endpoint.

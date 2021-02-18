@@ -50,7 +50,7 @@ type Reconciler struct {
 	Log                   logr.Logger
 	PollInterval          time.Duration
 	createSageMakerClient clientwrapper.SageMakerClientWrapperProvider
-	awsConfigLoader       controllers.AwsConfigLoader
+	awsConfigLoader       controllers.AWSConfigLoader
 }
 
 // NewProcessingJobReconciler creates a new reconciler with the default SageMaker client.
@@ -63,7 +63,7 @@ func NewProcessingJobReconciler(client client.Client, log logr.Logger, pollInter
 			sess := controllers.CreateNewAWSSessionFromConfig(cfg)
 			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(sess))
 		},
-		awsConfigLoader: controllers.NewAwsConfigLoader(),
+		awsConfigLoader: controllers.NewAWSConfigLoader(),
 	}
 }
 
@@ -214,7 +214,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 
 	ctx.Log.Info("ProcessingJob", "Using job name: ", ctx.ProcessingJobName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.ProcessingJob.Spec.Region, ctx.ProcessingJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.ProcessingJob.Spec.Region, ctx.ProcessingJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

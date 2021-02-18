@@ -716,7 +716,7 @@ func createReconciler(k8sClient k8sclient.Client, applicationAutoscalingClient a
 		Client:                             k8sClient,
 		Log:                                ctrl.Log,
 		createApplicationAutoscalingClient: CreateMockAutoscalingClientWrapperProvider(applicationAutoscalingClient),
-		awsConfigLoader:                    CreateMockAwsConfigLoader(),
+		awsConfigLoader:                    CreateMockAWSConfigLoader(),
 	}
 }
 

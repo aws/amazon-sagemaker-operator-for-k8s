@@ -36,8 +36,8 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-func CreateMockAwsConfigLoader() AwsConfigLoader {
-	return NewAwsConfigLoaderForEnv(venv.Mock())
+func CreateMockAWSConfigLoader() AWSConfigLoader {
+	return NewAWSConfigLoaderForEnv(venv.Mock())
 }
 
 // Create a provider that creates a mock SageMaker client.

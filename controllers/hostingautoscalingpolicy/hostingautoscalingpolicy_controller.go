@@ -69,7 +69,7 @@ type Reconciler struct {
 	Log                                logr.Logger
 	PollInterval                       time.Duration
 	createApplicationAutoscalingClient clientwrapper.ApplicationAutoscalingClientWrapperProvider
-	awsConfigLoader                    controllers.AwsConfigLoader
+	awsConfigLoader                    controllers.AWSConfigLoader
 }
 
 // NewHostingAutoscalingPolicyReconciler creates a new reconciler with the default ApplicationAutoscaling client.
@@ -82,7 +82,7 @@ func NewHostingAutoscalingPolicyReconciler(client client.Client, log logr.Logger
 			sess := controllers.CreateNewAWSSessionFromConfig(cfg)
 			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(sess))
 		},
-		awsConfigLoader: controllers.NewAwsConfigLoader(),
+		awsConfigLoader: controllers.NewAWSConfigLoader(),
 	}
 }
 
@@ -300,7 +300,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		ctx.HostingAutoscalingPolicy.Spec.SuspendedState.ScheduledScalingSuspended = controllertest.ToBoolPtr(DefaultSuspendedStateAttributeValue)
 	}
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

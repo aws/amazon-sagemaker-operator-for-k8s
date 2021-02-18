@@ -58,7 +58,7 @@ type EndpointConfigReconciler struct {
 	Log          logr.Logger
 	PollInterval time.Duration
 
-	awsConfigLoader       AwsConfigLoader
+	awsConfigLoader       AWSConfigLoader
 	createSageMakerClient SageMakerClientProvider
 }
 
@@ -70,7 +70,7 @@ func NewEndpointConfigReconciler(client client.Client, log logr.Logger, pollInte
 		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
 			return sagemaker.New(CreateNewAWSSessionFromConfig(cfg))
 		},
-		awsConfigLoader: NewAwsConfigLoader(),
+		awsConfigLoader: NewAWSConfigLoader(),
 	}
 }
 
@@ -202,7 +202,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 // Initialize config on context object.
 func (r *EndpointConfigReconciler) initializeContext(ctx *reconcileRequestContext) error {
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.EndpointConfig.Spec.Region, ctx.EndpointConfig.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.EndpointConfig.Spec.Region, ctx.EndpointConfig.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err
