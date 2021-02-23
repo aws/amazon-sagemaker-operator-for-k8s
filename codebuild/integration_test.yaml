@@ -1,6 +1,9 @@
 version: 0.2
      
 phases:
+  pre_build:
+    commands:
+      - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
   build:
     commands:
        - (bash codebuild/scripts/diff_release_yamls.sh)
