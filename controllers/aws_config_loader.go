@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	awsendpoints "github.com/aws/aws-sdk-go/aws/endpoints"
 	awssession "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 // AWSConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
@@ -60,7 +61,7 @@ func (l AWSConfigLoader) LoadAWSConfigWithOverrides(regionOverride *string, jobS
 	var config aws.Config
 
 	if regionOverride != nil {
-		return aws.Config{Region: regionOverride}, nil
+		config = aws.Config{Region: regionOverride}
 	}
 
 	// Override SageMaker endpoint.
@@ -75,7 +76,7 @@ func (l AWSConfigLoader) LoadAWSConfigWithOverrides(regionOverride *string, jobS
 	// If a custom endpoint is requested, install custom resolver for SageMaker into config.
 	if customEndpoint != "" {
 		customSageMakerResolver := func(service, region string, optFns ...func(*awsendpoints.Options)) (awsendpoints.ResolvedEndpoint, error) {
-			if service == "sagemaker" {
+			if service == sagemaker.EndpointsID {
 				return awsendpoints.ResolvedEndpoint{
 					URL: customEndpoint,
 				}, nil

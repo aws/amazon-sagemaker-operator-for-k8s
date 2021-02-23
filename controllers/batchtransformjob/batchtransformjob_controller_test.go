@@ -644,8 +644,6 @@ var _ = Describe("Reconciling a job without finalizer that is being deleted", fu
 	})
 })
 
-// Currently these 3 tests are skipped
-// TODO : GoSDK V1 : resolve null pointer issue for custom endpoint unit test
 var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", func() {
 
 	var (
@@ -710,7 +708,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(apierrs.IsNotFound(err)).To(Equal(true))
 	})
 
-	PIt("should configure the SageMaker client to use the custom endpoint", func() {
+	It("should configure the SageMaker client to use the custom endpoint", func() {
 
 		// Create job in Kubernetes.
 		err = k8sClient.Create(context.Background(), job)
@@ -750,7 +748,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
 
-	PIt("should use the job-specific SageMakerEndpoint over the environment variable", func() {
+	It("should use the job-specific SageMakerEndpoint over the environment variable", func() {
 
 		expectedEndpoint = "https://" + uuid.New().String() + ".expected.com"
 		job.Spec.SageMakerEndpoint = &expectedEndpoint
@@ -793,7 +791,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
 
-	PIt("should configure the SageMaker client to use the job-specific endpoint if provided", func() {
+	It("should configure the SageMaker client to use the job-specific endpoint if provided", func() {
 
 		// Set env variable to empty
 		mockEnv.Setenv(DefaultSageMakerEndpointEnvKey, "")
