@@ -360,7 +360,7 @@ func (r *HostingDeploymentReconciler) initializeContext(ctx *reconcileRequestCon
 
 	r.Log.Info("SageMaker EndpointName", "name", ctx.EndpointName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

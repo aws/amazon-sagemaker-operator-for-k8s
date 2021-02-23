@@ -264,9 +264,8 @@ func (s hpoTrainingJobSpawner) deleteSpawnedTrainingJobsConcurrently(ctx context
 
 		if hpoTrainingJobOutput.NextToken == nil {
 			break
-		} else {
-			nextToken = hpoTrainingJobOutput.NextToken
 		}
+		nextToken = hpoTrainingJobOutput.NextToken
 	}
 
 	// Spawn a goroutine that concurrently waits for all of the worker goroutines, then closes the errors channel.

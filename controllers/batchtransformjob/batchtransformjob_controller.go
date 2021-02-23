@@ -113,7 +113,7 @@ func (r *BatchTransformJobReconciler) reconcileJob(ctx reconcileRequestContext) 
 		return RequeueImmediately()
 	}
 
-	if awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.Job.Spec.Region, ctx.Job.Spec.SageMakerEndpoint); err != nil {
+	if awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.Job.Spec.Region, ctx.Job.Spec.SageMakerEndpoint); err != nil {
 		log.Error(err, "Error loading AWS config")
 		return NoRequeue()
 	} else {

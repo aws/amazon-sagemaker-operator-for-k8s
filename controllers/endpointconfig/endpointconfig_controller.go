@@ -202,7 +202,7 @@ func (r *EndpointConfigReconciler) reconcileEndpointConfig(ctx reconcileRequestC
 // Initialize config on context object.
 func (r *EndpointConfigReconciler) initializeContext(ctx *reconcileRequestContext) error {
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.EndpointConfig.Spec.Region, ctx.EndpointConfig.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.EndpointConfig.Spec.Region, ctx.EndpointConfig.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

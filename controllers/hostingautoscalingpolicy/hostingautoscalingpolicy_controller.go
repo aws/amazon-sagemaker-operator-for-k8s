@@ -300,7 +300,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		ctx.HostingAutoscalingPolicy.Spec.SuspendedState.ScheduledScalingSuspended = controllertest.ToBoolPtr(DefaultSuspendedStateAttributeValue)
 	}
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

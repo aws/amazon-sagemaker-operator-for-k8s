@@ -53,10 +53,10 @@ func CreateNewAWSSessionFromConfig(cfg aws.Config) *awssession.Session {
 	return sess
 }
 
-// LoadAwsConfigWithOverrides loads default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.
+// LoadAWSConfigWithOverrides loads default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.
 // If specified, jobSpecificEndpointOverride always overrides the endpoint. Otherwise, the environment
 // variable specified by DefaultSageMakerEndpointEnvKey overrides the endpoint if it is set.
-func (l AWSConfigLoader) LoadAwsConfigWithOverrides(regionOverride *string, jobSpecificEndpointOverride *string) (aws.Config, error) {
+func (l AWSConfigLoader) LoadAWSConfigWithOverrides(regionOverride *string, jobSpecificEndpointOverride *string) (aws.Config, error) {
 	var config aws.Config
 
 	if regionOverride != nil {

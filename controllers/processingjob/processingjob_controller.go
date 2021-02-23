@@ -214,7 +214,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 
 	ctx.Log.Info("ProcessingJob", "Using job name: ", ctx.ProcessingJobName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.ProcessingJob.Spec.Region, ctx.ProcessingJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.ProcessingJob.Spec.Region, ctx.ProcessingJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

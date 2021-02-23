@@ -263,7 +263,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	}
 	ctx.Log.Info("TrainingJob", "name", ctx.TrainingJobName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(ctx.TrainingJob.Spec.Region, ctx.TrainingJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.TrainingJob.Spec.Region, ctx.TrainingJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err
