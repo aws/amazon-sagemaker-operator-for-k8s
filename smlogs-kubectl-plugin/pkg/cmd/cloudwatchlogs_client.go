@@ -35,7 +35,7 @@ type concreteCloudWatchLogsClient struct {
 
 // Forwarding implementation of FilterLogEventsRequest.
 func (m concreteCloudWatchLogsClient) FilterLogEventsRequest(input *cloudwatchlogs.FilterLogEventsInput) (*awsrequest.Request, *cloudwatchlogs.FilterLogEventsOutput) {
-	req, output := m.FilterLogEventsRequest(input)
+	req, output := m.client.FilterLogEventsRequest(input)
 	return req, output
 }
 
