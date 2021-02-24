@@ -1,5 +1,8 @@
 version: 0.2      
 phases:
+  pre_build:
+    commands:
+      - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
   build:
     commands:
        # Docker engine takes few seconds to start
