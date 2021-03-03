@@ -28,9 +28,10 @@ import (
 	transformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
 	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	cwlogs "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	awsrequest "github.com/aws/aws-sdk-go/aws/request"
+	cwlogs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -130,7 +131,7 @@ func TestTrainingRunPrintsLogs(t *testing.T) {
 	}{
 		// Verify base success case.
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{
 				createFilteredLogEvent("eventId1", 123123, "logStreamName1", "message1", 234234),
 				createFilteredLogEvent("eventId2", 897987, "logStreamName2", "message2", 3456456),
 			}),
@@ -144,20 +145,20 @@ func TestTrainingRunPrintsLogs(t *testing.T) {
 
 		// Verify that second request is made when token is provided
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponse("nextToken1", []cwlogs.FilteredLogEvent{
+			createMockFilterLogEventsResponse("nextToken1", []*cwlogs.FilteredLogEvent{
 				createFilteredLogEvent("eventId1", 123123, "logStreamName1", "message1", 234234),
 				createFilteredLogEvent("eventId2", 897987, "logStreamName2", "message2", 3456456),
 			}),
-			createMockFilterLogEventsResponse("nextToken2", []cwlogs.FilteredLogEvent{
+			createMockFilterLogEventsResponse("nextToken2", []*cwlogs.FilteredLogEvent{
 				createFilteredLogEvent("eventId3", 235345, "logStreamName3", "message3", 5675658),
 				createFilteredLogEvent("eventId4", 234111, "logStreamName4", "message4", 2101010),
 			}),
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTrainingJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), false},
 
 		// Verify no output and no error when an empty response is provided.
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTrainingJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), false},
 
 		// Verify API failure causes logger to return error.
@@ -172,12 +173,12 @@ func TestTrainingRunPrintsLogs(t *testing.T) {
 
 		// Verify error output and when empty region is empty
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTrainingJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), nil), true},
 
 		// Verify error output and when training jon is empty
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTrainingJob("k8s-xgboost-mnist", "namespace", nil, aws.String("us-east-1")), true},
 	}
 
@@ -260,7 +261,7 @@ func TestTransformRunPrintsLogs(t *testing.T) {
 	}{
 		// Verify base success case.
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{
 				createFilteredLogEvent("eventId1", 123123, "logStreamName1", "message1", 234234),
 				createFilteredLogEvent("eventId2", 897987, "logStreamName2", "message2", 3456456),
 			}),
@@ -274,20 +275,20 @@ func TestTransformRunPrintsLogs(t *testing.T) {
 
 		// Verify that second request is made when token is provided
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponse("nextToken1", []cwlogs.FilteredLogEvent{
+			createMockFilterLogEventsResponse("nextToken1", []*cwlogs.FilteredLogEvent{
 				createFilteredLogEvent("eventId1", 123123, "logStreamName1", "message1", 234234),
 				createFilteredLogEvent("eventId2", 897987, "logStreamName2", "message2", 3456456),
 			}),
-			createMockFilterLogEventsResponse("nextToken2", []cwlogs.FilteredLogEvent{
+			createMockFilterLogEventsResponse("nextToken2", []*cwlogs.FilteredLogEvent{
 				createFilteredLogEvent("eventId3", 235345, "logStreamName3", "message3", 5675658),
 				createFilteredLogEvent("eventId4", 234111, "logStreamName4", "message4", 2101010),
 			}),
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), false},
 
 		// Verify no output and no error when an empty response is provided.
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), aws.String("us-east-1")), false},
 
 		// Verify API failure causes logger to return error.
@@ -302,12 +303,12 @@ func TestTransformRunPrintsLogs(t *testing.T) {
 
 		// Verify error output and when empty region is empty
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", aws.String("sm-xgboost-mnist"), nil), true},
 
 		// Verify error output and when training jon is empty
 		{[]mockFilterLogEventsResponse{
-			createMockFilterLogEventsResponseNilToken([]cwlogs.FilteredLogEvent{}),
+			createMockFilterLogEventsResponseNilToken([]*cwlogs.FilteredLogEvent{}),
 		}, "k8s-xgboost-mnist", "namespace", createTransformJob("k8s-xgboost-mnist", "namespace", nil, aws.String("us-east-1")), true},
 	}
 
@@ -528,7 +529,7 @@ type mockedCloudWatchLogsClient struct {
 }
 
 // Mock implementation of FilterLogEvents. It will return responses in the order they are provided.
-func (m mockedCloudWatchLogsClient) FilterLogEventsRequest(input *cwlogs.FilterLogEventsInput) *cwlogs.FilterLogEventsRequest {
+func (m mockedCloudWatchLogsClient) FilterLogEventsRequest(input *cwlogs.FilterLogEventsInput) (*awsrequest.Request, *cwlogs.FilterLogEventsOutput) {
 
 	outputs := m.filterLogEventsOutputs
 
@@ -543,25 +544,21 @@ func (m mockedCloudWatchLogsClient) FilterLogEventsRequest(input *cwlogs.FilterL
 	next = outputs[*m.nextToReturn]
 	*m.nextToReturn += 1
 
-	mockRequest := &aws.Request{
+	mockRequest := &awsrequest.Request{
 		HTTPRequest:  &http.Request{},
 		HTTPResponse: &http.Response{},
-		Retryer:      &aws.NoOpRetryer{},
+		Retryer:      nil,
 	}
 
 	if next.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
+		mockRequest.Handlers.Send.PushBack(func(r *awsrequest.Request) {
 			r.Error = next.err
 		})
-	} else {
-		mockRequest.Handlers.Complete.PushBack(func(r *aws.Request) {
-			r.Data = next.data
-		})
+		mockRequest.Error = next.err
+		return mockRequest, nil
 	}
 
-	return &cwlogs.FilterLogEventsRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, next.data
 }
 
 // A mock response from CloudWatchLogs.
@@ -572,12 +569,12 @@ type mockFilterLogEventsResponse struct {
 
 // Helper function to create a response from cwlogs.FilterLogEvents with the specified events and a non-nil
 // continuation token.
-func createMockFilterLogEventsResponse(nextToken string, events []cwlogs.FilteredLogEvent) mockFilterLogEventsResponse {
+func createMockFilterLogEventsResponse(nextToken string, events []*cwlogs.FilteredLogEvent) mockFilterLogEventsResponse {
 
 	data := cwlogs.FilterLogEventsOutput{
 		Events:             events,
 		NextToken:          &nextToken,
-		SearchedLogStreams: []cwlogs.SearchedLogStream{},
+		SearchedLogStreams: []*cwlogs.SearchedLogStream{},
 	}
 
 	return mockFilterLogEventsResponse{
@@ -588,12 +585,12 @@ func createMockFilterLogEventsResponse(nextToken string, events []cwlogs.Filtere
 
 // Helper function to create a response from cwlogs.FilterLogEvents with the specified events and a nil
 // continuation token.
-func createMockFilterLogEventsResponseNilToken(events []cwlogs.FilteredLogEvent) mockFilterLogEventsResponse {
+func createMockFilterLogEventsResponseNilToken(events []*cwlogs.FilteredLogEvent) mockFilterLogEventsResponse {
 
 	data := cwlogs.FilterLogEventsOutput{
 		Events:             events,
 		NextToken:          nil,
-		SearchedLogStreams: []cwlogs.SearchedLogStream{},
+		SearchedLogStreams: []*cwlogs.SearchedLogStream{},
 	}
 
 	return mockFilterLogEventsResponse{
@@ -612,8 +609,8 @@ func createErrorMockFilterLogEventsResponse(message string, statusCode int, reqI
 }
 
 // Helper function to concisely create a FilteredLogEvent.
-func createFilteredLogEvent(eventId string, ingestionTime int64, logStreamName string, message string, timestamp int64) cwlogs.FilteredLogEvent {
-	return cwlogs.FilteredLogEvent{
+func createFilteredLogEvent(eventId string, ingestionTime int64, logStreamName string, message string, timestamp int64) *cwlogs.FilteredLogEvent {
+	return &cwlogs.FilteredLogEvent{
 		EventId:       &eventId,
 		IngestionTime: &ingestionTime,
 		LogStreamName: &logStreamName,

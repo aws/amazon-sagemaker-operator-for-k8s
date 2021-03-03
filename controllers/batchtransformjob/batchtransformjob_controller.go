@@ -27,10 +27,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	aws "github.com/aws/aws-sdk-go-v2/aws"
-	awserr "github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	aws "github.com/aws/aws-sdk-go/aws"
+	awserr "github.com/aws/aws-sdk-go/aws/awserr"
+	awsrequest "github.com/aws/aws-sdk-go/aws/request"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 
 	batchtransformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
@@ -53,7 +54,7 @@ type BatchTransformJobReconciler struct {
 
 	PollInterval          time.Duration
 	createSageMakerClient SageMakerClientProvider
-	awsConfigLoader       AwsConfigLoader
+	awsConfigLoader       AWSConfigLoader
 }
 
 // +kubebuilder:rbac:groups=sagemaker.aws.amazon.com,resources=batchtransformjobs,verbs=get;list;watch;create;update;patch;delete
@@ -65,10 +66,10 @@ func NewBatchTransformJobReconciler(client client.Client, log logr.Logger, pollI
 		Client:       client,
 		Log:          log,
 		PollInterval: pollInterval,
-		createSageMakerClient: func(cfg aws.Config) sagemakeriface.ClientAPI {
-			return sagemaker.New(cfg)
+		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
+			return sagemaker.New(CreateNewAWSSessionFromConfig(cfg))
 		},
-		awsConfigLoader: NewAwsConfigLoader(),
+		awsConfigLoader: NewAWSConfigLoader(),
 	}
 }
 
@@ -79,7 +80,7 @@ type reconcileRequestContext struct {
 	Job                  batchtransformjobv1.BatchTransformJob
 	SageMakerDescription *sagemaker.DescribeTransformJobOutput
 
-	SageMakerClient sagemakeriface.ClientAPI
+	SageMakerClient sagemakeriface.SageMakerAPI
 }
 
 func (r *BatchTransformJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -112,7 +113,7 @@ func (r *BatchTransformJobReconciler) reconcileJob(ctx reconcileRequestContext) 
 		return RequeueImmediately()
 	}
 
-	if awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Job.Spec.Region, ctx.Job.Spec.SageMakerEndpoint); err != nil {
+	if awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.Job.Spec.Region, ctx.Job.Spec.SageMakerEndpoint); err != nil {
 		log.Error(err, "Error loading AWS config")
 		return NoRequeue()
 	} else {
@@ -220,13 +221,13 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 	}
 
 	log.Info("Object has been scheduled for deletion")
-	switch ctx.SageMakerDescription.TransformJobStatus {
+	switch *ctx.SageMakerDescription.TransformJobStatus {
 	case sagemaker.TransformJobStatusInProgress:
 		log.Info("Job is in_progress and has finalizer, so we need to delete it")
-		req := ctx.SageMakerClient.StopTransformJobRequest(&sagemaker.StopTransformJobInput{
+		req, _ := ctx.SageMakerClient.StopTransformJobRequest(&sagemaker.StopTransformJobInput{
 			TransformJobName: ctx.Job.Spec.TransformJobName,
 		})
-		_, err := req.Send(ctx)
+		err := req.Send()
 		if err != nil {
 			log.Error(err, "Unable to stop the job in sagemaker", "context", ctx)
 			return r.handleSageMakerApiFailure(ctx, err, false)
@@ -240,7 +241,7 @@ func (r *BatchTransformJobReconciler) deleteBatchTransformJobIfFinalizerExists(c
 		if err := r.updateJobStatus(ctx, batchtransformjobv1.BatchTransformJobStatus{
 			LastCheckTime:             Now(),
 			SageMakerTransformJobName: *ctx.Job.Spec.TransformJobName,
-			TransformJobStatus:        string(ctx.SageMakerDescription.TransformJobStatus),
+			TransformJobStatus:        *ctx.SageMakerDescription.TransformJobStatus,
 		}); err != nil {
 			return RequeueIfError(err)
 		}
@@ -286,7 +287,7 @@ func (r *BatchTransformJobReconciler) reconcileSpecWithDescription(ctx reconcile
 
 	if err := r.updateJobStatus(ctx, batchtransformjobv1.BatchTransformJobStatus{
 		LastCheckTime:             Now(),
-		TransformJobStatus:        string(ctx.SageMakerDescription.TransformJobStatus),
+		TransformJobStatus:        *ctx.SageMakerDescription.TransformJobStatus,
 		SageMakerTransformJobName: *ctx.Job.Spec.TransformJobName,
 	}); err != nil {
 		return RequeueIfError(err)
@@ -296,7 +297,7 @@ func (r *BatchTransformJobReconciler) reconcileSpecWithDescription(ctx reconcile
 	inProgress := sagemaker.TransformJobStatusInProgress
 	stopping := sagemaker.TransformJobStatusStopping
 
-	if observedStatus == inProgress || observedStatus == stopping {
+	if *observedStatus == inProgress || *observedStatus == stopping {
 		return RequeueAfterInterval(r.PollInterval, nil)
 	}
 
@@ -352,13 +353,13 @@ func (r *BatchTransformJobReconciler) createBatchTransformJob(ctx reconcileReque
 	ctx.Log.Info("Creating BatchTransformJob in SageMaker")
 
 	input := CreateCreateBatchTransformJobInputFromSpec(ctx.Job.Spec)
-	request := ctx.SageMakerClient.CreateTransformJobRequest(&input)
+	request, _ := ctx.SageMakerClient.CreateTransformJobRequest(&input)
 	ctx.Log.Info("Transform job request", "request", input)
 
 	// Add `sagemaker-on-kubernetes` string literal to identify the k8s job in sagemaker
-	aws.AddToUserAgent(request.Request, SagemakerOnKubernetesUserAgentAddition)
+	awsrequest.AddToUserAgent(request, SagemakerOnKubernetesUserAgentAddition)
 
-	_, createError := request.Send(ctx)
+	createError := request.Send()
 	if createError == nil {
 		ctx.Log.Info("TransformJob created in SageMaker")
 		return RequeueImmediately()
@@ -368,11 +369,11 @@ func (r *BatchTransformJobReconciler) createBatchTransformJob(ctx reconcileReque
 }
 
 func (r *BatchTransformJobReconciler) getSageMakerDescription(ctx reconcileRequestContext) (*sagemaker.DescribeTransformJobOutput, awserr.RequestFailure) {
-	describeRequest := ctx.SageMakerClient.DescribeTransformJobRequest(&sagemaker.DescribeTransformJobInput{
+	describeRequest, describeTransformJobOutput := ctx.SageMakerClient.DescribeTransformJobRequest(&sagemaker.DescribeTransformJobInput{
 		TransformJobName: ctx.Job.Spec.TransformJobName,
 	})
 
-	describeResponse, describeError := describeRequest.Send(ctx)
+	describeError := describeRequest.Send()
 	log := ctx.Log.WithName("getSageMakerDescription")
 
 	if awsErr, requestFailed := describeError.(awserr.RequestFailure); requestFailed {
@@ -388,7 +389,7 @@ func (r *BatchTransformJobReconciler) getSageMakerDescription(ctx reconcileReque
 		log.Info("Failed to parse the describe error output from sagemaker")
 		return nil, awsErr
 	}
-	return describeResponse.DescribeTransformJobOutput, nil
+	return describeTransformJobOutput, nil
 }
 
 func (r *BatchTransformJobReconciler) SetupWithManager(mgr ctrl.Manager) error {

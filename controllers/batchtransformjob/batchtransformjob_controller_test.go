@@ -23,6 +23,7 @@ import (
 	"time"
 
 	. "container/list"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -32,9 +33,10 @@ import (
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 
 	"github.com/adammck/venv"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go/aws"
+	awsendpoints "github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/google/uuid"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -395,7 +397,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should stop the SageMaker job and requeue if the job is in progress", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -417,7 +419,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should update the status and requeue if the job is stopping", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusStopping
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusStopping)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -473,7 +475,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should remove the finalizer and not requeue if the job is stopped", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusStopped
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusStopped)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -501,7 +503,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 
 	It("should remove the finalizer and not requeue if the job is failed", func() {
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusFailed
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusFailed)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -528,7 +530,7 @@ var _ = Describe("Reconciling a job with finalizer that is being deleted", func(
 	})
 
 	It("should remove the finalizer and not requeue if the job is completed", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusCompleted
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusCompleted)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			AddDescribeTransformJobResponse(description).
@@ -622,7 +624,7 @@ var _ = Describe("Reconciling a job without finalizer that is being deleted", fu
 	})
 
 	It("should not requeue if the job has no finalizer", func() {
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 		// Setup mock responses.
 		sageMakerClient := builder.
 			Build()
@@ -714,7 +716,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		setTransformJobStatus(job, InitializingJobStatus)
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 
 		// Instantiate dependencies
 		sageMakerClient := builder.
@@ -722,15 +724,15 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 			AddDescribeTransformJobResponse(description).
 			Build()
 
-		var actualEndpointResolver *aws.EndpointResolver = nil
+		var actualEndpointResolver *awsendpoints.Resolver = nil
 
-		endpointInspector := func(awsConfig aws.Config) sagemakeriface.ClientAPI {
+		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
 			return sageMakerClient
 		}
 
 		// Instantiate controller and reconciliation request.
-		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAwsConfigLoaderForEnv(mockEnv), 1)
+		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAWSConfigLoaderForEnv(mockEnv), 1)
 		request := CreateReconciliationRequest(job.ObjectMeta.Name, job.ObjectMeta.Namespace)
 
 		// Run test
@@ -741,7 +743,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(actualEndpointResolver).ToNot(BeNil())
-		actualEndpoint, err := (*actualEndpointResolver).ResolveEndpoint(sagemaker.EndpointsID, uuid.New().String())
+		actualEndpoint, err := (*actualEndpointResolver).EndpointFor(sagemaker.EndpointsID, uuid.New().String())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
@@ -757,7 +759,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		setTransformJobStatus(job, InitializingJobStatus)
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 
 		// Instantiate dependencies
 		sageMakerClient := builder.
@@ -765,15 +767,15 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 			AddDescribeTransformJobResponse(description).
 			Build()
 
-		var actualEndpointResolver *aws.EndpointResolver = nil
+		var actualEndpointResolver *awsendpoints.Resolver = nil
 
-		endpointInspector := func(awsConfig aws.Config) sagemakeriface.ClientAPI {
+		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
 			return sageMakerClient
 		}
 
 		// Instantiate controller and reconciliation request.
-		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAwsConfigLoaderForEnv(mockEnv), 1)
+		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAWSConfigLoaderForEnv(mockEnv), 1)
 		request := CreateReconciliationRequest(job.ObjectMeta.Name, job.ObjectMeta.Namespace)
 
 		// Run test
@@ -784,7 +786,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(actualEndpointResolver).ToNot(BeNil())
-		actualEndpoint, err := (*actualEndpointResolver).ResolveEndpoint(sagemaker.EndpointsID, uuid.New().String())
+		actualEndpoint, err := (*actualEndpointResolver).EndpointFor(sagemaker.EndpointsID, uuid.New().String())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
@@ -803,7 +805,7 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 
 		setTransformJobStatus(job, InitializingJobStatus)
 
-		description.TransformJobStatus = sagemaker.TransformJobStatusInProgress
+		description.TransformJobStatus = aws.String(sagemaker.TransformJobStatusInProgress)
 
 		// Instantiate dependencies
 		sageMakerClient := builder.
@@ -811,15 +813,15 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 			AddDescribeTransformJobResponse(description).
 			Build()
 
-		var actualEndpointResolver *aws.EndpointResolver = nil
+		var actualEndpointResolver *awsendpoints.Resolver = nil
 
-		endpointInspector := func(awsConfig aws.Config) sagemakeriface.ClientAPI {
+		endpointInspector := func(awsConfig aws.Config) sagemakeriface.SageMakerAPI {
 			actualEndpointResolver = &awsConfig.EndpointResolver
 			return sageMakerClient
 		}
 
 		// Instantiate controller and reconciliation request.
-		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAwsConfigLoaderForEnv(mockEnv), 1)
+		controller := createTransformJobReconciler(k8sClient, endpointInspector, NewAWSConfigLoaderForEnv(mockEnv), 1)
 		request := CreateReconciliationRequest(job.ObjectMeta.Name, job.ObjectMeta.Namespace)
 
 		// Run test
@@ -830,23 +832,23 @@ var _ = Describe("Reconciling when a custom SageMaker endpoint is requested", fu
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(actualEndpointResolver).ToNot(BeNil())
-		actualEndpoint, err := (*actualEndpointResolver).ResolveEndpoint(sagemaker.EndpointsID, uuid.New().String())
+		actualEndpoint, err := (*actualEndpointResolver).EndpointFor(sagemaker.EndpointsID, uuid.New().String())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(actualEndpoint.URL).To(Equal(expectedEndpoint))
 	})
 })
 
 // Helper function to create a reconciler.
-func createTransformJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalSeconds int64) BatchTransformJobReconciler {
-	provider := func(_ aws.Config) sagemakeriface.ClientAPI {
+func createTransformJobReconcilerForSageMakerClient(k8sClient client.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalSeconds int64) BatchTransformJobReconciler {
+	provider := func(_ aws.Config) sagemakeriface.SageMakerAPI {
 		return sageMakerClient
 	}
 
-	return createTransformJobReconciler(k8sClient, provider, CreateMockAwsConfigLoader(), pollIntervalSeconds)
+	return createTransformJobReconciler(k8sClient, provider, CreateMockAWSConfigLoader(), pollIntervalSeconds)
 }
 
 // Helper function to create a reconciler.
-func createTransformJobReconciler(k8sClient client.Client, sageMakerClientProvider SageMakerClientProvider, awsConfigLoader AwsConfigLoader, pollIntervalSeconds int64) BatchTransformJobReconciler {
+func createTransformJobReconciler(k8sClient client.Client, sageMakerClientProvider SageMakerClientProvider, awsConfigLoader AWSConfigLoader, pollIntervalSeconds int64) BatchTransformJobReconciler {
 	return BatchTransformJobReconciler{
 		Client:                k8sClient,
 		Log:                   ctrl.Log,
@@ -922,7 +924,7 @@ func createDescriptionFromSmTransformJob(job *batchtransformjobv1.BatchTransform
 			ContentType: job.Spec.TransformInput.ContentType,
 			DataSource: &sagemaker.TransformDataSource{
 				S3DataSource: &sagemaker.TransformS3DataSource{
-					S3DataType: sagemaker.S3DataType(job.Spec.TransformInput.DataSource.S3DataSource.S3DataType),
+					S3DataType: &job.Spec.TransformInput.DataSource.S3DataSource.S3DataType,
 					S3Uri:      job.Spec.TransformInput.DataSource.S3DataSource.S3Uri,
 				},
 			},
@@ -932,7 +934,7 @@ func createDescriptionFromSmTransformJob(job *batchtransformjobv1.BatchTransform
 		},
 		TransformResources: &sagemaker.TransformResources{
 			InstanceCount: job.Spec.TransformResources.InstanceCount,
-			InstanceType:  sagemaker.TransformInstanceType(job.Spec.TransformResources.InstanceType),
+			InstanceType:  &job.Spec.TransformResources.InstanceType,
 		},
 	}
 }

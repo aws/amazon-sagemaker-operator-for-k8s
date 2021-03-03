@@ -31,8 +31,9 @@ import (
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	processingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/processingjob"
 	trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
-	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/pkg/errors"
 )
 
@@ -263,7 +264,7 @@ func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.Hype
 	for name, value := range source.TunedHyperParameters {
 		tunedHyperParameters = append(tunedHyperParameters, &commonv1.KeyValuePair{
 			Name:  name,
-			Value: value,
+			Value: *value,
 		})
 	}
 
@@ -280,7 +281,7 @@ func ConvertHyperParameterTrainingJobSummaryFromSageMaker(source *sagemaker.Hype
 }
 
 // ConvertDebugRuleEvaluationStatusesFromSageMaker converts an array of SageMaker DebugRuleEvaluationStatus to a Kubernetes SageMaker type.
-func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []sagemaker.DebugRuleEvaluationStatus) ([]commonv1.DebugRuleEvaluationStatus, error) {
+func ConvertDebugRuleEvaluationStatusesFromSageMaker(source []*sagemaker.DebugRuleEvaluationStatus) ([]commonv1.DebugRuleEvaluationStatus, error) {
 	var convertedStatuses []commonv1.DebugRuleEvaluationStatus
 
 	for _, status := range source {
@@ -582,10 +583,10 @@ func replaceFloat64WithInt64(obj *gabs.Container, path string, toConvert float64
 }
 
 // ConvertProductionVariantSummarySlice creates a []*commonv1.ProductionVariantSummary from the equivalent SageMaker type.
-func ConvertProductionVariantSummarySlice(pvs []sagemaker.ProductionVariantSummary) ([]*commonv1.ProductionVariantSummary, error) {
+func ConvertProductionVariantSummarySlice(pvs []*sagemaker.ProductionVariantSummary) ([]*commonv1.ProductionVariantSummary, error) {
 	productionVariants := []*commonv1.ProductionVariantSummary{}
 	for _, pv := range pvs {
-		if converted, err := ConvertProductionVariantSummary(&pv); err != nil {
+		if converted, err := ConvertProductionVariantSummary(pv); err != nil {
 			return nil, err
 		} else {
 			productionVariants = append(productionVariants, converted)
@@ -596,10 +597,10 @@ func ConvertProductionVariantSummarySlice(pvs []sagemaker.ProductionVariantSumma
 }
 
 // ConvertTagSliceToSageMakerTagSlice converts Tags to Sagemaker Tags
-func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []sagemaker.Tag {
-	sageMakerTags := []sagemaker.Tag{}
+func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []*sagemaker.Tag {
+	sageMakerTags := []*sagemaker.Tag{}
 	for _, tag := range tags {
-		sageMakerTags = append(sageMakerTags, sagemaker.Tag{
+		sageMakerTags = append(sageMakerTags, &sagemaker.Tag{
 			Key:   tag.Key,
 			Value: tag.Value,
 		})
@@ -609,21 +610,21 @@ func ConvertTagSliceToSageMakerTagSlice(tags []commonv1.Tag) []sagemaker.Tag {
 }
 
 // ConvertKeyValuePairSliceToMap converts key value pairs to a map
-func ConvertKeyValuePairSliceToMap(kvps []*commonv1.KeyValuePair) map[string]string {
-	target := map[string]string{}
+func ConvertKeyValuePairSliceToMap(kvps []*commonv1.KeyValuePair) map[string]*string {
+	target := map[string]*string{}
 	for _, kvp := range kvps {
-		target[kvp.Name] = kvp.Value
+		target[kvp.Name] = &kvp.Value
 	}
 	return target
 }
 
 // ConvertMapToKeyValuePairSlice converts a map to a key value pair
-func ConvertMapToKeyValuePairSlice(m map[string]string) []*commonv1.KeyValuePair {
+func ConvertMapToKeyValuePairSlice(m map[string]*string) []*commonv1.KeyValuePair {
 	var kvps []*commonv1.KeyValuePair
 	for name, value := range m {
 		kvps = append(kvps, &commonv1.KeyValuePair{
 			Name:  name,
-			Value: value,
+			Value: *value,
 		})
 	}
 	return kvps
@@ -763,7 +764,7 @@ func createDeregisterScalableTargetInput(spec hostingautoscalingpolicyv1.Hosting
 	}
 
 	output.ResourceId = &resourceID
-	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
+	output.ServiceNamespace = aws.String(HostingAutoscalingPolicyServiceNamespace)
 
 	return output, nil
 }
@@ -790,7 +791,7 @@ func createDeleteScalingPolicyInput(spec hostingautoscalingpolicyv1.HostingAutos
 	output.PolicyName = spec.PolicyName
 	output.ResourceId = &resourceID
 
-	output.ServiceNamespace = HostingAutoscalingPolicyServiceNamespace
+	output.ServiceNamespace = aws.String(HostingAutoscalingPolicyServiceNamespace)
 
 	return output, nil
 }
@@ -868,8 +869,8 @@ func CreateHostingAutoscalingPolicySpecFromDescription(targetDescriptions []*app
 }
 
 // Converts VariantProperties to SageMaker VariantProperties
-func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []commonv1.VariantProperty) []sagemaker.VariantProperty {
-	sageMakerVariantProperties := []sagemaker.VariantProperty{}
+func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []commonv1.VariantProperty) []*sagemaker.VariantProperty {
+	sageMakerVariantProperties := []*sagemaker.VariantProperty{}
 
 	for _, variantProperty := range variantProperties {
 		variantPropertyType := sagemaker.VariantPropertyTypeDesiredInstanceCount
@@ -886,8 +887,8 @@ func ConvertVariantPropertiesToSageMakerVariantProperties(variantProperties []co
 			errors.New("Error: invalid VariantPropertyType string '" + *variantProperty.VariantPropertyType + "'")
 		}
 
-		sageMakerVariantProperties = append(sageMakerVariantProperties, sagemaker.VariantProperty{
-			VariantPropertyType: variantPropertyType,
+		sageMakerVariantProperties = append(sageMakerVariantProperties, &sagemaker.VariantProperty{
+			VariantPropertyType: &variantPropertyType,
 		})
 	}
 

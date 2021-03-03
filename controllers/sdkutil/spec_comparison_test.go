@@ -27,7 +27,8 @@ import (
 	hpojobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hyperparametertuningjob"
 	modelv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/model"
 	// trainingjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/trainingjob"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 var _ = Describe("HyperParameterTuningJobMatchesDescription", func() {
@@ -87,7 +88,7 @@ var _ = Describe("HyperParameterTuningJobMatchesDescription", func() {
 
 		description.TrainingJobDefinition = &sagemaker.HyperParameterTrainingJobDefinition{
 			AlgorithmSpecification: &sagemaker.HyperParameterAlgorithmSpecification{
-				MetricDefinitions: []sagemaker.MetricDefinition{
+				MetricDefinitions: []*sagemaker.MetricDefinition{
 					{
 						Name:  ToStringPtr("different name"),
 						Regex: ToStringPtr(".*"),
@@ -161,9 +162,9 @@ var _ = Describe("HyperParameterTuningJobMatchesDescription", func() {
 		}
 
 		description.TrainingJobDefinition = &sagemaker.HyperParameterTrainingJobDefinition{
-			InputDataConfig: []sagemaker.Channel{
+			InputDataConfig: []*sagemaker.Channel{
 				{
-					RecordWrapperType: "None",
+					RecordWrapperType: aws.String("None"),
 				},
 			},
 		}
@@ -184,9 +185,9 @@ var _ = Describe("HyperParameterTuningJobMatchesDescription", func() {
 		}
 
 		description.TrainingJobDefinition = &sagemaker.HyperParameterTrainingJobDefinition{
-			InputDataConfig: []sagemaker.Channel{
+			InputDataConfig: []*sagemaker.Channel{
 				{
-					CompressionType: "None",
+					CompressionType: aws.String("None"),
 				},
 			},
 		}
@@ -217,9 +218,9 @@ var _ = Describe("HyperParameterTuningJobMatchesDescription", func() {
 		}
 
 		description.TrainingJobDefinition = &sagemaker.HyperParameterTrainingJobDefinition{
-			StaticHyperParameters: map[string]string{
-				name1: value1,
-				name2: value2,
+			StaticHyperParameters: map[string]*string{
+				name1: aws.String(value1),
+				name2: aws.String(value2),
 			},
 		}
 
@@ -245,9 +246,9 @@ var _ = Describe("HyperParameterTuningJobMatchesDescription", func() {
 		}
 
 		description.TrainingJobDefinition = &sagemaker.HyperParameterTrainingJobDefinition{
-			StaticHyperParameters: map[string]string{
-				name1: value1,
-				name2: value2,
+			StaticHyperParameters: map[string]*string{
+				name1: aws.String(value1),
+				name2: aws.String(value2),
 			},
 		}
 
@@ -488,7 +489,7 @@ var _ = Describe("BatchTransformJobSpecMatchesDescription", func() {
 		}
 
 		description.TransformOutput = &sagemaker.TransformOutput{
-			AssembleWith: "None",
+			AssembleWith: aws.String("None"),
 		}
 
 		comparison := TransformJobSpecMatchesDescription(description, spec)
@@ -503,7 +504,7 @@ var _ = Describe("BatchTransformJobSpecMatchesDescription", func() {
 		}
 
 		description.TransformInput = &sagemaker.TransformInput{
-			CompressionType: "None",
+			CompressionType: aws.String("None"),
 		}
 
 		comparison := TransformJobSpecMatchesDescription(description, spec)
@@ -518,7 +519,7 @@ var _ = Describe("BatchTransformJobSpecMatchesDescription", func() {
 		}
 
 		description.TransformInput = &sagemaker.TransformInput{
-			SplitType: "None",
+			SplitType: aws.String("None"),
 		}
 
 		comparison := TransformJobSpecMatchesDescription(description, spec)

@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 var _ = Describe("ConvertProductionVariantSummary", func() {

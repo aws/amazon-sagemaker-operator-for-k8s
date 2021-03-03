@@ -25,10 +25,10 @@ import (
 	. "github.com/onsi/ginkgo"
 
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 
-	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
+	"github.com/aws/aws-sdk-go/service/applicationautoscaling/applicationautoscalingiface"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,33 +36,33 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-func CreateMockAwsConfigLoader() AwsConfigLoader {
-	return NewAwsConfigLoaderForEnv(venv.Mock())
+func CreateMockAWSConfigLoader() AWSConfigLoader {
+	return NewAWSConfigLoaderForEnv(venv.Mock())
 }
 
 // Create a provider that creates a mock SageMaker client.
-func CreateMockSageMakerClientProvider(sageMakerClient sagemakeriface.ClientAPI) SageMakerClientProvider {
-	return func(_ aws.Config) sagemakeriface.ClientAPI {
+func CreateMockSageMakerClientProvider(sageMakerClient sagemakeriface.SageMakerAPI) SageMakerClientProvider {
+	return func(_ aws.Config) sagemakeriface.SageMakerAPI {
 		return sageMakerClient
 	}
 }
 
 // Create a provider that creates a mock SageMaker client wrapper.
-func CreateMockSageMakerClientWrapperProvider(sageMakerClient sagemakeriface.ClientAPI) clientwrapper.SageMakerClientWrapperProvider {
+func CreateMockSageMakerClientWrapperProvider(sageMakerClient sagemakeriface.SageMakerAPI) clientwrapper.SageMakerClientWrapperProvider {
 	return func(_ aws.Config) clientwrapper.SageMakerClientWrapper {
 		return clientwrapper.NewSageMakerClientWrapper(sageMakerClient)
 	}
 }
 
 // CreateMockAutoscalingClientProvider Create a provider that creates a mock ApplicationAutoscaling client.
-func CreateMockAutoscalingClientProvider(applicationAutoscalingClient applicationautoscalingiface.ClientAPI) ApplicationAutoscalingClientProvider {
-	return func(_ aws.Config) applicationautoscalingiface.ClientAPI {
+func CreateMockAutoscalingClientProvider(applicationAutoscalingClient applicationautoscalingiface.ApplicationAutoScalingAPI) ApplicationAutoscalingClientProvider {
+	return func(_ aws.Config) applicationautoscalingiface.ApplicationAutoScalingAPI {
 		return applicationAutoscalingClient
 	}
 }
 
 // CreateMockAutoscalingClientWrapperProvider Creates a provider that creates a mock Application client wrapper.
-func CreateMockAutoscalingClientWrapperProvider(applicationAutoscalingClient applicationautoscalingiface.ClientAPI) clientwrapper.ApplicationAutoscalingClientWrapperProvider {
+func CreateMockAutoscalingClientWrapperProvider(applicationAutoscalingClient applicationautoscalingiface.ApplicationAutoScalingAPI) clientwrapper.ApplicationAutoscalingClientWrapperProvider {
 	return func(_ aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
 		return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationAutoscalingClient)
 	}

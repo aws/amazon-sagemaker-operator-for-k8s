@@ -35,9 +35,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
-	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/spf13/cobra"
 
 	transformjobv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/batchtransformjob"
@@ -258,9 +257,7 @@ func (o *SmLogsOptions) CompleteTraining(c *cobra.Command, args []string) error 
 		return err
 	}
 
-	if o.awsConfig, err = external.LoadDefaultAWSConfig(); err != nil {
-		return err
-	}
+	o.awsConfig = aws.Config{}
 
 	return nil
 }
@@ -295,7 +292,7 @@ func (o *SmLogsOptions) RunTraining(c *cobra.Command, args []string) error {
 	}
 
 	trainingJobName := string(*smJob.Spec.TrainingJobName)
-	o.awsConfig.Region = string(*smJob.Spec.Region)
+	o.awsConfig.Region = smJob.Spec.Region
 
 	fmt.Fprintf(o.ErrOut, "\"%s\" has SageMaker TrainingJobName \"%s\" in region \"%s\", status \"%s\" and secondary status \"%s\"\n", o.k8sJobName, trainingJobName, string(*smJob.Spec.Region), smJob.Status.TrainingJobStatus, smJob.Status.SecondaryStatus)
 
@@ -326,13 +323,14 @@ func (o *SmLogsOptions) RunTraining(c *cobra.Command, args []string) error {
 			startTimeMillis = *latestEvent.Timestamp
 		}
 
-		filterResponse, err := cwClient.FilterLogEventsRequest(&cloudwatchlogs.FilterLogEventsInput{
+		filterRequest, filterResponse := cwClient.FilterLogEventsRequest(&cloudwatchlogs.FilterLogEventsInput{
 			LogGroupName:        &o.logGroupName,
 			LogStreamNamePrefix: &streamName,
 			NextToken:           nextToken,
 			StartTime:           &startTimeMillis,
 			EndTime:             &endTimeMillis,
-		}).Send(ctx)
+		})
+		err := filterRequest.Send()
 
 		if err != nil {
 			return err
@@ -357,7 +355,7 @@ func (o *SmLogsOptions) RunTraining(c *cobra.Command, args []string) error {
 
 			for _, event := range filterResponse.Events[startingIndex:] {
 
-				latestEvent = &event
+				latestEvent = event
 
 				// time.Unix only accepts in seconds or nanoseconds, Timestamp is in milliseconds
 				timestampInNano := *event.Timestamp * 1e6
@@ -406,9 +404,7 @@ func (o *SmLogsOptions) CompleteTransform(c *cobra.Command, args []string) error
 		return err
 	}
 
-	if o.awsConfig, err = external.LoadDefaultAWSConfig(); err != nil {
-		return err
-	}
+	o.awsConfig = aws.Config{}
 
 	return nil
 }
@@ -443,7 +439,7 @@ func (o *SmLogsOptions) RunTransform(c *cobra.Command, args []string) error {
 	}
 
 	transformJobName := string(*smJob.Spec.TransformJobName)
-	o.awsConfig.Region = string(*smJob.Spec.Region)
+	o.awsConfig.Region = smJob.Spec.Region
 
 	fmt.Fprintf(o.ErrOut, "\"%s\" has SageMaker TransformJobName \"%s\" in region \"%s\", status \"%s\"\n", o.k8sJobName, transformJobName, string(*smJob.Spec.Region), smJob.Status.TransformJobStatus)
 
@@ -474,13 +470,14 @@ func (o *SmLogsOptions) RunTransform(c *cobra.Command, args []string) error {
 			startTimeMillis = *latestEvent.Timestamp
 		}
 
-		filterResponse, err := cwClient.FilterLogEventsRequest(&cloudwatchlogs.FilterLogEventsInput{
+		filterRequest, filterResponse := cwClient.FilterLogEventsRequest(&cloudwatchlogs.FilterLogEventsInput{
 			LogGroupName:        &o.logGroupName,
 			LogStreamNamePrefix: &streamName,
 			NextToken:           nextToken,
 			StartTime:           &startTimeMillis,
 			EndTime:             &endTimeMillis,
-		}).Send(ctx)
+		})
+		err := filterRequest.Send()
 
 		if err != nil {
 			return err
@@ -505,7 +502,7 @@ func (o *SmLogsOptions) RunTransform(c *cobra.Command, args []string) error {
 
 			for _, event := range filterResponse.Events[startingIndex:] {
 
-				latestEvent = &event
+				latestEvent = event
 
 				// time.Unix only accepts in seconds or nanoseconds, Timestamp is in milliseconds
 				timestampInNano := *event.Timestamp * 1e6

@@ -33,8 +33,8 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 // Status used when no SageMaker status is available
@@ -54,7 +54,7 @@ type Reconciler struct {
 	PollInterval time.Duration
 
 	createSageMakerClient       clientwrapper.SageMakerClientWrapperProvider
-	awsConfigLoader             controllers.AwsConfigLoader
+	awsConfigLoader             controllers.AWSConfigLoader
 	createHPOTrainingJobSpawner HPOTrainingJobSpawnerProvider
 }
 
@@ -65,10 +65,11 @@ func NewHyperparameterTuningJobReconciler(client client.Client, log logr.Logger,
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
-			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
+			sess := controllers.CreateNewAWSSessionFromConfig(cfg)
+			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(sess))
 		},
 		createHPOTrainingJobSpawner: NewHPOTrainingJobSpawner,
-		awsConfigLoader:             controllers.NewAwsConfigLoader(),
+		awsConfigLoader:             controllers.NewAWSConfigLoader(),
 	}
 }
 
@@ -186,7 +187,7 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, errors.Wrap(err, "Unable to add best training job to status"))
 	}
 
-	switch ctx.TuningJobDescription.HyperParameterTuningJobStatus {
+	switch *ctx.TuningJobDescription.HyperParameterTuningJobStatus {
 	case sagemaker.HyperParameterTuningJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TuningJob.ObjectMeta) {
 			// Request to stop the job. If SageMaker returns a 404 then the job has already been deleted.
@@ -208,10 +209,10 @@ func (r *Reconciler) reconcileTuningJob(ctx reconcileRequestContext) error {
 		break
 
 	default:
-		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", ctx.TuningJobDescription.HyperParameterTuningJobStatus))
+		return r.updateStatusAndReturnError(ctx, ReconcilingTuningJobStatus, fmt.Errorf("Unknown Tuning Job Status: %s", *ctx.TuningJobDescription.HyperParameterTuningJobStatus))
 	}
 
-	status := string(ctx.TuningJobDescription.HyperParameterTuningJobStatus)
+	status := *ctx.TuningJobDescription.HyperParameterTuningJobStatus
 	additional := controllers.GetOrDefault(ctx.TuningJobDescription.FailureReason, "")
 
 	if err = r.updateStatusWithAdditional(ctx, status, additional); err != nil {
@@ -236,7 +237,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	ctx.TuningJobName = *ctx.TuningJob.Spec.HyperParameterTuningJobName
 	ctx.Log.Info("TuningJob", "name", ctx.TuningJobName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.TuningJob.Spec.Region, ctx.TuningJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.TuningJob.Spec.Region, ctx.TuningJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

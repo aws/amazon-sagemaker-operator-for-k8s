@@ -18,39 +18,50 @@ package controllers
 
 import (
 	"github.com/adammck/venv"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/aws"
+	awsendpoints "github.com/aws/aws-sdk-go/aws/endpoints"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
-// AwsConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
+// AWSConfigLoader is a simple struct to facilitate loading AWS config with region- and endpoint-overrides.
 // This uses venv.Env for mocking in tests.
-type AwsConfigLoader struct {
+type AWSConfigLoader struct {
 	Env venv.Env
 }
 
-// NewAwsConfigLoader creates an AwsConfigLoader with the default OS environment.
-func NewAwsConfigLoader() AwsConfigLoader {
-	return NewAwsConfigLoaderForEnv(venv.OS())
+// NewAWSConfigLoader creates an AWSConfigLoader with the default OS environment.
+func NewAWSConfigLoader() AWSConfigLoader {
+	return NewAWSConfigLoaderForEnv(venv.OS())
 }
 
-// NewAwsConfigLoaderForEnv returns a AwsConfigLoader for the specified environment.
-func NewAwsConfigLoaderForEnv(env venv.Env) AwsConfigLoader {
-	return AwsConfigLoader{
+// NewAWSConfigLoaderForEnv returns a AWSConfigLoader for the specified environment.
+func NewAWSConfigLoaderForEnv(env venv.Env) AWSConfigLoader {
+	return AWSConfigLoader{
 		Env: env,
 	}
 }
 
-// LoadAwsConfigWithOverrides loads default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.
+// CreateNewAWSSessionFromConfig returns an AWS session using AWS Config
+func CreateNewAWSSessionFromConfig(cfg aws.Config) *awssession.Session {
+	// Use SharedConfigEnable for OIDC
+	// https://github.com/aws/aws-sdk-go/issues/3101
+	sess, _ := awssession.NewSessionWithOptions(
+		awssession.Options{
+			SharedConfigState: awssession.SharedConfigEnable,
+			Config:            cfg,
+		})
+	return sess
+}
+
+// LoadAWSConfigWithOverrides loads default AWS config and apply overrides, like setting the region and using a custom SageMaker endpoint.
 // If specified, jobSpecificEndpointOverride always overrides the endpoint. Otherwise, the environment
 // variable specified by DefaultSageMakerEndpointEnvKey overrides the endpoint if it is set.
-func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSpecificEndpointOverride *string) (aws.Config, error) {
+func (l AWSConfigLoader) LoadAWSConfigWithOverrides(regionOverride *string, jobSpecificEndpointOverride *string) (aws.Config, error) {
 	var config aws.Config
-	var err error
 
-	if config, err = external.LoadDefaultAWSConfig(external.WithRegion(regionOverride)); err != nil {
-		return aws.Config{}, err
+	if regionOverride != nil {
+		config = aws.Config{Region: regionOverride}
 	}
 
 	// Override SageMaker endpoint.
@@ -64,17 +75,17 @@ func (l AwsConfigLoader) LoadAwsConfigWithOverrides(regionOverride string, jobSp
 
 	// If a custom endpoint is requested, install custom resolver for SageMaker into config.
 	if customEndpoint != "" {
-		customSageMakerResolver := func(service, region string) (aws.Endpoint, error) {
+		customSageMakerResolver := func(service, region string, optFns ...func(*awsendpoints.Options)) (awsendpoints.ResolvedEndpoint, error) {
 			if service == sagemaker.EndpointsID {
-				return aws.Endpoint{
+				return awsendpoints.ResolvedEndpoint{
 					URL: customEndpoint,
 				}, nil
 			}
 
-			return endpoints.NewDefaultResolver().ResolveEndpoint(service, region)
+			return awsendpoints.DefaultResolver().EndpointFor(service, region)
 		}
 
-		config.EndpointResolver = aws.EndpointResolverFunc(customSageMakerResolver)
+		config.EndpointResolver = awsendpoints.ResolverFunc(customSageMakerResolver)
 	}
 
 	return config, nil

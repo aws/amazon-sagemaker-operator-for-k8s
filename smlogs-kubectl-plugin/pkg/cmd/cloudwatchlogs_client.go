@@ -17,29 +17,36 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/aws/aws-sdk-go-v2/aws"
-	cloudwatchlogs "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go/aws"
+	awsrequest "github.com/aws/aws-sdk-go/aws/request"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
+	cloudwatchlogs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
 // Interface which enables us to mock the CloudWatchLogsClient.
 type mockableCloudWatchLogsClient interface {
-	FilterLogEventsRequest(*cloudwatchlogs.FilterLogEventsInput) *cloudwatchlogs.FilterLogEventsRequest
+	FilterLogEventsRequest(*cloudwatchlogs.FilterLogEventsInput) (*awsrequest.Request, *cloudwatchlogs.FilterLogEventsOutput)
 }
 
 // Concrete implementation which forwards to the actual client.
 type concreteCloudWatchLogsClient struct {
-	client *cloudwatchlogs.Client
+	client *cloudwatchlogs.CloudWatchLogs
 }
 
 // Forwarding implementation of FilterLogEventsRequest.
-func (m concreteCloudWatchLogsClient) FilterLogEventsRequest(input *cloudwatchlogs.FilterLogEventsInput) *cloudwatchlogs.FilterLogEventsRequest {
-	rval := m.client.FilterLogEventsRequest(input)
-	return &rval
+func (m concreteCloudWatchLogsClient) FilterLogEventsRequest(input *cloudwatchlogs.FilterLogEventsInput) (*awsrequest.Request, *cloudwatchlogs.FilterLogEventsOutput) {
+	req, output := m.client.FilterLogEventsRequest(input)
+	return req, output
 }
 
 // Create client wrapped by interface to allow for mocking.
 func createCloudWatchLogsClientForConfig(awsConfig aws.Config) mockableCloudWatchLogsClient {
+	session, _ := awssession.NewSessionWithOptions(
+		awssession.Options{
+			SharedConfigState: awssession.SharedConfigEnable,
+			Config:            awsConfig,
+		})
 	return concreteCloudWatchLogsClient{
-		client: cloudwatchlogs.New(awsConfig),
+		client: cloudwatchlogs.New(session),
 	}
 }

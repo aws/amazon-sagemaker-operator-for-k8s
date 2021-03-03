@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -58,7 +58,7 @@ type ModelReconciler struct {
 	Log          logr.Logger
 	PollInterval time.Duration
 
-	awsConfigLoader       AwsConfigLoader
+	awsConfigLoader       AWSConfigLoader
 	createSageMakerClient SageMakerClientProvider
 }
 
@@ -67,10 +67,10 @@ func NewModelReconciler(client client.Client, log logr.Logger, pollInterval time
 		Client:       client,
 		Log:          log,
 		PollInterval: pollInterval,
-		createSageMakerClient: func(awsConfig aws.Config) sagemakeriface.ClientAPI {
-			return sagemaker.New(awsConfig)
+		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
+			return sagemaker.New(CreateNewAWSSessionFromConfig(cfg))
 		},
-		awsConfigLoader: NewAwsConfigLoader(),
+		awsConfigLoader: NewAWSConfigLoader(),
 	}
 }
 
@@ -202,7 +202,7 @@ func (r *ModelReconciler) reconcileModel(ctx reconcileRequestContext) error {
 // Initialize config on context object.
 func (r *ModelReconciler) initializeContext(ctx *reconcileRequestContext) error {
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Model.Spec.Region, ctx.Model.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.Model.Spec.Region, ctx.Model.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

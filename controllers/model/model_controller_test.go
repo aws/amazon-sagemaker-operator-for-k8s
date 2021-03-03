@@ -26,8 +26,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,7 +44,7 @@ import (
 var _ = Describe("Reconciling an model while failing to get the Kubernetes job", func() {
 
 	var (
-		sageMakerClient sagemakeriface.ClientAPI
+		sageMakerClient sagemakeriface.SageMakerAPI
 	)
 
 	BeforeEach(func() {
@@ -183,7 +183,7 @@ var _ = Describe("Reconciling a model that is different than the spec", func() {
 		receivedRequests     List
 		model                *modelv1.Model
 		outOfDateDescription sagemaker.DescribeModelOutput
-		sageMakerClient      sagemakeriface.ClientAPI
+		sageMakerClient      sagemakeriface.SageMakerAPI
 		controller           ModelReconciler
 		request              ctrl.Request
 	)
@@ -583,7 +583,7 @@ var _ = Describe("Reconciling a model with finalizer that is being deleted", fun
 	})
 })
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) ModelReconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string) ModelReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return ModelReconciler{
@@ -591,7 +591,7 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 		Log:                   ctrl.Log,
 		PollInterval:          pollInterval,
 		createSageMakerClient: CreateMockSageMakerClientProvider(sageMakerClient),
-		awsConfigLoader:       CreateMockAwsConfigLoader(),
+		awsConfigLoader:       CreateMockAWSConfigLoader(),
 	}
 }
 

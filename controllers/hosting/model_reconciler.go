@@ -47,7 +47,7 @@ func NewModelReconciler(client client.Client, log logr.Logger) ModelReconciler {
 // Helper type that is responsible for reconciling models of an endpoint.
 type ModelReconciler interface {
 	Reconcile(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment, shouldDeleteUnusedModels bool) error
-	GetSageMakerModelNames(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) (map[string]string, error)
+	GetSageMakerModelNames(ctx context.Context, desiredDeployment *hostingv1.HostingDeployment) (map[string]*string, error)
 }
 
 // Concrete implementation of ModelReconciler.
@@ -206,7 +206,7 @@ func (r *modelReconciler) getActualModelsForHostingDeployment(ctx context.Contex
 
 // Generate a map of Kubernetes model names (defined by user in spec) and the corresponding auto-generated SageMaker names.
 // Returns error if unable to get the Kubernetes Models, or if the Models do not yet have a SageMaker name.
-func (r *modelReconciler) GetSageMakerModelNames(ctx context.Context, deployment *hostingv1.HostingDeployment) (map[string]string, error) {
+func (r *modelReconciler) GetSageMakerModelNames(ctx context.Context, deployment *hostingv1.HostingDeployment) (map[string]*string, error) {
 
 	var err error
 	var desiredModels map[string]*modelv1.Model
@@ -219,9 +219,9 @@ func (r *modelReconciler) GetSageMakerModelNames(ctx context.Context, deployment
 }
 
 // For a map of desiredModels, return a map of their names to the SageMaker model name.
-func (r *modelReconciler) getSageMakerModelNames(ctx context.Context, desiredModels map[string]*modelv1.Model, specModelNameToK8sNameMap map[string]string) (map[string]string, error) {
+func (r *modelReconciler) getSageMakerModelNames(ctx context.Context, desiredModels map[string]*modelv1.Model, specModelNameToK8sNameMap map[string]string) (map[string]*string, error) {
 
-	sageMakerModelNames := map[string]string{}
+	sageMakerModelNames := map[string]*string{}
 
 	for modelSpecName, modelK8sName := range specModelNameToK8sNameMap {
 
@@ -251,7 +251,7 @@ func (r *modelReconciler) getSageMakerModelNames(ctx context.Context, desiredMod
 			return nil, fmt.Errorf("Awaiting model name for '%s' to not be empty. %s", key, causedBy)
 		}
 
-		sageMakerModelNames[modelSpecName] = actualModel.Status.SageMakerModelName
+		sageMakerModelNames[modelSpecName] = &actualModel.Status.SageMakerModelName
 	}
 
 	return sageMakerModelNames, nil

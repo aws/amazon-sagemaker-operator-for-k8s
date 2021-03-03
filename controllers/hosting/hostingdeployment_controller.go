@@ -32,9 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 
 	hostingv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/hostingdeployment"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
@@ -55,7 +55,7 @@ type HostingDeploymentReconciler struct {
 	Log          logr.Logger
 	PollInterval time.Duration
 
-	awsConfigLoader                AwsConfigLoader
+	awsConfigLoader                AWSConfigLoader
 	createModelReconciler          ModelReconcilerProvider
 	createEndpointConfigReconciler EndpointConfigReconcilerProvider
 	createSageMakerClient          SageMakerClientProvider
@@ -66,10 +66,10 @@ func NewHostingDeploymentReconciler(client client.Client, log logr.Logger, pollI
 		Client:       client,
 		Log:          log,
 		PollInterval: pollInterval,
-		createSageMakerClient: func(awsConfig aws.Config) sagemakeriface.ClientAPI {
-			return sagemaker.New(awsConfig)
+		createSageMakerClient: func(cfg aws.Config) sagemakeriface.SageMakerAPI {
+			return sagemaker.New(CreateNewAWSSessionFromConfig(cfg))
 		},
-		awsConfigLoader:                NewAwsConfigLoader(),
+		awsConfigLoader:                NewAWSConfigLoader(),
 		createModelReconciler:          NewModelReconciler,
 		createEndpointConfigReconciler: NewEndpointConfigReconciler,
 	}
@@ -128,7 +128,7 @@ type reconcileRequestContext struct {
 	EndpointName string
 
 	// A map of k8s model names to their SageMaker model names.
-	ModelNames map[string]string
+	ModelNames map[string]*string
 
 	// The name of the SageMaker EndpointConfig
 	EndpointConfigName string
@@ -210,7 +210,7 @@ func (r *HostingDeploymentReconciler) reconcileHostingDeployment(ctx reconcileRe
 
 	// Updates and deletions are only supported in SageMaker when the Endpoint is "InService" (update or deletion) or "Failed" (only deletion).
 	// Thus, gate the updates/deletes according to status.
-	switch ctx.EndpointDescription.EndpointStatus {
+	switch *ctx.EndpointDescription.EndpointStatus {
 	case sagemaker.EndpointStatusInService:
 
 		// Only do updates if the object is not marked as deleted.
@@ -244,10 +244,10 @@ func (r *HostingDeploymentReconciler) reconcileHostingDeployment(ctx reconcileRe
 		r.Log.Info("Noop action, endpoint status does not allow modifications", "status", ctx.EndpointDescription.EndpointStatus)
 	}
 
-	status := string(ctx.EndpointDescription.EndpointStatus)
+	status := *ctx.EndpointDescription.EndpointStatus
 
 	// Present to the user that the endpoint is being deleted after they delete the hosting deployment.
-	if HasDeletionTimestamp(ctx.Deployment.ObjectMeta) && ctx.EndpointDescription.EndpointStatus != sagemaker.EndpointStatusDeleting {
+	if HasDeletionTimestamp(ctx.Deployment.ObjectMeta) && ctx.EndpointDescription.EndpointStatus != aws.String(sagemaker.EndpointStatusDeleting) {
 		status = string(sagemaker.EndpointStatusDeleting)
 	}
 
@@ -286,7 +286,7 @@ func (r *HostingDeploymentReconciler) handleUpdates(ctx reconcileRequestContext)
 		r.Log.Info("Endpoint needs update", "endpoint name", ctx.EndpointName, "actual config name", ctx.EndpointDescription.EndpointConfigName, "desired config name", ctx.EndpointConfigName)
 
 		var output *sagemaker.UpdateEndpointOutput
-		var excludeRetainedVariantProperties []sagemaker.VariantProperty
+		var excludeRetainedVariantProperties []*sagemaker.VariantProperty
 
 		excludeRetainedVariantProperties = sdkutil.ConvertVariantPropertiesToSageMakerVariantProperties(ctx.Deployment.Spec.ExcludeRetainedVariantProperties)
 
@@ -360,7 +360,7 @@ func (r *HostingDeploymentReconciler) initializeContext(ctx *reconcileRequestCon
 
 	r.Log.Info("SageMaker EndpointName", "name", ctx.EndpointName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.Deployment.Spec.Region, ctx.Deployment.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

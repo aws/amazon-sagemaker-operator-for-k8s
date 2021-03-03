@@ -32,8 +32,8 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 )
 
 const (
@@ -50,7 +50,7 @@ type Reconciler struct {
 	Log                   logr.Logger
 	PollInterval          time.Duration
 	createSageMakerClient clientwrapper.SageMakerClientWrapperProvider
-	awsConfigLoader       controllers.AwsConfigLoader
+	awsConfigLoader       controllers.AWSConfigLoader
 }
 
 // NewProcessingJobReconciler creates a new reconciler with the default SageMaker client.
@@ -60,9 +60,10 @@ func NewProcessingJobReconciler(client client.Client, log logr.Logger, pollInter
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
-			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
+			sess := controllers.CreateNewAWSSessionFromConfig(cfg)
+			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(sess))
 		},
-		awsConfigLoader: controllers.NewAwsConfigLoader(),
+		awsConfigLoader: controllers.NewAWSConfigLoader(),
 	}
 }
 
@@ -166,7 +167,7 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 		}
 	}
 
-	switch ctx.ProcessingJobDescription.ProcessingJobStatus {
+	switch *ctx.ProcessingJobDescription.ProcessingJobStatus {
 	case sagemaker.ProcessingJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.ProcessingJob.ObjectMeta) {
 			// Request to stop the job
@@ -193,11 +194,11 @@ func (r *Reconciler) reconcileProcessingJob(ctx reconcileRequestContext) error {
 		break
 
 	default:
-		unknownStateError := errors.New(fmt.Sprintf("Unknown Processing Job Status: %s", ctx.ProcessingJobDescription.ProcessingJobStatus))
+		unknownStateError := errors.New(fmt.Sprintf("Unknown Processing Job Status: %s", *ctx.ProcessingJobDescription.ProcessingJobStatus))
 		return r.updateStatusAndReturnError(ctx, unknownStateError)
 	}
 
-	status := string(ctx.ProcessingJobDescription.ProcessingJobStatus)
+	status := *ctx.ProcessingJobDescription.ProcessingJobStatus
 	additional := controllers.GetOrDefault(ctx.ProcessingJobDescription.FailureReason, "")
 
 	if err = r.updateStatusWithAdditional(ctx, status, additional); err != nil {
@@ -213,7 +214,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 
 	ctx.Log.Info("ProcessingJob", "Using job name: ", ctx.ProcessingJobName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.ProcessingJob.Spec.Region, ctx.ProcessingJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.ProcessingJob.Spec.Region, ctx.ProcessingJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

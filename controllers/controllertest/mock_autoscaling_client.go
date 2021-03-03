@@ -19,13 +19,14 @@ package controllertest
 import (
 	. "container/list"
 	"fmt"
-	. "github.com/onsi/ginkgo"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
-	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling/applicationautoscalingiface"
+	. "github.com/onsi/ginkgo"
+
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	awsrequest "github.com/aws/aws-sdk-go/aws/request"
+	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
+	"github.com/aws/aws-sdk-go/service/applicationautoscaling/applicationautoscalingiface"
 )
 
 // NewMockAutoscalingClientBuilder returns a MockAuoscalingClientBuilder
@@ -210,7 +211,7 @@ func (m *MockAutoscalingClientBuilder) WithRequestList(requests *List) *MockAuto
 }
 
 // Build Create a mock ApplicationAutoscaling API client given configuration.
-func (m *MockAutoscalingClientBuilder) Build() applicationautoscalingiface.ClientAPI {
+func (m *MockAutoscalingClientBuilder) Build() applicationautoscalingiface.ApplicationAutoScalingAPI {
 
 	if m.testReporter == nil {
 		panic("MockAutoscalingClientBuilder requires non-nil test reporter.")
@@ -231,7 +232,7 @@ func (m *MockAutoscalingClientBuilder) Build() applicationautoscalingiface.Clien
 
 // Mock ApplicationAutoscaling API client.
 type mockApplicationAutoscalingClient struct {
-	applicationautoscalingiface.ClientAPI
+	applicationautoscalingiface.ApplicationAutoScalingAPI
 
 	// List of responses to use when responding to API calls. They are returned in same order
 	// as they are stored in the list.
@@ -244,15 +245,15 @@ type mockApplicationAutoscalingClient struct {
 	testReporter GinkgoTInterface
 }
 
-func (m *mockApplicationAutoscalingClient) mockRequestBuilder() *aws.Request {
-	return &aws.Request{
+func (m *mockApplicationAutoscalingClient) mockRequestBuilder() *awsrequest.Request {
+	return &awsrequest.Request{
 		HTTPRequest: &http.Request{
 			Header: map[string][]string{},
 		},
 		HTTPResponse: &http.Response{},
-		Retryer:      &aws.NoOpRetryer{},
+		Retryer:      nil,
 		// Required for pagination operation.
-		Operation: &aws.Operation{
+		Operation: &awsrequest.Operation{
 			Paginator: nil,
 		},
 	}
@@ -260,7 +261,7 @@ func (m *mockApplicationAutoscalingClient) mockRequestBuilder() *aws.Request {
 
 // Mock DescribeScalableTargetsRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type ScalableTargetsResponse, or there are no more responses to give, fail the test.
-func (m mockApplicationAutoscalingClient) DescribeScalableTargetsRequest(input *applicationautoscaling.DescribeScalableTargetsInput) applicationautoscaling.DescribeScalableTargetsRequest {
+func (m mockApplicationAutoscalingClient) DescribeScalableTargetsRequest(input *applicationautoscaling.DescribeScalableTargetsInput) (*awsrequest.Request, *applicationautoscaling.DescribeScalableTargetsOutput) {
 	m.requests.PushBack(input)
 	front := m.responses.Front()
 
@@ -287,23 +288,16 @@ func (m mockApplicationAutoscalingClient) DescribeScalableTargetsRequest(input *
 	mockRequest := m.mockRequestBuilder()
 
 	if nextdescribeScalableTargetsResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Error = nextdescribeScalableTargetsResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Data = nextdescribeScalableTargetsResponse.targetData
-		})
+		mockRequest.Error = nextdescribeScalableTargetsResponse.err
+		return mockRequest, nil
 	}
 
-	return applicationautoscaling.DescribeScalableTargetsRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nextdescribeScalableTargetsResponse.targetData
 }
 
 // Mock DescribeScalingPoliciesRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type ScalableTargetsResponse, or there are no more responses to give, fail the test.
-func (m mockApplicationAutoscalingClient) DescribeScalingPoliciesRequest(input *applicationautoscaling.DescribeScalingPoliciesInput) applicationautoscaling.DescribeScalingPoliciesRequest {
+func (m mockApplicationAutoscalingClient) DescribeScalingPoliciesRequest(input *applicationautoscaling.DescribeScalingPoliciesInput) (*awsrequest.Request, *applicationautoscaling.DescribeScalingPoliciesOutput) {
 	m.requests.PushBack(input)
 
 	front := m.responses.Front()
@@ -331,23 +325,16 @@ func (m mockApplicationAutoscalingClient) DescribeScalingPoliciesRequest(input *
 	mockRequest := m.mockRequestBuilder()
 
 	if nextdescribeScalingPolicyResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Error = nextdescribeScalingPolicyResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Data = nextdescribeScalingPolicyResponse.policyData
-		})
+		mockRequest.Error = nextdescribeScalingPolicyResponse.err
+		return mockRequest, nil
 	}
 
-	return applicationautoscaling.DescribeScalingPoliciesRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nextdescribeScalingPolicyResponse.policyData
 }
 
 // Mock RegisterScalableTargetRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type RegisterScalableTarget, or there are no more responses to give, fail the test.
-func (m mockApplicationAutoscalingClient) RegisterScalableTargetRequest(input *applicationautoscaling.RegisterScalableTargetInput) applicationautoscaling.RegisterScalableTargetRequest {
+func (m mockApplicationAutoscalingClient) RegisterScalableTargetRequest(input *applicationautoscaling.RegisterScalableTargetInput) (*awsrequest.Request, *applicationautoscaling.RegisterScalableTargetOutput) {
 
 	m.requests.PushBack(input)
 
@@ -376,23 +363,16 @@ func (m mockApplicationAutoscalingClient) RegisterScalableTargetRequest(input *a
 	mockRequest := m.mockRequestBuilder()
 
 	if nextregisterScalableTargetResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Error = nextregisterScalableTargetResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Data = nextregisterScalableTargetResponse.targetData
-		})
+		mockRequest.Error = nextregisterScalableTargetResponse.err
+		return mockRequest, nil
 	}
 
-	return applicationautoscaling.RegisterScalableTargetRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nextregisterScalableTargetResponse.targetData
 }
 
 // Mock PutScalingPolicyRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type PutScalingPolicy, or there are no more responses to give, fail the test.
-func (m mockApplicationAutoscalingClient) PutScalingPolicyRequest(input *applicationautoscaling.PutScalingPolicyInput) applicationautoscaling.PutScalingPolicyRequest {
+func (m mockApplicationAutoscalingClient) PutScalingPolicyRequest(input *applicationautoscaling.PutScalingPolicyInput) (*awsrequest.Request, *applicationautoscaling.PutScalingPolicyOutput) {
 
 	m.requests.PushBack(input)
 
@@ -421,23 +401,16 @@ func (m mockApplicationAutoscalingClient) PutScalingPolicyRequest(input *applica
 	mockRequest := m.mockRequestBuilder()
 
 	if nextputScalingPolicyResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Error = nextputScalingPolicyResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Data = nextputScalingPolicyResponse.policyData
-		})
+		mockRequest.Error = nextputScalingPolicyResponse.err
+		return mockRequest, nil
 	}
 
-	return applicationautoscaling.PutScalingPolicyRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nextputScalingPolicyResponse.policyData
 }
 
 // Mock DeregisterScalableTargetRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DeregisterScalableTarget, or there are no more responses to give, fail the test.
-func (m mockApplicationAutoscalingClient) DeregisterScalableTargetRequest(input *applicationautoscaling.DeregisterScalableTargetInput) applicationautoscaling.DeregisterScalableTargetRequest {
+func (m mockApplicationAutoscalingClient) DeregisterScalableTargetRequest(input *applicationautoscaling.DeregisterScalableTargetInput) (*awsrequest.Request, *applicationautoscaling.DeregisterScalableTargetOutput) {
 
 	m.requests.PushBack(input)
 
@@ -466,23 +439,16 @@ func (m mockApplicationAutoscalingClient) DeregisterScalableTargetRequest(input 
 	mockRequest := m.mockRequestBuilder()
 
 	if nextderegisterScalableTargetResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Error = nextderegisterScalableTargetResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Data = nextderegisterScalableTargetResponse.targetData
-		})
+		mockRequest.Error = nextderegisterScalableTargetResponse.err
+		return mockRequest, nil
 	}
 
-	return applicationautoscaling.DeregisterScalableTargetRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nextderegisterScalableTargetResponse.targetData
 }
 
 // Mock DeleteScalingPolicyRequest implementation. It overrides a request response with the mock data.
 // If the next response is not of type DeleteScalingPolicy, or there are no more responses to give, fail the test.
-func (m mockApplicationAutoscalingClient) DeleteScalingPolicyRequest(input *applicationautoscaling.DeleteScalingPolicyInput) applicationautoscaling.DeleteScalingPolicyRequest {
+func (m mockApplicationAutoscalingClient) DeleteScalingPolicyRequest(input *applicationautoscaling.DeleteScalingPolicyInput) (*awsrequest.Request, *applicationautoscaling.DeleteScalingPolicyOutput) {
 
 	m.requests.PushBack(input)
 
@@ -511,16 +477,9 @@ func (m mockApplicationAutoscalingClient) DeleteScalingPolicyRequest(input *appl
 	mockRequest := m.mockRequestBuilder()
 
 	if nextdeleteScalingPolicyResponse.err != nil {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Error = nextdeleteScalingPolicyResponse.err
-		})
-	} else {
-		mockRequest.Handlers.Send.PushBack(func(r *aws.Request) {
-			r.Data = nextdeleteScalingPolicyResponse.policyData
-		})
+		mockRequest.Error = nextdeleteScalingPolicyResponse.err
+		return mockRequest, nil
 	}
 
-	return applicationautoscaling.DeleteScalingPolicyRequest{
-		Request: mockRequest,
-	}
+	return mockRequest, nextdeleteScalingPolicyResponse.policyData
 }

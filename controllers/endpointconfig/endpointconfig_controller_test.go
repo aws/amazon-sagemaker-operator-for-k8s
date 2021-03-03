@@ -26,8 +26,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,7 +45,7 @@ import (
 var _ = Describe("Reconciling an EndpointConfig while failing to get the Kubernetes job", func() {
 
 	var (
-		sageMakerClient sagemakeriface.ClientAPI
+		sageMakerClient sagemakeriface.SageMakerAPI
 	)
 
 	BeforeEach(func() {
@@ -299,7 +299,7 @@ var _ = Describe("Reconciling a endpointconfig with finalizer that is being dele
 	})
 })
 
-func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.ClientAPI, pollIntervalStr string) EndpointConfigReconciler {
+func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface.SageMakerAPI, pollIntervalStr string) EndpointConfigReconciler {
 	pollInterval := ParseDurationOrFail(pollIntervalStr)
 
 	return EndpointConfigReconciler{
@@ -307,7 +307,7 @@ func createReconciler(k8sClient k8sclient.Client, sageMakerClient sagemakeriface
 		Log:                   ctrl.Log,
 		PollInterval:          pollInterval,
 		createSageMakerClient: CreateMockSageMakerClientProvider(sageMakerClient),
-		awsConfigLoader:       CreateMockAwsConfigLoader(),
+		awsConfigLoader:       CreateMockAWSConfigLoader(),
 	}
 }
 
@@ -357,7 +357,7 @@ var _ = Describe("Reconciling a endpointConfig that is different than the spec",
 		receivedRequests     List
 		endpointConfig       *endpointconfigv1.EndpointConfig
 		outOfDateDescription sagemaker.DescribeEndpointConfigOutput
-		sageMakerClient      sagemakeriface.ClientAPI
+		sageMakerClient      sagemakeriface.SageMakerAPI
 		controller           EndpointConfigReconciler
 		request              ctrl.Request
 	)
@@ -371,12 +371,12 @@ var _ = Describe("Reconciling a endpointConfig that is different than the spec",
 			EndpointConfigName: ToStringPtr("endpointConfig name"),
 			EndpointConfigArn:  ToStringPtr("endpointConfig arn"),
 			KmsKeyId:           ToStringPtr(endpointConfig.Spec.KmsKeyId),
-			ProductionVariants: []sagemaker.ProductionVariant{},
+			ProductionVariants: []*sagemaker.ProductionVariant{},
 		}
 
 		for _, pv := range endpointConfig.Spec.ProductionVariants {
-			outOfDateDescription.ProductionVariants = append(outOfDateDescription.ProductionVariants, sagemaker.ProductionVariant{
-				AcceleratorType:      sagemaker.ProductionVariantAcceleratorType(pv.AcceleratorType),
+			outOfDateDescription.ProductionVariants = append(outOfDateDescription.ProductionVariants, &sagemaker.ProductionVariant{
+				AcceleratorType:      pv.AcceleratorType,
 				InitialInstanceCount: ToInt64Ptr(*pv.InitialInstanceCount + 1),
 				InitialVariantWeight: ToFloat64Ptr(float64(*pv.InitialVariantWeight)),
 				ModelName:            ToStringPtr(*pv.ModelName),

@@ -32,8 +32,8 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
 
-	aws "github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
+	aws "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/go-logr/logr"
 )
 
@@ -53,7 +53,7 @@ type Reconciler struct {
 	Log                   logr.Logger
 	PollInterval          time.Duration
 	createSageMakerClient clientwrapper.SageMakerClientWrapperProvider
-	awsConfigLoader       controllers.AwsConfigLoader
+	awsConfigLoader       controllers.AWSConfigLoader
 }
 
 // NewTrainingJobReconciler creates a new reconciler with the default SageMaker client.
@@ -63,9 +63,10 @@ func NewTrainingJobReconciler(client client.Client, log logr.Logger, pollInterva
 		Log:          log,
 		PollInterval: pollInterval,
 		createSageMakerClient: func(cfg aws.Config) clientwrapper.SageMakerClientWrapper {
-			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(cfg))
+			sess := controllers.CreateNewAWSSessionFromConfig(cfg)
+			return clientwrapper.NewSageMakerClientWrapper(sagemaker.New(sess))
 		},
-		awsConfigLoader: controllers.NewAwsConfigLoader(),
+		awsConfigLoader: controllers.NewAWSConfigLoader(),
 	}
 }
 
@@ -185,7 +186,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	} else {
 		for i, debugJob := range ctx.TrainingJobDescription.DebugRuleEvaluationStatuses {
-			if string(debugJob.RuleEvaluationStatus) != controllers.GetOrDefault(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus, "") {
+			if *debugJob.RuleEvaluationStatus != controllers.GetOrDefault(ctx.TrainingJob.Status.DebugRuleEvaluationStatuses[i].RuleEvaluationStatus, "") {
 				if err = r.addDebugRuleEvaluationStatusesToStatus(ctx); err != nil {
 					return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", errors.Wrap(err, "Unable to add debug job statuses to status"))
 				}
@@ -194,7 +195,7 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		}
 	}
 
-	switch ctx.TrainingJobDescription.TrainingJobStatus {
+	switch *ctx.TrainingJobDescription.TrainingJobStatus {
 	case sagemaker.TrainingJobStatusInProgress:
 		if controllers.HasDeletionTimestamp(ctx.TrainingJob.ObjectMeta) {
 			// Request to stop the job
@@ -224,15 +225,15 @@ func (r *Reconciler) reconcileTrainingJob(ctx reconcileRequestContext) error {
 		break
 
 	default:
-		unknownStateError := errors.New(fmt.Sprintf("Unknown Training Job Status: %s", ctx.TrainingJobDescription.TrainingJobStatus))
+		unknownStateError := errors.New(fmt.Sprintf("Unknown Training Job Status: %s", *ctx.TrainingJobDescription.TrainingJobStatus))
 		return r.updateStatusAndReturnError(ctx, ReconcilingTrainingJobStatus, "", unknownStateError)
 	}
 
-	primaryStatus := string(ctx.TrainingJobDescription.TrainingJobStatus)
-	secondaryStatus := string(ctx.TrainingJobDescription.SecondaryStatus)
+	primaryStatus := *ctx.TrainingJobDescription.TrainingJobStatus
+	secondaryStatus := *ctx.TrainingJobDescription.SecondaryStatus
 	additional := controllers.GetOrDefault(ctx.TrainingJobDescription.FailureReason, "")
 
-	if ctx.TrainingJobDescription.TrainingJobStatus == sagemaker.TrainingJobStatusStopping {
+	if *ctx.TrainingJobDescription.TrainingJobStatus == string(sagemaker.TrainingJobStatusStopping) {
 		// Clear the secondary status if we detected stopping, since SageMaker has unclear secondary statuses during this phase
 		// Open ticket with the SageMaker team: https://t.corp.amazon.com/0411302791
 		secondaryStatus = ""
@@ -262,7 +263,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 	}
 	ctx.Log.Info("TrainingJob", "name", ctx.TrainingJobName)
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.TrainingJob.Spec.Region, ctx.TrainingJob.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.TrainingJob.Spec.Region, ctx.TrainingJob.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

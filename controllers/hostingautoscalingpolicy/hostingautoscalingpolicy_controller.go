@@ -26,8 +26,8 @@ import (
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
-	aws "github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
+	aws "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/applicationautoscaling"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -69,7 +69,7 @@ type Reconciler struct {
 	Log                                logr.Logger
 	PollInterval                       time.Duration
 	createApplicationAutoscalingClient clientwrapper.ApplicationAutoscalingClientWrapperProvider
-	awsConfigLoader                    controllers.AwsConfigLoader
+	awsConfigLoader                    controllers.AWSConfigLoader
 }
 
 // NewHostingAutoscalingPolicyReconciler creates a new reconciler with the default ApplicationAutoscaling client.
@@ -79,9 +79,10 @@ func NewHostingAutoscalingPolicyReconciler(client client.Client, log logr.Logger
 		Log:          log,
 		PollInterval: pollInterval,
 		createApplicationAutoscalingClient: func(cfg aws.Config) clientwrapper.ApplicationAutoscalingClientWrapper {
-			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(cfg))
+			sess := controllers.CreateNewAWSSessionFromConfig(cfg)
+			return clientwrapper.NewApplicationAutoscalingClientWrapper(applicationautoscaling.New(sess))
 		},
-		awsConfigLoader: controllers.NewAwsConfigLoader(),
+		awsConfigLoader: controllers.NewAWSConfigLoader(),
 	}
 }
 
@@ -299,7 +300,7 @@ func (r *Reconciler) initializeContext(ctx *reconcileRequestContext) error {
 		ctx.HostingAutoscalingPolicy.Spec.SuspendedState.ScheduledScalingSuspended = controllertest.ToBoolPtr(DefaultSuspendedStateAttributeValue)
 	}
 
-	awsConfig, err := r.awsConfigLoader.LoadAwsConfigWithOverrides(*ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
+	awsConfig, err := r.awsConfigLoader.LoadAWSConfigWithOverrides(ctx.HostingAutoscalingPolicy.Spec.Region, ctx.HostingAutoscalingPolicy.Spec.SageMakerEndpoint)
 	if err != nil {
 		ctx.Log.Error(err, "Error loading AWS config")
 		return err

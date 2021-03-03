@@ -31,9 +31,9 @@ import (
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers"
 	. "github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/controllertest"
 	"github.com/aws/amazon-sagemaker-operator-for-k8s/controllers/sdkutil/clientwrapper"
-
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
-	"github.com/aws/aws-sdk-go-v2/service/sagemaker/sagemakeriface"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/sagemaker"
+	"github.com/aws/aws-sdk-go/service/sagemaker/sagemakeriface"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +45,7 @@ import (
 )
 
 // Helper function to create a HpoTrainingJobSpawner
-func createHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.ClientAPI) hpoTrainingJobSpawner {
+func createHPOTrainingJobSpawner(k8sClient client.Client, log logr.Logger, sageMakerClient sagemakeriface.SageMakerAPI) hpoTrainingJobSpawner {
 	return hpoTrainingJobSpawner{
 		K8sClient:       k8sClient,
 		Log:             log,
@@ -58,14 +58,14 @@ func createSageMakerJob(name string) sagemaker.DescribeTrainingJobOutput {
 	return sagemaker.DescribeTrainingJobOutput{
 		TrainingJobName: &name,
 		AlgorithmSpecification: &sagemaker.AlgorithmSpecification{
-			TrainingInputMode: sagemaker.TrainingInputModeFile,
+			TrainingInputMode: aws.String(sagemaker.TrainingInputModeFile),
 		},
 		OutputDataConfig: &sagemaker.OutputDataConfig{
 			S3OutputPath: ToStringPtr("s3://outputpath"),
 		},
 		ResourceConfig: &sagemaker.ResourceConfig{
 			InstanceCount:  ToInt64Ptr(1),
-			InstanceType:   sagemaker.TrainingInstanceTypeMlM4Xlarge,
+			InstanceType:   aws.String(sagemaker.TrainingInstanceTypeMlM4Xlarge),
 			VolumeSizeInGB: ToInt64Ptr(50),
 		},
 		RoleArn:           ToStringPtr("xxxxxxxxxxxxxxxxxxxx"),
@@ -141,18 +141,17 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 
 		// Create a mock response for ListTrainingJobs.
 		listResponse := sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput{
-			NextToken: ToStringPtr(""),
-			TrainingJobSummaries: []sagemaker.HyperParameterTrainingJobSummary{
-				sagemaker.HyperParameterTrainingJobSummary{
+			TrainingJobSummaries: []*sagemaker.HyperParameterTrainingJobSummary{
+				{
 					TrainingJobName: &present1Name,
 				},
-				sagemaker.HyperParameterTrainingJobSummary{
+				{
 					TrainingJobName: &missing1Name,
 				},
-				sagemaker.HyperParameterTrainingJobSummary{
+				{
 					TrainingJobName: &missing2Name,
 				},
-				sagemaker.HyperParameterTrainingJobSummary{
+				{
 					TrainingJobName: &present2Name,
 				},
 			},
@@ -222,9 +221,8 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 
 	It("should fail gracefully for DescribeTrainingJob errors", func() {
 		listResponse := sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput{
-			NextToken: ToStringPtr(""),
-			TrainingJobSummaries: []sagemaker.HyperParameterTrainingJobSummary{
-				sagemaker.HyperParameterTrainingJobSummary{
+			TrainingJobSummaries: []*sagemaker.HyperParameterTrainingJobSummary{
+				{
 					TrainingJobName: ToStringPtr("job-1"),
 				},
 			},
@@ -248,9 +246,8 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 		missingName := "missing-" + uuid.New().String()
 
 		listResponse := sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput{
-			NextToken: ToStringPtr(""),
-			TrainingJobSummaries: []sagemaker.HyperParameterTrainingJobSummary{
-				sagemaker.HyperParameterTrainingJobSummary{
+			TrainingJobSummaries: []*sagemaker.HyperParameterTrainingJobSummary{
+				{
 					TrainingJobName: ToStringPtr(missingName),
 				},
 			},
@@ -292,9 +289,8 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 		missingName := "missing-" + uuid.New().String()
 
 		listResponse := sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput{
-			NextToken: ToStringPtr(""),
-			TrainingJobSummaries: []sagemaker.HyperParameterTrainingJobSummary{
-				sagemaker.HyperParameterTrainingJobSummary{
+			TrainingJobSummaries: []*sagemaker.HyperParameterTrainingJobSummary{
+				{
 					TrainingJobName: ToStringPtr(missingName),
 				},
 			},
@@ -337,9 +333,8 @@ var _ = Describe("SpawnMissingTrainingJobs", func() {
 		missingName := "missing-" + uuid.New().String()
 
 		listResponse := sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput{
-			NextToken: ToStringPtr(""),
-			TrainingJobSummaries: []sagemaker.HyperParameterTrainingJobSummary{
-				sagemaker.HyperParameterTrainingJobSummary{
+			TrainingJobSummaries: []*sagemaker.HyperParameterTrainingJobSummary{
+				&sagemaker.HyperParameterTrainingJobSummary{
 					TrainingJobName: ToStringPtr(missingName),
 				},
 			},
@@ -413,12 +408,11 @@ var _ = Describe("DeleteSpawnedTrainingJobs", func() {
 		}
 
 		// Setup SageMaker response
-		listResponse = sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput{
-			NextToken: ToStringPtr(""),
-		}
+		listResponse = sagemaker.ListTrainingJobsForHyperParameterTuningJobOutput{}
+
 		for _, name := range existingJobNames {
 			nameCopy := name
-			listResponse.TrainingJobSummaries = append(listResponse.TrainingJobSummaries, sagemaker.HyperParameterTrainingJobSummary{
+			listResponse.TrainingJobSummaries = append(listResponse.TrainingJobSummaries, &sagemaker.HyperParameterTrainingJobSummary{
 				TrainingJobName: &nameCopy,
 			})
 		}
