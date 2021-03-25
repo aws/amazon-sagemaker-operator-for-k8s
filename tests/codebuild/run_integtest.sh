@@ -80,6 +80,9 @@ if [ "${need_setup_cluster}" == "true" ]; then
 
     echo "Setting kubeconfig"
     export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
+
+    echo "Install SSM Agent"
+    ./install_ssm.sh
 else
     readonly cluster_info="$(kubectl config get-contexts | awk '$1 == "*" {print $3}' | sed 's/\./ /g')"
     readonly cluster_name="$(echo "${cluster_info}" | awk '{print $1}')"
