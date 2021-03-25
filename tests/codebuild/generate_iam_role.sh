@@ -43,6 +43,7 @@ function create_namespaced_iam_role {
         echo "IAM Role does not exist, creating a new Role for the cluster"
         aws iam create-role --role-name ${ROLE_NAME} --assume-role-policy-document file://${trustfile} --output=text
         aws iam attach-role-policy --role-name ${ROLE_NAME}  --policy-arn arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+        aws iam attach-role-policy --role-name ${ROLE_NAME}  --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
     fi
 }
 

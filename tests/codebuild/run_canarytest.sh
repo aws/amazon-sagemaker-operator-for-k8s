@@ -70,6 +70,10 @@ then
 
    echo "Setting kubeconfig"
    export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
+
+   echo "Install SSM Agent"
+   ./install_ssm.sh
+
 else
    cluster_name="non-ephemeral-cluster"
    aws eks update-kubeconfig --name "${cluster_name}" --region "${CLUSTER_REGION}"

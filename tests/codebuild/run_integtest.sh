@@ -74,12 +74,23 @@ if [ "${need_setup_cluster}" == "true" ]; then
     readonly cluster_region="us-east-1"
 
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
-    eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.15 --fargate
-    eksctl create fargateprofile --namespace "${crd_namespace}" --cluster "${cluster_name}" --name namespace-profile --region "${cluster_region}"
-    eksctl create fargateprofile --namespace "${default_operator_namespace}" --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
+    eksctl_args=( --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${CLUSTER_REGION}" --auto-kubeconfig --version "${CLUSTER_VERSION}" )
+    [ "${CLUSTER_PUBLIC_SUBNETS}" != "" ] && eksctl_args+=( --vpc-public-subnets="${CLUSTER_PUBLIC_SUBNETS}" )
+    [ "${CLUSTER_PRIVATE_SUBNETS}" != "" ] && eksctl_args+=( --vpc-private-subnets="${CLUSTER_PRIVATE_SUBNETS}" )
+
+    eksctl create cluster "${cluster_name}" "${eksctl_args[@]}"
+
+    #eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.15 --fargate
+    #eksctl create fargateprofile --namespace "${crd_namespace}" --cluster "${cluster_name}" --name namespace-profile --region "${cluster_region}"
+    #eksctl create fargateprofile --namespace "${default_operator_namespace}" --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
 
     echo "Setting kubeconfig"
     export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
+
+    echo "Install SSM Agent"
+    pushd tests/codebuild
+    ./install_ssm.sh
+    popd
 else
     readonly cluster_info="$(kubectl config get-contexts | awk '$1 == "*" {print $3}' | sed 's/\./ /g')"
     readonly cluster_name="$(echo "${cluster_info}" | awk '{print $1}')"
