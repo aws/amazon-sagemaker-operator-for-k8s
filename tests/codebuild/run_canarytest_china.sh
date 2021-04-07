@@ -61,7 +61,7 @@ function create_eks_cluster() {
   [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-public-subnets="${EKS_PUBLIC_SUBNET_1},${EKS_PUBLIC_SUBNET_2}" )
   [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-private-subnets="${EKS_PRIVATE_SUBNET_1},${EKS_PRIVATE_SUBNET_2}" )
 
-  eksctl create cluster "$CLUSTER_NAME" "${eksctl_args[@]}"
+  eksctl create cluster "$CLUSTER_NAME" "${eksctl_args[@]}" --enable-ssm
 }
 
 function install_k8s_operators() {
