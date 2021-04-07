@@ -66,7 +66,7 @@ then
    [ "${CLUSTER_PUBLIC_SUBNETS}" != "" ] && eksctl_args+=( --vpc-public-subnets="${CLUSTER_PUBLIC_SUBNETS}" )
    [ "${CLUSTER_PRIVATE_SUBNETS}" != "" ] && eksctl_args+=( --vpc-private-subnets="${CLUSTER_PRIVATE_SUBNETS}" )
 
-   eksctl create cluster "${cluster_name}" "${eksctl_args[@]}"
+   eksctl create cluster "${cluster_name}" "${eksctl_args[@]}" --enable-ssm
 
    echo "Setting kubeconfig"
    export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
