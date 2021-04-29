@@ -314,7 +314,7 @@ spec:
         env:
         - name: AWS_DEFAULT_SAGEMAKER_ENDPOINT
           value: ""
-        image: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s:v1
+        image: 957583890962.dkr.ecr.us-east-1.amazonaws.com/amazon-sagemaker-operator-for-k8s:v1.2
         imagePullPolicy: Always
         name: manager
         resources:
