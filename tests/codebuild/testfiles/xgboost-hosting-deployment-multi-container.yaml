@@ -16,9 +16,9 @@ spec:
       containers:
         - containerHostname: xgboost-1
           modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
-          image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
+          image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
           mode: SingleModel
         - containerHostname: xgboost-2
           modelDataUrl: s3://{DATA_BUCKET}/inference/xgboost-mnist/model.tar.gz
-          image: 246618743249.dkr.ecr.us-west-2.amazonaws.com/sagemaker-xgboost:1.2-1
+          image: 433757028032.dkr.ecr.us-west-2.amazonaws.com/xgboost:1
           mode: SingleModel
