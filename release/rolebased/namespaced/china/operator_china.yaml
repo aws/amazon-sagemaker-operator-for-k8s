@@ -307,7 +307,7 @@ spec:
     spec:
       containers:
       - args:
-        - --enable-leader-election
+        - --metrics-addr=127.0.0.1:8080
         - --namespace=PLACEHOLDER-NAMESPACE
         command:
         - /manager
