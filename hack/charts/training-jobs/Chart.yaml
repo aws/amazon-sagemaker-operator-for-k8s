@@ -3,12 +3,12 @@ name: amazon-sagemaker-trainingjob
 version: 1.0.0
 description: A Helm chart for deploying a SageMaker TrainingJob from Kubernetes.
 maintainers:
-  - name: Cade Daniel
-    email: cdnamz@amazon.com
   - name: Gautam Kumar
     email: gauta@amazon.com
-  - name: Nicholas Thomson
-    email: nithomso@amazon.com
+  - name: Suraj Kota
+    email: surakota@amazon.com
+  - name: Kartik Kalamadi
+    email: kalamadi@amazon.com
   - name: Meghna Baijal
     email: mbaijal@amazon.com
 # dependencies:

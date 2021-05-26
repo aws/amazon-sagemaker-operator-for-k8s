@@ -46,7 +46,7 @@ source ./common.sh
 # Build environment `Docker image` has all prerequisite setup and credentials are being passed using AWS system manager
 
 CLUSTER_REGION=${CLUSTER_REGION:-us-east-1}
-CLUSTER_VERSION=${CLUSTER_VERSION:-1.13}
+CLUSTER_VERSION=1.17
 
 # Define the list of optional subnets for the EKS test cluster
 CLUSTER_PUBLIC_SUBNETS=${CLUSTER_PUBLIC_SUBNETS:-}
