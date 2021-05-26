@@ -74,7 +74,7 @@ if [ "${need_setup_cluster}" == "true" ]; then
     readonly cluster_region="us-east-1"
 
     # By default eksctl picks random AZ, which time to time leads to capacity issue.
-    eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.15 --fargate
+    eksctl create cluster "${cluster_name}" --timeout=40m --region "${cluster_region}" --zones us-east-1a,us-east-1b,us-east-1c --auto-kubeconfig --version=1.17 --fargate
     eksctl create fargateprofile --namespace "${crd_namespace}" --cluster "${cluster_name}" --name namespace-profile --region "${cluster_region}"
     eksctl create fargateprofile --namespace "${default_operator_namespace}" --cluster "${cluster_name}" --name operator-profile --region "${cluster_region}"
 
