@@ -33,7 +33,7 @@ RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06
       && chmod +x ./kubectl && cp ./kubectl /bin
 
 # Install eksctl
-RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && mv /tmp/eksctl /bin
+RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && mv /tmp/eksctl /bin
 
 # Install Kubebuilder which is required for make test
 RUN curl -L -O https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_linux_amd64.tar.gz && tar -zxvf kubebuilder_master_linux_amd64.tar.gz && mv kubebuilder /usr/local/ && rm -rf kubebuilder_master_linux_amd64.tar.gz
