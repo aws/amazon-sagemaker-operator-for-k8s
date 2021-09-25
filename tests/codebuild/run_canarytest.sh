@@ -8,22 +8,13 @@ function cleanup {
     # We want to run every command in this function, even if some fail.
     set +e
 
-    # Describe, if the test fails the Additional field might have more helpful info.
-    # This is helpful for nonEphemeral cluster since we are not printing manager pod logs
-    echo "Job descriptions:"
-    kubectl describe TrainingJob
-    kubectl describe ProcessingJob
-    kubectl describe HyperparameterTuningJob
-    kubectl describe BatchTransformJob
-    kubectl describe HostingDeployment
-    kubectl describe HostingAutoscalingPolicy
+    # Managable to print logs for ephemeral cluster
+    get_manager_logs
 
     delete_all_resources "default"
 
     if [ -z "${USE_EXISTING_CLUSTER}" ]
     then
-        # Managable to print logs for ephemeral cluster
-        get_manager_logs
         # Delete the role associated with the cluster thats being deleted
         delete_generated_role "${role_name}"
         # Tear down the cluster if we set it up.
