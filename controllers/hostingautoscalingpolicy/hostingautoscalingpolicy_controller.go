@@ -18,7 +18,6 @@ package hostingautoscalingpolicy
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	commonv1 "github.com/aws/amazon-sagemaker-operator-for-k8s/api/v1/common"
@@ -434,11 +433,6 @@ func (r *Reconciler) applyAutoscalingPolicy(ctx reconcileRequestContext) ([]*app
 	var err error
 	if scalableTargetDescriptionList, scalingPolicyDescriptionList, err = r.describeAutoscalingPolicy(ctx); err != nil {
 		return scalableTargetDescriptionList, scalingPolicyDescriptionList, r.updateStatusAndReturnError(ctx, errors.Wrap(err, "Unable to describe HostingAutoscalingPolicy."))
-	}
-
-	// TODO mbaijal: This check is not needed since the first describe is handled differently
-	if len(scalableTargetDescriptionList) == 0 || len(scalingPolicyDescriptionList) == 0 {
-		return nil, nil, fmt.Errorf("hosting autoscaling policy was not applied, description is empty")
 	}
 
 	return scalableTargetDescriptionList, scalingPolicyDescriptionList, nil
