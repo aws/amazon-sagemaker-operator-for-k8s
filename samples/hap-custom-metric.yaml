@@ -7,7 +7,7 @@ spec:
       - endpointName: Endpoint-20200410010239-FZFY
         variantName: variant-name-1
     region: us-east-2
-    policyName: SageMakerEndpointInvocationScalingPolicy
+    policyName: CPUUtilizationScalingPolicy
     policyType: TargetTrackingScaling
     minCapacity: 1
     maxCapacity: 2
