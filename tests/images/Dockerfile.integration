@@ -36,7 +36,10 @@ RUN curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.12.9/2019-06
 RUN curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp && mv /tmp/eksctl /bin
 
 # Install Kubebuilder which is required for make test
-RUN curl -L -O https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_linux_amd64.tar.gz && tar -zxvf kubebuilder_master_linux_amd64.tar.gz && mv kubebuilder /usr/local/ && rm -rf kubebuilder_master_linux_amd64.tar.gz
+RUN wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.3.1/kubebuilder_2.3.1_linux_amd64.tar.gz \
+ && tar -zxvf kubebuilder_2.3.1_linux_amd64.tar.gz \
+ && mv kubebuilder_2.3.1_linux_amd64 /usr/local/kubebuilder \
+ && rm -rf kubebuilder_2.3.1_linux_amd64.tar.gz
 
 # Install dig, used for PrivateLink test.
 RUN apt-get install -y dnsutils
