@@ -6,10 +6,19 @@ default_operator_namespace="sagemaker-k8s-operator-system"
 # Parameter:
 #    $1: Target namespace
 #    $2: Filename of the test
+#    $3: Optional spec field to rename with a random variable
 function run_test()
 {
   local target_namespace="$1"
   local file_name="$2"
+  
+  if [ $# -eq 4 ]; then
+    local replace_string="$3"
+    local random_trail="$4"
+    local random_string="$replace_string-$random_trail"
+
+    sed -i "s/$replace_string/$random_string/g" "$file_name"
+  fi
 
   kubectl apply -n "$target_namespace" -f "$file_name"
 }

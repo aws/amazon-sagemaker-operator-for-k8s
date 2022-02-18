@@ -3,6 +3,9 @@
 source common.sh
 source inject_tests.sh
 
+# Use the current PID as random string
+RANDOM_STRING=$$
+
 # Applies each of the resources needed for the canary tests.
 # Parameter:
 #    $1: Namespace of the CRD
@@ -14,7 +17,7 @@ function run_canary_tests
   inject_all_variables
 
   echo "Starting Canary Tests"
-  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml
+  run_test "${crd_namespace}" testfiles/xgboost-mnist-trainingjob.yaml xgboost-mnist "${RANDOM_STRING}"
   run_test "${crd_namespace}" testfiles/kmeans-mnist-processingjob.yaml
   run_test "${crd_namespace}" testfiles/xgboost-mnist-hpo.yaml
   # Special code for batch transform till we fix issue-59
@@ -82,7 +85,7 @@ function verify_canary_tests
 {
   local crd_namespace="$1"
   echo "Verifying canary tests"
-  verify_test "${crd_namespace}" TrainingJob xgboost-mnist 20m Completed
+  verify_test "${crd_namespace}" TrainingJob "xgboost-mnist-${RANDOM_STRING}" 20m Completed
   verify_test "${crd_namespace}" ProcessingJob kmeans-mnist 20m Completed
   verify_test "${crd_namespace}" HyperparameterTuningJob xgboost-mnist-hpo 20m Completed
   verify_test "${crd_namespace}" BatchTransformJob xgboost-batch 20m Completed 
