@@ -8,7 +8,7 @@ Amazon SageMaker Operators for Kubernetes are operators that can be used to trai
 
 ## Usage
 
-First, you must [install the operators](https://docs.aws.amazon.com/sagemaker/latest/dg/amazon-sagemaker-operators-for-kubernetes.html). After installation is complete, create a TrainingJob YAML specification by following one of the samples, like [samples/xgboost-mnist-trainingjob.yaml](./samples/xgboost-mnist-trainingjob.yaml). Then, use `kubectl` to create and monitor the progress of your job:
+First, you must [install the operators](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators.html). After installation is complete, create a TrainingJob YAML specification by following one of the samples, like [samples/xgboost-mnist-trainingjob.yaml](./samples/xgboost-mnist-trainingjob.yaml). Then, use `kubectl` to create and monitor the progress of your job:
 
 ```bash
 $ kubectl apply -f xgboost-mnist-trainingjob.yaml
