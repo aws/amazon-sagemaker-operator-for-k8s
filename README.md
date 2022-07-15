@@ -37,7 +37,7 @@ xgboost-mnist-cf1e16fb10a511eaaa450a350733ba06/algo-1-1574811611 2019-11-26 15:4
 
 The Amazon SageMaker Operators for Kubernetes enable management of SageMaker TrainingJobs, HyperParameterTuningJobs, BatchTransformJobs and HostingDeployments (Endpoints). Create and monitor them using the same `kubectl` tool as above.
 
-To install the operators onto your Kubernetes cluster, follow our [User Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/amazon-sagemaker-operators-for-kubernetes.html).
+To install the operators onto your Kubernetes cluster, follow our [User Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators.html).
 
 ### YAML Examples
 
