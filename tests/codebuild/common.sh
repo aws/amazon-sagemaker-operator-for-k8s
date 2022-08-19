@@ -54,6 +54,19 @@ function wait_for_crd_status()
   fi
 }
 
+function force_delete_training_jobs()
+{
+  training_jobs=$(kubectl get trainingjobs -ojson | jq -r '.items | .[] | .metadata.name')
+ 
+for job in $training_jobs
+do
+    echo $job
+    kubectl patch trainingjob $job -p '{"metadata":{"finalizers":null}}' --type=merge
+done
+ 
+kubectl delete trainingjob --all
+}
+
 # Cleans up all resources created during tests.
 # Parameter:
 #    $1: Namespace of CRD
@@ -68,7 +81,9 @@ function delete_all_resources()
   kubectl delete -n "$crd_namespace" hostingautoscalingpolicies --all
   kubectl delete -n "$crd_namespace" endpointconfig --all  
   kubectl delete -n "$crd_namespace" hostingdeployment --all 
-  kubectl delete -n "$crd_namespace" model --all  
+  kubectl delete -n "$crd_namespace" model --all 
+
+  force_delete_training_jobs 
 }
 
 # A helper function to generate an IAM Role name for the current cluster and specified namespace
