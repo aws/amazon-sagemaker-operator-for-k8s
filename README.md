@@ -6,7 +6,15 @@
 ## Introduction
 Amazon SageMaker Operators for Kubernetes are operators that can be used to train machine learning models, optimize hyperparameters for a given model, run batch transform jobs over existing models, and set up inference endpoints. With these operators, users can manage their jobs in Amazon SageMaker from their Kubernetes cluster in Amazon Elastic Kubernetes Service [EKS](http://aws.amazon.com/eks).
 
+## Migrate resources to the new SageMaker Operators for Kubernetes
+
+The new version of SageMaker Operators for Kubernetes uses AWS Controllers for Kubernetes (ACK). ACK is a framework for building Kubernetes custom controllers, where each controller communicates with an AWS service API. These controllers allow Kubernetes users to provision AWS resources like databases or message queues using the Kubernetes API. Follow development in the [ACK SageMaker controller GitHub respository](https://github.com/aws-controllers-k8s/sagemaker-controller). 
+
+For information on migrating existing SageMaker Operators for Kubernetes resources to the new operators, see [Migrate resources to the new SageMaker Operators for Kubernetes](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-migrate.html) in the *Amazon SageMaker Developer Guide*. To get started with the new operators, see the [Machine Learning with the ACK SageMaker Controller](https://aws-controllers-k8s.github.io/community/docs/tutorials/sagemaker-example/) tutorial in the ACK documentation.
+
 ## Usage
+
+> :warning: The following steps do not install the latest version of SageMaker Operators for Kubernetes. The new version of SageMaker Operators for Kubernetes uses AWS Controllers for Kubernetes (ACK) and can be found in the [ACK SageMaker controller GitHub respository](https://github.com/aws-controllers-k8s/sagemaker-controller).
 
 First, you must [install the operators](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators.html). After installation is complete, create a TrainingJob YAML specification by following one of the samples, like [samples/xgboost-mnist-trainingjob.yaml](./samples/xgboost-mnist-trainingjob.yaml). Then, use `kubectl` to create and monitor the progress of your job:
 
