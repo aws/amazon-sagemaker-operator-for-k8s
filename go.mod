@@ -6,7 +6,6 @@ require (
 	github.com/Jeffail/gabs/v2 v2.5.1
 	github.com/adammck/venv v0.0.0-20160819025605-8a9c907a37d3
 	github.com/aws/aws-sdk-go v1.37.3
-	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7 // indirect
@@ -22,9 +21,9 @@ require (
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
-	k8s.io/api v0.18.8
-	k8s.io/apimachinery v0.18.8
-	k8s.io/client-go v0.18.8
+	k8s.io/api v0.18.19
+	k8s.io/apimachinery v0.18.19
+	k8s.io/client-go v0.18.19
 	k8s.io/klog/v2 v2.2.0 // indirect
 	sigs.k8s.io/controller-runtime v0.6.2
 )

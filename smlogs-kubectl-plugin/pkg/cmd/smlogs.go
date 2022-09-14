@@ -23,7 +23,6 @@ limitations under the License.
 // Kubectl plugin overview: https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/
 // Cobra CLI framework: https://github.com/spf13/cobra
 // How to setup typed client for CRD: https://www.oreilly.com/library/view/programming-kubernetes/9781492047094/ch04.html#controller-runtime
-//
 package cmd
 
 import (
