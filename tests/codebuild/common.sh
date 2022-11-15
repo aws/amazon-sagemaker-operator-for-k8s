@@ -69,7 +69,6 @@ do
 done
  
 kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
-kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
 }
 
 # Cleans up all resources created during tests.
@@ -78,7 +77,7 @@ kubectl delete -n "$crd_namespace" hyperparametertuningjob --all
 function delete_all_resources()
 {
   local crd_namespace="$1"
-  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
+  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all --timeout=10m
   kubectl delete -n "$crd_namespace" trainingjob --all
   kubectl delete -n "$crd_namespace" processingjob --all
   kubectl delete -n "$crd_namespace" batchtransformjob --all
