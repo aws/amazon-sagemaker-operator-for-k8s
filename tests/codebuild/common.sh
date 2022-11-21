@@ -77,15 +77,20 @@ kubectl delete -n "$crd_namespace" hyperparametertuningjob --all
 function delete_all_resources()
 {
   local crd_namespace="$1"
-  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all --timeout=10m
-  kubectl delete -n "$crd_namespace" trainingjob --all
+  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all
   kubectl delete -n "$crd_namespace" processingjob --all
   kubectl delete -n "$crd_namespace" batchtransformjob --all
   # HAP must be deleted before hostingdeployment
   kubectl delete -n "$crd_namespace" hostingautoscalingpolicies --all
   kubectl delete -n "$crd_namespace" endpointconfig --all  
   kubectl delete -n "$crd_namespace" hostingdeployment --all 
-  kubectl delete -n "$crd_namespace" model --all 
+  kubectl delete -n "$crd_namespace" model --all
+
+  kubectl delete -n "$crd_namespace" trainingjob --all --timeout=3m
+  deleted_suceeded=$?
+  if [ $deleted_suceeded = 1 ]; then
+    echo "Delete failed, will need to force delete"
+  fi
 
   force_delete_training_jobs "$crd_namespace"
 }
