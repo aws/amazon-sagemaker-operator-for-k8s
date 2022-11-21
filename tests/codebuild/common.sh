@@ -62,13 +62,13 @@ function force_delete_training_jobs()
   local crd_namespace="$1"
   training_jobs=$(kubectl get trainingjobs -n "$crd_namespace" -ojson | jq -r '.items | .[] | .metadata.name')
  
-for job in $training_jobs
-do
-    echo $job
-    kubectl patch -n "$crd_namespace" trainingjob $job -p '{"metadata":{"finalizers":null}}' --type=merge
-done
- 
-kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
+  for job in $training_jobs
+  do
+      echo $job
+      kubectl patch -n "$crd_namespace" trainingjob $job -p '{"metadata":{"finalizers":null}}' --type=merge
+  done
+   
+  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
 }
 
 # Cleans up all resources created during tests.
