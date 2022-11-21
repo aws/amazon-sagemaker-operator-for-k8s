@@ -12,6 +12,6 @@ verify_canary_tests "default"
 run_update_canary_tests "default"
 verify_update_canary_tests "default"
 verify_feature_canary_tests "default"
-# run_smlogs_canary_tests "default"
+run_smlogs_canary_tests "default"
 delete_all_resources "default" # Delete all existing resources to re-use metadata names
-# run_delete_canary_tests "default" 
+run_delete_canary_tests "default" 
