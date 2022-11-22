@@ -54,21 +54,44 @@ function wait_for_crd_status()
   fi
 }
 
+# Force deletes all trainingJobs which might have been left dangling. 
+# Parameter:
+#    $1: Namespace of CRD
+function force_delete_training_jobs()
+{
+  local crd_namespace="$1"
+  training_jobs=$(kubectl get trainingjobs -n "$crd_namespace" -ojson | jq -r '.items | .[] | .metadata.name')
+ 
+  for job in $training_jobs
+  do
+      echo "Removing finalizer for ${job}"
+      kubectl patch -n "$crd_namespace" trainingjob $job -p '{"metadata":{"finalizers":null}}' --type=merge
+  done
+   
+  kubectl delete -n "$crd_namespace" trainingjob --all 
+}
+
 # Cleans up all resources created during tests.
 # Parameter:
 #    $1: Namespace of CRD
 function delete_all_resources()
 {
   local crd_namespace="$1"
-  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
-  kubectl delete -n "$crd_namespace" trainingjob --all
+  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all
   kubectl delete -n "$crd_namespace" processingjob --all
   kubectl delete -n "$crd_namespace" batchtransformjob --all
   # HAP must be deleted before hostingdeployment
   kubectl delete -n "$crd_namespace" hostingautoscalingpolicies --all
   kubectl delete -n "$crd_namespace" endpointconfig --all  
   kubectl delete -n "$crd_namespace" hostingdeployment --all 
-  kubectl delete -n "$crd_namespace" model --all  
+  kubectl delete -n "$crd_namespace" model --all
+
+  kubectl delete -n "$crd_namespace" trainingjob --all --timeout=3m
+  if [ $? -ne 0 ]; then
+    echo "Delete failed, will need to force delete"
+  fi
+
+  force_delete_training_jobs "$crd_namespace"
 }
 
 # A helper function to generate an IAM Role name for the current cluster and specified namespace
