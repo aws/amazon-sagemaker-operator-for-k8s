@@ -64,11 +64,11 @@ function force_delete_training_jobs()
  
   for job in $training_jobs
   do
-      echo $job
+      echo "Removing finalizer for ${job}"
       kubectl patch -n "$crd_namespace" trainingjob $job -p '{"metadata":{"finalizers":null}}' --type=merge
   done
    
-  kubectl delete -n "$crd_namespace" hyperparametertuningjob --all 
+  kubectl delete -n "$crd_namespace" trainingjob --all 
 }
 
 # Cleans up all resources created during tests.
