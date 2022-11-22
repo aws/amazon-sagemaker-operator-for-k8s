@@ -87,8 +87,7 @@ function delete_all_resources()
   kubectl delete -n "$crd_namespace" model --all
 
   kubectl delete -n "$crd_namespace" trainingjob --all --timeout=3m
-  deleted_suceeded=$?
-  if [ $deleted_suceeded = 1 ]; then
+  if [ $? -ne 0 ]; then
     echo "Delete failed, will need to force delete"
   fi
 
