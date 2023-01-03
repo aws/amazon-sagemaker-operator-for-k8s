@@ -6,11 +6,12 @@
 ## Introduction
 Amazon SageMaker Operators for Kubernetes are operators that can be used to train machine learning models, optimize hyperparameters for a given model, run batch transform jobs over existing models, and set up inference endpoints. With these operators, users can manage their jobs in Amazon SageMaker from their Kubernetes cluster in Amazon Elastic Kubernetes Service [EKS](http://aws.amazon.com/eks).
 
+
 ## Migrate resources to the new SageMaker Operators for Kubernetes
 > :warning: This project will reach its end-of-life (EOL) on **Feb 15, 2023** along with [Amazon Elastic Kubernetes Service Kubernetes 1.21](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html#kubernetes-release-calendar). If you are currently using version *v1.2.2* or below of this SageMaker Operators for Kubernetes, we recommend migrating your resources to the latest SageMaker Operators for Kubernetes, the **[ACK service controller for Amazon SageMaker](https://github.com/aws-controllers-k8s/sagemaker-controller)** based on [AWS Controllers for Kubernetes (ACK)](https://aws-controllers-k8s.github.io/community/).   
 
-- For information on the migration steps, see [Migrate resources to the latest Operators.](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-migrate.html).
-- For answers to frequently asked questions (FAQ) regarding the end of support of this version of SageMaker Operators for Kubernetes, see [Announcing the End of Support of the Original Version of SageMaker Operator for Kubernetes.](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-eos-announcement.html).
+- For information on the migration steps, see [Migrate resources to the latest Operators.](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-migrate.html)
+- For answers to frequently asked questions (FAQ) regarding the end of support of this version of SageMaker Operators for Kubernetes, see [Announcing the End of Support of the Original Version of SageMaker Operator for Kubernetes.](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-eos-announcement.html)
 
 
 ## Usage
