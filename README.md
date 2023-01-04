@@ -7,14 +7,14 @@
 Amazon SageMaker Operators for Kubernetes are operators that can be used to train machine learning models, optimize hyperparameters for a given model, run batch transform jobs over existing models, and set up inference endpoints. With these operators, users can manage their jobs in Amazon SageMaker from their Kubernetes cluster in Amazon Elastic Kubernetes Service [EKS](http://aws.amazon.com/eks).
 
 ## Migrate resources to the new SageMaker Operators for Kubernetes
+> :warning: This project will reach its end-of-life (EOL) on **Feb 15, 2023** along with [Amazon Elastic Kubernetes Service Kubernetes 1.21](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html#kubernetes-release-calendar). If you are currently using version *v1.2.2* or below of this SageMaker Operators for Kubernetes, we recommend migrating your resources to the latest SageMaker Operators for Kubernetes, the **[ACK service controller for Amazon SageMaker](https://github.com/aws-controllers-k8s/sagemaker-controller)** based on [AWS Controllers for Kubernetes (ACK)](https://aws-controllers-k8s.github.io/community/).   
 
-The new version of SageMaker Operators for Kubernetes uses AWS Controllers for Kubernetes (ACK). ACK is a framework for building Kubernetes custom controllers, where each controller communicates with an AWS service API. These controllers allow Kubernetes users to provision AWS resources like databases or message queues using the Kubernetes API. Follow development in the [ACK SageMaker controller GitHub respository](https://github.com/aws-controllers-k8s/sagemaker-controller). 
+- For information on the migration steps, see [Migrate resources to the latest Operators.](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-migrate.html).
+- For answers to frequently asked questions (FAQ) regarding the end of support of this version of SageMaker Operators for Kubernetes, see [Announcing the End of Support of the Original Version of SageMaker Operator for Kubernetes.](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-eos-announcement.html).
 
-For information on migrating existing SageMaker Operators for Kubernetes resources to the new operators, see [Migrate resources to the new SageMaker Operators for Kubernetes](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators-migrate.html) in the *Amazon SageMaker Developer Guide*. To get started with the new operators, see the [Machine Learning with the ACK SageMaker Controller](https://aws-controllers-k8s.github.io/community/docs/tutorials/sagemaker-example/) tutorial in the ACK documentation.
 
 ## Usage
-
-> :warning: The following steps do not install the latest version of SageMaker Operators for Kubernetes. The new version of SageMaker Operators for Kubernetes uses AWS Controllers for Kubernetes (ACK) and can be found in the [ACK SageMaker controller GitHub respository](https://github.com/aws-controllers-k8s/sagemaker-controller).
+> :note: The following steps do not install the latest version of SageMaker Operators for Kubernetes. Find the link to the new ACK-based SageMaker Operators for Kubernetes project in the warning message above.
 
 First, you must [install the operators](https://docs.aws.amazon.com/sagemaker/latest/dg/kubernetes-sagemaker-operators.html). After installation is complete, create a TrainingJob YAML specification by following one of the samples, like [samples/xgboost-mnist-trainingjob.yaml](./samples/xgboost-mnist-trainingjob.yaml). Then, use `kubectl` to create and monitor the progress of your job:
 
