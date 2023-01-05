@@ -53,11 +53,14 @@ cluster_name="sagemaker-k8s-canary-"$(date '+%Y-%m-%d-%H-%M-%S')""
 
 if [ -z "${USE_EXISTING_CLUSTER}" ]
 then 
-   eksctl_args=( --nodes 1 --node-type=c5.xlarge --timeout=40m --region "${CLUSTER_REGION}" --auto-kubeconfig --version "${CLUSTER_VERSION}" )
+   eksctl_args=( --nodes 1 --node-type=c5.xlarge --region "${CLUSTER_REGION}" --version "${CLUSTER_VERSION}" )
    [ "${CLUSTER_PUBLIC_SUBNETS}" != "" ] && eksctl_args+=( --vpc-public-subnets="${CLUSTER_PUBLIC_SUBNETS}" )
    [ "${CLUSTER_PRIVATE_SUBNETS}" != "" ] && eksctl_args+=( --vpc-private-subnets="${CLUSTER_PRIVATE_SUBNETS}" )
+   
+   eksctl create cluster "${cluster_name}" "${eksctl_args[@]}" --dry-run > generated-cluster.yaml
+   yq -i ".managedNodeGroups[0].disableIMDSv1 = true" generated-cluster.yaml
 
-   eksctl create cluster "${cluster_name}" "${eksctl_args[@]}" --enable-ssm
+   eksctl create cluster -f generated-cluster.yaml --auto-kubeconfig --timeout=40m
 
    echo "Setting kubeconfig"
    export KUBECONFIG="/root/.kube/eksctl/clusters/${cluster_name}"
