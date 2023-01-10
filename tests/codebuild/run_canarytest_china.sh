@@ -57,11 +57,14 @@ function download_installer_china(){
 }
 
 function create_eks_cluster() {
-  eksctl_args=( --managed --nodes 1 --node-type=c5.xlarge --timeout=30m --region "$CLUSTER_REGION" --auto-kubeconfig )
+  eksctl_args=( --managed --nodes 1 --node-type=c5.xlarge --region "$CLUSTER_REGION" )
   [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-public-subnets="${EKS_PUBLIC_SUBNET_1},${EKS_PUBLIC_SUBNET_2}" )
   [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-private-subnets="${EKS_PRIVATE_SUBNET_1},${EKS_PRIVATE_SUBNET_2}" )
+  
+  eksctl create cluster "${CLUSTER_NAME}" "${eksctl_args[@]}" --dry-run > generated-cluster.yaml
+  yq -i ".managedNodeGroups[0].disableIMDSv1 = true" generated-cluster.yaml
 
-  eksctl create cluster "$CLUSTER_NAME" "${eksctl_args[@]}" --enable-ssm
+  eksctl create cluster -f generated-cluster.yaml --auto-kubeconfig --timeout=40m
 }
 
 function install_k8s_operators() {
