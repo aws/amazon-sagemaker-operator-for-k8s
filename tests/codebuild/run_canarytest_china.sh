@@ -62,7 +62,7 @@ function create_eks_cluster() {
   [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-private-subnets="${EKS_PRIVATE_SUBNET_1},${EKS_PRIVATE_SUBNET_2}" )
   
   eksctl create cluster "${CLUSTER_NAME}" "${eksctl_args[@]}" --dry-run > generated-cluster.yaml
-  yq -i ".managedNodeGroups[0].disableIMDSv1 = true" generated-cluster.yaml
+  yq w -i ".managedNodeGroups[0].disableIMDSv1 = true" generated-cluster.yaml
 
   eksctl create cluster -f generated-cluster.yaml --auto-kubeconfig --timeout=40m
 }

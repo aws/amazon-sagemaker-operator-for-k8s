@@ -58,7 +58,7 @@ then
    [ "${CLUSTER_PRIVATE_SUBNETS}" != "" ] && eksctl_args+=( --vpc-private-subnets="${CLUSTER_PRIVATE_SUBNETS}" )
    
    eksctl create cluster "${cluster_name}" "${eksctl_args[@]}" --dry-run > generated-cluster.yaml
-   yq -i ".managedNodeGroups[0].disableIMDSv1 = true" generated-cluster.yaml
+   yq w -i ".managedNodeGroups[0].disableIMDSv1 = true" generated-cluster.yaml
 
    eksctl create cluster -f generated-cluster.yaml --auto-kubeconfig --timeout=40m
 
