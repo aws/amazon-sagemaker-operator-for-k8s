@@ -29,6 +29,7 @@ CLUSTER_NAME=${DEPLOYMENT_NAME}-cluster
 CLUSTER_REGION=${CLUSTER_REGION:-cn-northwest-1}
 OIDC_ROLE_NAME=pod-role-$DEPLOYMENT_NAME
 AWS_ACC_NUM=$(aws sts get-caller-identity --region $CLUSTER_REGION   --query Account --output text)
+CLUSTER_VERSION=1.21
 
 function download_installer_china(){
   if [ -f ./installer_china.yaml ]; then
@@ -57,12 +58,12 @@ function download_installer_china(){
 }
 
 function create_eks_cluster() {
-  eksctl_args=( --managed --nodes 1 --node-type=c5.xlarge --region "$CLUSTER_REGION" )
+  eksctl_args=( --managed --nodes 1 --node-type=c5.xlarge --region "$CLUSTER_REGION" --version "${CLUSTER_VERSION}" )
   [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-public-subnets="${EKS_PUBLIC_SUBNET_1},${EKS_PUBLIC_SUBNET_2}" )
   [ ! -z "${USE_EXISTING_SUBNET}" ] && eksctl_args+=( --vpc-private-subnets="${EKS_PRIVATE_SUBNET_1},${EKS_PRIVATE_SUBNET_2}" )
   
   eksctl create cluster "${CLUSTER_NAME}" "${eksctl_args[@]}" --dry-run > generated-cluster.yaml
-  yq w -i ".managedNodeGroups[0].disableIMDSv1 = true" generated-cluster.yaml
+  yq w -i generated-cluster.yaml managedNodeGroups[0].disableIMDSv1 true
 
   eksctl create cluster -f generated-cluster.yaml --auto-kubeconfig --timeout=40m
 }
